@@ -1,9 +1,9 @@
 // Saving progress in the browser's localStorage (similar to PlayerPrefs in Unity).
 import type { SaveData } from '../data/types';
 
-const SAVE_KEY = 'misiachnyi-korzh-v5';
+const SAVE_KEY = 'misiachnyi-korzh-v6';
 /** Bump when the save structure changes incompatibly; old saves are then ignored. */
-const SAVE_VERSION = 5;
+const SAVE_VERSION = 6;
 
 export function createNewSave(): SaveData {
   return {
