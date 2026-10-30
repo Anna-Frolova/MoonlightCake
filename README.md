@@ -1,50 +1,50 @@
 # Місячний Корж
 
-A cozy 2D game about a magical café where cats in different outfits order cakes. TypeScript + Canvas 2D, no engine.
+Уютная 2D-игра про магическое кафе, где коты в разных нарядах заказывают торты. TypeScript + Canvas 2D, без движка.
 
-## Running
+## Запуск
 
 ```bash
-npm install      # once
-npm run dev      # dev server at http://localhost:8765, reloads on save
-npm run build    # typecheck + build a single file dist/index.html (opens without a server)
+npm install      # один раз
+npm run dev      # дев-сервер на http://localhost:8765, перезагружается при сохранении
+npm run build    # проверка типов + сборка в один файл dist/index.html (открывается без сервера)
 ```
 
-`npm run typecheck` checks types only, without building.
+`npm run typecheck` только проверяет типы, без сборки.
 
-## Code structure (`src/`)
+## Структура кода (`src/`)
 
-Unity analogy: there is no scene editor here; scenes are just functions that draw everything every frame.
+Аналогия с Unity: редактора сцен нет, сцены — это функции, которые каждый кадр рисуют всё заново.
 
-| Folder | What's inside | In Unity terms |
+| Папка | Что внутри | В терминах Unity |
 |---|---|---|
-| `main.ts` | Game loop: `update(dt)` → `render()` every frame | `Update()` on the main object |
-| `input.ts` | Mouse / touch / keyboard, button presses | Input System |
-| `core/` | Canvas, time, maths, colours, drawing helpers, buttons, particles, UI theme | engine utilities |
-| `data/` | **Game content**: ingredients, palettes, cats, elements, shop, unlock schedule. No logic. | ScriptableObjects |
-| `game/` | Rules: the cake model, colour mixing, sign recognition, orders, scoring, daily menu, saves, day flow, `state.ts` (all state) | game logic / managers |
-| `audio/` | Sound synthesiser, effects, music | AudioSource / AudioMixer |
-| `render/` | Drawing of objects: cake, cats, toppings, café backdrop, icons, bottles, order card | prefabs / sprites |
-| `kitchen/` | Kitchen: `layout.ts` (coordinates), `stations/` (one file per station: layers, cream, glaze, toppings, magic) | per-station components |
-| `scenes/` | Screens: title, day start, hall, kitchen, day end, finale, shop, shared HUD | Scenes |
+| `main.ts` | Игровой цикл: `update(dt)` → `render()` каждый кадр | `Update()` главного объекта |
+| `input.ts` | Мышь / тач / клавиатура, нажатия кнопок | Input System |
+| `core/` | Канвас, время, математика, цвета, рисование, кнопки, частицы, тема UI | утилиты движка |
+| `data/` | **Контент игры**: ингредиенты, палитры, коты, стихии, магазин, расписание открытий. Без логики. | ScriptableObjects |
+| `game/` | Правила: модель торта, смешивание цветов, распознавание знаков, заказы, оценка, меню дня, сохранения, ход дня, `state.ts` (всё состояние) | игровая логика / менеджеры |
+| `audio/` | Синтезатор звуков, эффекты, музыка | AudioSource / AudioMixer |
+| `render/` | Отрисовка объектов: торт, коты, украшения, фон кафе, иконки, колбы, карточка заказа | префабы / спрайты |
+| `kitchen/` | Кухня: `layout.ts` (координаты), `stations/` (по файлу на станцию: коржи, крем, глазурь, украшения, чары) | компоненты станций |
+| `scenes/` | Экраны: титул, начало дня, зал, кухня, конец дня, финал, магазин, общий HUD | Scenes |
 
-### State
+### Состояние
 
-- `progress` (`game/state.ts`): saved data (day, coins, purchases, menu). Written to `localStorage`.
-- `runtime` (`game/state.ts`): everything else (current scene, the cake in progress, animations).
+- `progress` (`game/state.ts`): то, что сохраняется (день, монеты, покупки, меню). Пишется в `localStorage`.
+- `runtime` (`game/state.ts`): всё остальное (текущая сцена, торт в работе, анимации).
 
-### Where to change what
+### Где что менять
 
-- New flavour / topping / cream: `data/ingredients.ts` plus the unlock schedule in `data/schedule.ts`.
-- New cat guest: `data/cats.ts`.
-- New colour palette for orders: `data/palettes.ts`.
-- Prices, tips, scoring weights: constants at the top of `game/scoring.ts`.
-- Kitchen layout (cake, cauldron, shelf): `kitchen/layout.ts`.
-- UI colours and fonts: `core/theme.ts`.
-- New kitchen station: a file in `kitchen/stations/` implementing the `Station` interface, added to `kitchen/stations/index.ts`.
+- Новый вкус / украшение / крем: `data/ingredients.ts` и расписание открытий в `data/schedule.ts`.
+- Новый кот-гость: `data/cats.ts`.
+- Новая цветовая палитра заказов: `data/palettes.ts`.
+- Цены, чаевые, веса оценки: константы вверху `game/scoring.ts`.
+- Расположение на кухне (торт, котёл, полка): `kitchen/layout.ts`.
+- Цвета и шрифты интерфейса: `core/theme.ts`.
+- Новая станция кухни: файл в `kitchen/stations/`, реализующий интерфейс `Station`, плюс строка в `kitchen/stations/index.ts`.
 
-### Debugging
+### Отладка
 
-In `npm run dev` the browser console exposes `__game.runtime`, `__game.progress` and `__game.stations` (e.g. `__game.progress.coins = 999`). This object is absent from the build.
+При `npm run dev` в консоли браузера доступны `__game.runtime`, `__game.progress` и `__game.stations` (например, `__game.progress.coins = 999`). В сборку этот объект не попадает.
 
-`legacy/index.html` is the original single-file version, kept for reference.
+`legacy/index.html` — исходная однофайловая версия, оставлена для сравнения.
