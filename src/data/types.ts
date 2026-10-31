@@ -14,10 +14,12 @@ export type ToppingId =
   | 'pearl' | 'goldPearl';
 export type GlazeColorId =
   | 'red' | 'yellow' | 'blue' | 'orange' | 'green' | 'purple' | 'sunset' | 'teal' | 'lime'
-  | 'pink' | 'sky' | 'lilac' | 'lemon' | 'white' | 'night' | 'plum' | 'forest' | 'cherry';
+  | 'pink' | 'sky' | 'lilac' | 'lemon' | 'white' | 'night' | 'plum' | 'forest' | 'cherry' | 'black';
 export type PaletteId = 'berry' | 'sunny' | 'sea' | 'lavender' | 'forest' | 'night' | 'chocolate';
 export type ElementId = 'fire' | 'ice' | 'bolt' | 'nature' | 'star';
-export type CatId = 'pushinka' | 'barsyk' | 'lihtaryk' | 'vusan' | 'mzhychka' | 'bulochka' | 'murlin' | 'queen';
+export type CatId =
+  | 'pushinka' | 'barsyk' | 'lihtaryk' | 'vusan' | 'mzhychka' | 'bulochka' | 'murlin'
+  | 'mokhovyk' | 'serdenko' | 'morok' | 'drimko' | 'queen';
 export type DecorId = 'garland' | 'catnip' | 'gramophone' | 'cushion' | 'vitrage' | 'chandelier';
 /** Kitchen station a helper automates. */
 export type HelperId = 'layers' | 'cream' | 'glaze' | 'toppings' | 'magic';
@@ -54,8 +56,9 @@ export interface PaletteDef {
 }
 
 export type CatPattern = 'none' | 'stripes' | 'points' | 'calico' | 'bicolor';
-export type CatHat = 'none' | 'flowers' | 'tophat' | 'witch' | 'captain' | 'souwester' | 'wizard' | 'kerchief' | 'crown' | 'chef';
-export type CatOutfit = 'none' | 'dress' | 'vest' | 'cloak' | 'sailor' | 'raincoat' | 'robe' | 'apron' | 'gown' | 'chef';
+export type CatHat = 'none' | 'flowers' | 'tophat' | 'witch' | 'captain' | 'souwester' | 'wizard' | 'kerchief' | 'crown' | 'chef'
+  | 'gothic' | 'mushroom' | 'beret' | 'nightcap';
+export type CatOutfit = 'none' | 'dress' | 'vest' | 'cloak' | 'sailor' | 'raincoat' | 'robe' | 'apron' | 'gown' | 'chef' | 'gothic' | 'leafy' | 'pajamas';
 export type CatAccessory = 'none' | 'monocle' | 'glasses' | 'bow';
 export type Mood = 'neutral' | 'happy' | 'sad' | 'thinking';
 
@@ -90,10 +93,20 @@ export interface CatDef extends CatLook {
   isGenerous?: boolean;
   favoritePalettes: PaletteId[];
   favoriteShapes: ShapeId[];
-  lines: Localized<CatLines>;
+  /** A picky guest orders only cakes that follow this rule. */
+  orderRule?: OrderRule;
 }
 
-export interface CatLines { hello: string[]; ask: string; good: string[]; ok: string[]; bad: string[] }
+/** "Only these glaze colours" and/or "only these shapes". The guest skips days when today's menu can't make it. */
+export interface OrderRule {
+  glazes?: GlazeColorId[];
+  shapes?: ShapeId[];
+  /** What the guest orders, for the day's news: "фіолетові торти" / "紫のケーキ". */
+  label: Localized;
+}
+
+/** What a guest says; every list is used up before any line repeats (see game/lines.ts). */
+export interface CatLines { hello: string[]; ask: string[]; good: string[]; ok: string[]; bad: string[] }
 
 export interface ShopItemDef { id: ShopItemId; tab: 'decor' | 'helpers'; name: Localized; description: Localized; price: number; tipBonus?: number }
 

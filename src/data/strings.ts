@@ -29,6 +29,7 @@ const uk = {
   endlessDaySubtitle: (guests: number) => `нескінченний режим · гостей: ${guests}`,
   welcomeNote: 'Ласкаво просимо до «Місячного Коржа»! Гості покажуть картинку торта, який хочуть. Меню щодня змінюється само.',
   newGuestsNote: (names: string[]) => `Нові гості: ${names.join(', ')}.`,
+  pickyTag: (what: string) => `★ лише ${what}`,
   newEssenceNote: (names: string[]) => `У казані нова есенція: ${names.map(n => n.toLowerCase()).join(', ')}!`,
   firstMagicNote: 'Кожен торт треба зачарувати! Вогонь — намалюй трикутник, лід — коло.',
   newElementNote: (element: string, sign: string) => `Нова стихія — ${element.toLowerCase()}! Її знак: «${sign}».`,
@@ -55,7 +56,7 @@ const uk = {
   // hall
   orderSpeech: (greeting: string, ask: string) => `${greeting} ${ask}`,
   acceptOrder: 'Прийняти замовлення',
-  thinking: ['Хм-м…', 'Ану, ану…', 'Мрр… дай-но подивлюся…'],
+  thinking: ['Хм-м…', 'Ану, ану…', 'Мрр… дай-но подивлюся…', 'Нумо скуштуємо…', 'Так-так-так…', 'Мур… цікаво…'],
   guestScore: 'Оцінка гостя',
   scoreParts: {
     shape: 'Форма', layers: 'Коржі', filling: 'Начинка', cream: 'Крем', glaze: 'Глазур', toppings: 'Прикраси', magic: 'Магія',
@@ -185,6 +186,7 @@ const ja: UiStrings = {
   endlessDaySubtitle: guests => `エンドレスモード · お客さん：${guests}匹`,
   welcomeNote: '「ムーンライトケーキ」へようこそ！お客さんがほしいケーキの絵を見せてくれます。メニューは毎日かわります。',
   newGuestsNote: names => `新しいお客さん：${names.join('、')}。`,
+  pickyTag: what => `★ ${what}だけ`,
   newEssenceNote: names => `大釜に新しいエッセンス：${names.join('、')}！`,
   firstMagicNote: 'ケーキには必ず魔法をかけよう！炎は三角、氷は円を描いてね。',
   newElementNote: (element, sign) => `新しい属性「${element}」！しるしは「${sign}」。`,
@@ -210,7 +212,7 @@ const ja: UiStrings = {
 
   orderSpeech: (greeting, ask) => `${greeting}${ask}`,
   acceptOrder: '注文を受ける',
-  thinking: ['うーん…', 'どれどれ…', 'ニャ…ちょっと見せて…'],
+  thinking: ['うーん…', 'どれどれ…', 'ニャ…ちょっと見せて…', 'では、いただきます…', 'ふむふむ…', 'ニャ…気になるね…'],
   guestScore: 'お客さんの評価',
   scoreParts: {
     shape: '形', layers: 'スポンジ', filling: 'フィリング', cream: 'クリーム', glaze: 'グレーズ', toppings: 'トッピング', magic: '魔法',

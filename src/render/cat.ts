@@ -8,6 +8,8 @@ import type { CatLook, Mood } from '../data/types';
 const EYE_DARK = '#21163a';
 const BLUSH = 'rgba(255,120,170,0.42)';
 const INNER_EAR = '#ffb0cf';
+/** Rose and brooch of the gothic outfit. */
+const GOTHIC_RED = '#d0213f';
 /** Bluish light coming from the café's magic, painted on the right edge of the body and head. */
 const RIM_LIGHT = 'rgba(150,210,255,0.45)';
 
@@ -276,6 +278,39 @@ function drawOutfit(look: CatLook, outline: string, bodyScale: number): void {
       ctx.fillStyle = '#fff6c8'; ctx.beginPath(); ctx.arc(0, -74, 9, 0, Math.PI * 2); ctx.arc(4, -77, 8, 0, Math.PI * 2, true); ctx.fill('evenodd');
       drawGlow(0, -74, 22, '#fff6c8', 0.4);
       break;
+    case 'gothic':
+      fillFabric(color, -104);
+      ctx.fillStyle = shade(color, 0.22); // lace hem
+      for (let i = -4; i <= 4; i++) { ellipsePath(i * 22, 40, 11, 7); ctx.fill(); }
+      ctx.fillStyle = '#f4eefc'; // ruffled jabot
+      for (let i = 0; i < 4; i++) { ellipsePath(0, -94 + i * 15, 22 - i * 3, 9); ctx.fill(); ctx.stroke(); }
+      drawGlow(0, -102, 20, '#ff4a6e', 0.35);
+      ctx.fillStyle = GOTHIC_RED; ellipsePath(0, -102, 8, 8); ctx.fill(); ctx.stroke(); // brooch
+      break;
+    case 'leafy':
+      fillFabric(color, -104);
+      ctx.fillStyle = shade(color, 0.3);
+      for (let i = 0; i < 9; i++) { // leaves scattered over the tunic
+        ctx.save();
+        ctx.translate(-64 + (i % 3) * 62 + (Math.floor(i / 3) % 2) * 22, -64 + Math.floor(i / 3) * 34);
+        ctx.rotate(0.6 + i * 0.9);
+        ellipsePath(0, 0, 11, 5); ctx.fill();
+        ctx.restore();
+      }
+      ctx.fillStyle = '#6fbf5a'; roundRectPath(-64, -114, 128, 24, 12); ctx.fill(); ctx.stroke(); // moss scarf
+      ctx.fillStyle = '#a0683a'; ellipsePath(0, -40, 7, 8); ctx.fill(); ctx.stroke(); // acorn button
+      ctx.fillStyle = '#6e4626'; roundRectPath(-8, -50, 16, 7, 3); ctx.fill();
+      break;
+    case 'pajamas':
+      fillFabric(color, -104);
+      ctx.fillStyle = shade(color, 0.28);
+      for (let i = 0; i < 9; i++) ctx.fillRect(-92 + i * 22, -104, 9, 170); // stripes
+      ctx.fillStyle = '#fff1b0';
+      starPath(-46, -50, 7, 3); ctx.fill(); starPath(44, -26, 6, 2.5); ctx.fill(); starPath(-30, 4, 5, 2); ctx.fill();
+      ctx.fillStyle = shade(color, -0.15); // collar
+      for (const side of [-1, 1]) { ctx.beginPath(); ctx.moveTo(0, -84); ctx.lineTo(side * 42, -110); ctx.lineTo(side * 34, -78); ctx.closePath(); ctx.fill(); ctx.stroke(); }
+      ctx.fillStyle = '#ffffff'; for (const buttonY of [-60, -32, -4]) { ellipsePath(0, buttonY, 5, 5); ctx.fill(); ctx.stroke(); }
+      break;
     case 'chef':
       ctx.fillStyle = '#ffffff'; ctx.fillRect(-95, -104, 190, 170);
       ctx.fillStyle = '#ece6ff'; ctx.fillRect(-95, -104, 32, 170);
@@ -367,6 +402,51 @@ function drawHat(look: CatLook, outline: string, headY: number, time: number): v
       drawGlow(0, -46, 20, '#ffffff', 0.5 + 0.3 * Math.sin(time * 4));
       break;
     }
+    case 'gothic': // tiny tilted top hat with a veil and a red rose
+      ctx.translate(30, headY - 50); ctx.rotate(0.24);
+      ctx.fillStyle = 'rgba(20,12,30,0.4)';
+      ctx.beginPath(); ctx.moveTo(-38, 2); ctx.quadraticCurveTo(-30, 28, -6, 30); ctx.quadraticCurveTo(24, 26, 36, 2); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#1a1424'; ellipsePath(0, 0, 40, 9); ctx.fill(); ctx.stroke();
+      roundRectPath(-22, -44, 44, 44, 8); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = GOTHIC_RED; ctx.fillRect(-21, -14, 42, 8);
+      ellipsePath(24, -8, 11, 10); ctx.fill(); ctx.stroke(); // rose
+      ctx.strokeStyle = '#7a0f22'; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.arc(24, -8, 5, 0, Math.PI * 1.6); ctx.stroke();
+      break;
+    case 'mushroom': { // red toadstool cap with white spots
+      ctx.translate(0, headY - 40);
+      ctx.beginPath(); ctx.ellipse(0, 0, 82, 56, 0, Math.PI, 0); ctx.quadraticCurveTo(0, 16, -82, 0); ctx.closePath();
+      const cap = ctx.createLinearGradient(0, -56, 0, 10); cap.addColorStop(0, '#ff6a5a'); cap.addColorStop(1, '#d43a36');
+      ctx.fillStyle = cap; ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#fff6e8';
+      for (const [spotX, spotY, radius] of [[-46, -20, 10], [-10, -40, 12], [30, -26, 10], [60, -8, 6], [-66, -4, 5], [6, -10, 6]]) {
+        ellipsePath(spotX, spotY, radius, radius * 0.85); ctx.fill();
+      }
+      ctx.save(); ctx.translate(-30, -50); ctx.rotate(-0.6); // a leaf on top
+      ctx.fillStyle = '#6be08a'; ellipsePath(0, 0, 14, 6); ctx.fill(); ctx.stroke();
+      ctx.restore();
+      break;
+    }
+    case 'beret': // with a feather and a heart pin
+      ctx.translate(-10, headY - 46); ctx.rotate(-0.16);
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath(); ctx.moveTo(26, -10); ctx.quadraticCurveTo(52, -78, 104, -82); ctx.quadraticCurveTo(86, -30, 48, 6); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(38, -2); ctx.quadraticCurveTo(66, -50, 100, -78); ctx.stroke(); // quill
+      ellipsePath(0, 0, 72, 22); ctx.fillStyle = color; ctx.fill(); ctx.stroke();
+      ctx.fillStyle = shade(color, -0.2); ctx.beginPath(); ctx.ellipse(0, 8, 58, 10, 0, 0, Math.PI); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(0, -21); ctx.lineTo(5, -32); ctx.stroke(); // stem
+      ctx.fillStyle = '#ff6f9f'; heartPath(38, -2, 16); ctx.fill(); ctx.stroke();
+      break;
+    case 'nightcap': // floppy cap with stars and a pompom
+      ctx.translate(0, headY - 42);
+      ctx.beginPath();
+      ctx.moveTo(-66, 4); ctx.quadraticCurveTo(-40, -72, 20, -84); ctx.quadraticCurveTo(84, -92, 98, -36);
+      ctx.quadraticCurveTo(64, -56, 42, -40); ctx.quadraticCurveTo(62, -16, 66, 4); ctx.closePath();
+      ctx.fillStyle = color; ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#fff1b0';
+      starPath(-24, -38, 7, 3); ctx.fill(); starPath(14, -60, 6, 2.5); ctx.fill(); starPath(30, -24, 5, 2); ctx.fill();
+      ctx.fillStyle = '#ffffff'; roundRectPath(-70, -6, 140, 18, 9); ctx.fill(); ctx.stroke(); // fluffy brim
+      ellipsePath(98, -34, 13, 13); ctx.fill(); ctx.stroke(); // pompom
+      break;
     case 'chef':
       ctx.translate(0, headY - 50);
       ctx.fillStyle = '#ffffff'; roundRectPath(-46, -14, 92, 22, 8); ctx.fill(); ctx.stroke();

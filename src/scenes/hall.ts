@@ -2,9 +2,9 @@
 import { sfx } from '../audio/sfx';
 import { ctx, SCREEN_W } from '../core/canvas';
 import { clock } from '../core/clock';
-import { drawCoin, drawHeart, drawPanel, drawText, drawTitle, ellipsePath, font, roundRectPath, withPopIn, wrapText } from '../core/draw';
+import { drawCoin, drawGlassPill, drawHeart, drawPanel, drawText, drawTitle, ellipsePath, font, roundRectPath, withPopIn, wrapText } from '../core/draw';
 import { loc } from '../core/language';
-import { clamp, easeOutBack, pickRandom } from '../core/math';
+import { clamp, easeOutBack } from '../core/math';
 import { burst, drawMotes, floatingText } from '../core/particles';
 import { BUTTON_COLOR, TEXT } from '../core/theme';
 import { button } from '../core/ui';
@@ -12,6 +12,7 @@ import { t } from '../data/strings';
 import {
   acceptOrder, collectPayment, GUEST_COUNTER_X, isLastGuestOfDay, say, sendGuestAway, spawnNextGuest,
 } from '../game/flow';
+import { catLine } from '../game/lines';
 import { progress, runtime, type Customer } from '../game/state';
 import { drawCake } from '../render/cake';
 import { drawCat, drawPaws } from '../render/cat';
@@ -57,7 +58,7 @@ export function updateHall(dt: number): void {
         customer.x = GUEST_COUNTER_X;
         customer.state = 'ordering';
         customer.orderShownFor = 0;
-        say(t().orderSpeech(customer.greeting, loc(customer.cat.lines).ask));
+        say(t().orderSpeech(customer.greeting, catLine(customer.cat, 'ask')));
         sfx.meow(customer.cat.voicePitch);
       }
       break;
@@ -86,8 +87,7 @@ function startReaction(customer: Customer): void {
   customer.reactionTime = 0;
   const mood = hearts >= 4 ? 'happy' : hearts === 3 ? 'neutral' : 'sad';
   customer.mood = mood;
-  const lines = loc(customer.cat.lines);
-  say(pickRandom(hearts >= 4 ? lines.good : hearts === 3 ? lines.ok : lines.bad));
+  say(catLine(customer.cat, hearts >= 4 ? 'good' : hearts === 3 ? 'ok' : 'bad'));
   sfx.meow(customer.cat.voicePitch, mood);
   collectPayment();
 }
@@ -197,6 +197,14 @@ function drawSpeechBubble(customer: Customer): void {
   ctx.fillStyle = tag; roundRectPath(x + 20, y - 16, tagW, 30, 15); ctx.fill();
   ctx.shadowBlur = 0;
   drawText(catName, x + 20 + tagW / 2, y - 1, 17, '#fff', 'center', 900);
+  const rule = customer.cat.orderRule;
+  if (rule) { // a picky guest: what they always order, as a gold tag next to the name
+    const ruleText = t().pickyTag(loc(rule.label));
+    ctx.font = font(14, 900);
+    const ruleX = x + 28 + tagW, ruleW = ctx.measureText(ruleText).width + 24;
+    drawGlassPill(ruleX, y - 13, ruleW, 24, 0.95);
+    drawText(ruleText, ruleX + ruleW / 2, y - 1, 14, TEXT.gold, 'center', 900);
+  }
   // text typed so far
   // each line's offset in the text: a break may eat a space (Ukrainian) or nothing (Japanese)
   const visibleChars = Math.floor(speech.visibleChars);

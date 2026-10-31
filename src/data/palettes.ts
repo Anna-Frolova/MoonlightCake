@@ -43,7 +43,7 @@ export const PALETTES: Record<PaletteId, PaletteDef> = {
   night: {
     name: { uk: 'Нічна', ja: '夜' }, swatches: ['#3f3aa8', '#7ff0ff', '#e0d0ff'],
     flavors: ['starry', 'lavender', 'chocolate', 'sky'], fillings: ['jelly', 'blueberry'], creams: ['moon', 'cloud'],
-    glazes: ['night', 'plum', 'purple', 'sky'],
+    glazes: ['night', 'black', 'plum', 'purple', 'sky'],
     toppings: ['blueberry', 'goldPearl', 'lavender', 'pearl'],
     elements: ['star', 'ice', 'bolt'],
   },

@@ -2,7 +2,7 @@
 import { pickRandom, pickWeighted, randomInt } from '../core/math';
 import { PALETTES } from '../data/palettes';
 import { STORY_DAYS } from '../data/schedule';
-import type { Cake, CatDef, Order, PaletteId, ToppingId } from '../data/types';
+import type { Cake, CatDef, GlazeColorId, Order, PaletteId, ShapeId, ToppingId } from '../data/types';
 import { arrangeToppings, cakeHeight, createCake, createCreamDots, updateCreamCoverage } from './cake';
 import { glazeRgb } from './colorMixing';
 import { availableElements, availableGlazeColors, todaysMenu } from './state';
@@ -54,17 +54,36 @@ function viablePalettes(): PaletteId[] {
   });
 }
 
+/** A picky guest's allowed glaze colours and shapes that can be made today (empty = no such rule). */
+function ruleOptions(cat: CatDef): { glazes: GlazeColorId[]; shapes: ShapeId[] } {
+  const glazes = availableGlazeColors().map(color => color.id), shapes = todaysMenu().shapes;
+  return {
+    glazes: cat.orderRule?.glazes?.filter(id => glazes.includes(id)) ?? [],
+    shapes: cat.orderRule?.shapes?.filter(id => shapes.includes(id)) ?? [],
+  };
+}
+
+/** Can today's menu and essences make this guest's kind of cake? Always true for non-picky guests. */
+export function canTakeOrder(cat: CatDef): boolean {
+  const rule = cat.orderRule, options = ruleOptions(cat);
+  return !rule || ((!rule.glazes || options.glazes.length > 0) && (!rule.shapes || options.shapes.length > 0));
+}
+
 export function generateOrder(cat: CatDef, day: number, tutorial?: 1 | 2): Order {
   if (tutorial) return structuredClone(TUTORIAL_ORDERS[tutorial]);
   const storyDay = Math.min(day, STORY_DAYS);
   const menu = todaysMenu();
   const isRoyal = cat.id === 'queen';
+  const rule = ruleOptions(cat);
 
+  // a picky guest's palette must contain one of their colours, so the rest of the cake matches it
   const viable = viablePalettes();
-  const favorites = viable.filter(id => cat.favoritePalettes.includes(id));
+  const matching = rule.glazes.length ? viable.filter(id => PALETTES[id].glazes.some(g => rule.glazes.includes(g))) : viable;
+  const candidates = matching.length ? matching : viable;
+  const favorites = candidates.filter(id => cat.favoritePalettes.includes(id));
   const paletteId: PaletteId = favorites.length && Math.random() < FAVORITE_PALETTE_CHANCE
     ? pickRandom(favorites)
-    : viable.length ? pickRandom(viable) : 'berry';
+    : candidates.length ? pickRandom(candidates) : 'berry';
   const palette = PALETTES[paletteId];
 
   let layerCount = storyDay === 1 ? randomInt(1, 2) : randomInt(1, 3);
@@ -84,12 +103,12 @@ export function generateOrder(cat: CatDef, day: number, tutorial?: 1 | 2): Order
 
   return {
     palette: paletteId,
-    shape: pickPreferring(menu.shapes, cat.favoriteShapes, FAVORITE_SHAPE_CHANCE),
+    shape: rule.shapes.length ? pickRandom(rule.shapes) : pickPreferring(menu.shapes, cat.favoriteShapes, FAVORITE_SHAPE_CHANCE),
     layerCount,
     flavor: pickFromPalette(palette.flavors, menu.flavors),
     filling: layerCount >= 2 ? pickFromPalette(palette.fillings, menu.fillings) : null,
     cream: pickFromPalette(palette.creams, menu.creams),
-    glaze: pickFromPalette(palette.glazes, availableGlazeColors().map(color => color.id)),
+    glaze: pickFromPalette(palette.glazes, rule.glazes.length ? rule.glazes : availableGlazeColors().map(color => color.id)),
     toppings,
     element: pickFromPalette(palette.elements, availableElements()),
     isRoyal,

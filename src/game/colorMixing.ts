@@ -11,6 +11,8 @@ const RYB_CORNERS = {
 };
 const DARK_ESSENCE_RGB: Rgb = [28, 20, 48];
 const WHITE: Rgb = [255, 255, 255];
+/** Dark essence on its own: an almost-black glaze with a hint of violet. */
+const BLACK_GLAZE_RGB: Rgb = [42, 34, 58];
 /** How strongly white/dark drops tint the mix. */
 const TINT_STRENGTH = 0.85;
 
@@ -35,7 +37,7 @@ export function mixDrops(drops: Drops): Rgb | null {
   if (total === 0) return null;
   if (colored === 0) { // only white and/or dark
     if (drops.dark === 0) return [...WHITE];
-    if (drops.white === 0) return [62, 48, 86];
+    if (drops.white === 0) return [...BLACK_GLAZE_RGB];
     return mixRgb(WHITE, DARK_ESSENCE_RGB, (drops.dark / (drops.white + drops.dark)) * 0.8);
   }
   const strongest = Math.max(drops.red, drops.yellow, drops.blue);

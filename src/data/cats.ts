@@ -1,3 +1,4 @@
+// Who visits the café and how they look. What they say is in catLines.ts.
 import type { CatDef, CatId, CatLook } from './types';
 
 /** Regular guests, in the order they are introduced. */
@@ -7,154 +8,72 @@ export const GUESTS: CatDef[] = [
     fur: '#fbf4ff', furAccent: '#e9dcf5', pattern: 'none', eyeColor: '#ff7fbf',
     hat: 'flowers', outfit: 'dress', outfitColor: '#ff9ccb',
     favoritePalettes: ['berry', 'lavender'], favoriteShapes: ['heart', 'round'],
-    lines: {
-      uk: {
-        hello: ['Мур-мур, добрий вечір!', 'Ох, яке чарівне місце!', 'Привіт, любий пекарю!'],
-        ask: 'Мені, будь ласка, ось такий тортик:',
-        good: ['Це найніжніший торт у світі! Мрр!', 'Ах, просто казка! Дякую!'],
-        ok: ['Мило… але трішки не те.', 'Гарненький, хоч і не зовсім мій.'],
-        bad: ['Ой… це зовсім не те, що я просила.', 'Мяу… я трошки засмучена.'],
-      },
-      ja: {
-        hello: ['ニャーン、こんばんは！', 'まあ、なんて素敵なお店！', 'こんにちは、パティシエさん！'],
-        ask: 'こんなケーキをお願いね：',
-        good: ['世界一やさしいケーキだわ！ゴロゴロ…', 'まあ、夢みたい！ありがとう！'],
-        ok: ['かわいいけど…ちょっと違うかしら。', '素敵だけど、わたしのとは少し違うわ。'],
-        bad: ['あら…頼んだものと全然違うわ。', 'ニャ…ちょっと悲しいわ。'],
-      },
-    },
   },
   {
     id: 'barsyk', name: { uk: 'Сер Барсик', ja: 'バルシク卿' }, firstDay: 1, voicePitch: 0.85, isGenerous: true,
     fur: '#ffa24f', furAccent: '#e0762c', pattern: 'stripes', eyeColor: '#7fe06a',
     hat: 'tophat', outfit: 'vest', outfitColor: '#3c3f8b', accessory: 'monocle',
     favoritePalettes: ['chocolate', 'berry', 'sunny'], favoriteShapes: ['square', 'round'],
-    lines: {
-      uk: {
-        hello: ['Добрий вечір, шановний кондитере.', 'Вітаю. Я маю бездоганний смак.'],
-        ask: 'Прошу приготувати ось це:',
-        good: ['Бездоганно! Мої вітання кухареві.', 'Шедевр, гідний лорда!'],
-        ok: ['Пристойно. Але монокль бачить недоліки.'],
-        bad: ['Хм. Це… сміливе прочитання мого замовлення.'],
-      },
-      ja: {
-        hello: ['こんばんは、パティシエ殿。', 'ごきげんよう。吾輩の舌は確かですぞ。'],
-        ask: 'これを作っていただきたい：',
-        good: ['完璧だ！シェフに敬意を。', '貴族にふさわしい傑作だ！'],
-        ok: ['まずまずだ。だがモノクルは欠点を見逃さん。'],
-        bad: ['ふむ。これは…吾輩の注文の大胆な解釈ですな。'],
-      },
-    },
   },
   {
     id: 'lihtaryk', name: { uk: 'Ліхтарик', ja: 'ランタンくん' }, firstDay: 1, voicePitch: 1.5, isKitten: true,
     fur: '#ffae5c', furAccent: '#ffffff', pattern: 'bicolor', eyeColor: '#3fe0c8',
     hat: 'souwester', outfit: 'raincoat', outfitColor: '#ffd23f',
     favoritePalettes: ['sunny', 'forest'], favoriteShapes: ['star', 'round'],
-    lines: {
-      uk: {
-        hello: ['Привіт! Мама дала мені монетки!', 'Ура, торти! Ура!'],
-        ask: 'Я хочу-хочу ось такий!',
-        good: ['Ва-а-ау! Найкращий торт у моєму житті!'],
-        ok: ['Смачно! Але трішки не такий…'],
-        bad: ['Ой… я хотів інший… *шмиг*'],
-      },
-      ja: {
-        hello: ['こんにちは！ママがコインくれたの！', 'わーい、ケーキだ！わーい！'],
-        ask: 'これがいい、これがいいー！',
-        good: ['わあああ！人生でいちばんのケーキ！'],
-        ok: ['おいしい！でもちょっとちがう…'],
-        bad: ['うう…べつのがよかった…ぐすん'],
-      },
-    },
   },
   {
     id: 'vusan', name: { uk: 'Капітан Вусань', ja: 'ヒゲ船長' }, firstDay: 1, voicePitch: 0.75,
     fur: '#a9b4c8', furAccent: '#6f7a92', pattern: 'stripes', eyeColor: '#ffc24a',
     hat: 'captain', outfit: 'sailor', outfitColor: '#2f5fc8',
     favoritePalettes: ['sea', 'night'], favoriteShapes: ['square', 'star'],
-    lines: {
-      uk: {
-        hello: ['Агов, на кораблі!', 'Тримай курс на смачне, юнго!'],
-        ask: 'Юнго, ось креслення мого торта:',
-        good: ['Тисяча рибок! Чудовий торт!'],
-        ok: ['Пливе, але кренить на лівий борт.'],
-        bad: ['Шторм мені у вуса! Це не той торт.'],
-      },
-      ja: {
-        hello: ['おーい、乗組員たち！', 'うまいもの目指して面舵いっぱい、見習い！'],
-        ask: '見習いよ、これがわしのケーキの設計図だ：',
-        good: ['千匹の魚にかけて！見事なケーキだ！'],
-        ok: ['浮かんではいるが、左舷に傾いておる。'],
-        bad: ['ヒゲに嵐が！これは違うケーキだ。'],
-      },
-    },
+    orderRule: { glazes: ['blue', 'sky', 'teal'], label: { uk: 'блакитні торти', ja: '青いケーキ' } },
   },
   {
     id: 'mzhychka', name: { uk: 'Відьмочка Мжичка', ja: '魔女っ子キリサメ' }, firstDay: 2, voicePitch: 1.1, isDarkFur: true,
     fur: '#3a3150', furAccent: '#241d36', pattern: 'none', eyeColor: '#ffe14a',
     hat: 'witch', outfit: 'cloak', outfitColor: '#7a3fd0',
     favoritePalettes: ['night', 'lavender', 'forest'], favoriteShapes: ['star', 'heart'],
-    lines: {
-      uk: {
-        hello: ['Мрр… відчуваю тут чари.', 'Привіт! Я щойно з шабашу.'],
-        ask: 'Зачаклуй мені ось такий:',
-        good: ['Відьомськи смачно! Мяу-ха-ха!'],
-        ok: ['Непогано, але зілля було б кращим.'],
-        bad: ['Пфф! Перетворю тебе на жабку… жартую.'],
-      },
-      ja: {
-        hello: ['ニャ…ここ、魔法の気配がする。', 'やっほー！サバトの帰りなの。'],
-        ask: 'こんなのを魔法で作って：',
-        good: ['魔女的においしい！ニャハハ！'],
-        ok: ['悪くないけど、魔法薬のほうがよかったかも。'],
-        bad: ['ふん！カエルに変えちゃうぞ…なーんてね。'],
-      },
-    },
+    orderRule: { glazes: ['purple', 'plum', 'lilac'], label: { uk: 'фіолетові торти', ja: '紫のケーキ' } },
   },
   {
     id: 'bulochka', name: { uk: 'Тітонька Булочка', ja: 'マフィンおばさん' }, firstDay: 2, voicePitch: 0.95, ordersBigCakes: true,
     fur: '#fff6ea', furAccent: '#ff9a45', furPatch: '#4a3a40', pattern: 'calico', eyeColor: '#9be05a',
     hat: 'kerchief', outfit: 'apron', outfitColor: '#ff5a7a',
     favoritePalettes: ['chocolate', 'sunny', 'berry'], favoriteShapes: ['round', 'square', 'heart'],
-    lines: {
-      uk: {
-        hello: ['Ой, дитинко, привіт!', 'А я до тебе на тортик!'],
-        ask: 'Зроби мені, сонечко, такий тортик:',
-        good: ['Ох, як у бабусі! Обійму тебе!'],
-        ok: ['Смачненько, але чогось бракує.'],
-        bad: ['Ой, сонечко, щось сьогодні не вийшло…'],
-      },
-      ja: {
-        hello: ['あらまあ、こんにちは！', 'ケーキを食べに来たわよ！'],
-        ask: 'ねえ、こんなケーキを作ってちょうだい：',
-        good: ['おばあちゃんの味みたい！ぎゅってしちゃう！'],
-        ok: ['おいしいけど、何か足りないわねえ。'],
-        bad: ['あらあら、今日はうまくいかなかったのね…'],
-      },
-    },
+  },
+  {
+    id: 'mokhovyk', name: { uk: 'Лісовик Моховик', ja: '森番コケまる' }, firstDay: 2, voicePitch: 0.9,
+    fur: '#a07e56', furAccent: '#6e5236', pattern: 'stripes', eyeColor: '#9be85a',
+    hat: 'mushroom', outfit: 'leafy', outfitColor: '#3f8f4e',
+    favoritePalettes: ['forest'], favoriteShapes: ['round', 'heart'],
+    orderRule: { glazes: ['green', 'lime', 'forest'], label: { uk: 'зелені торти', ja: '緑のケーキ' } },
+  },
+  {
+    id: 'serdenko', name: { uk: 'Поет Серденько', ja: '詩人ココロ' }, firstDay: 2, voicePitch: 1.15,
+    fur: '#dcd5ea', furAccent: '#a99fc0', pattern: 'stripes', eyeColor: '#ff8fc8',
+    hat: 'beret', outfit: 'vest', outfitColor: '#b0304f',
+    favoritePalettes: ['berry', 'lavender', 'chocolate'], favoriteShapes: ['heart'],
+    orderRule: { shapes: ['heart'], label: { uk: 'торти-сердечка', ja: 'ハートのケーキ' } },
   },
   {
     id: 'murlin', name: { uk: 'Професор Мурлін', ja: 'ニャーリン教授' }, firstDay: 3, voicePitch: 0.9, isGenerous: true,
     fur: '#f4e8d6', furAccent: '#6a4c3c', pattern: 'points', eyeColor: '#4aa8ff',
     hat: 'wizard', outfit: 'robe', outfitColor: '#2e3c9a', accessory: 'glasses',
     favoritePalettes: ['night', 'sea', 'lavender'], favoriteShapes: ['star', 'square'],
-    lines: {
-      uk: {
-        hello: ['Доброго вечора, юний чарівнику.', 'А, мій улюблений кондитер!'],
-        ask: 'Ось мій рецепт:',
-        good: ['Блискуче! Чари бездоганні!'],
-        ok: ['Майже правильно. Оцінка — «добре».'],
-        bad: ['Хм-м. Варто перечитати підручник.'],
-      },
-      ja: {
-        hello: ['こんばんは、若き魔法使いくん。', 'おお、わしのお気に入りのパティシエ！'],
-        ask: 'これがわしのレシピじゃ：',
-        good: ['見事！魔法も完璧じゃ！'],
-        ok: ['ほぼ正解。評価は「良」じゃな。'],
-        bad: ['ふーむ。教科書を読み直すべきじゃな。'],
-      },
-    },
+  },
+  {
+    id: 'morok', name: { uk: 'Граф Морок', ja: 'ヤミヨ伯爵' }, firstDay: 3, voicePitch: 0.8, isDarkFur: true, isGenerous: true,
+    fur: '#2c2536', furAccent: '#1a1522', pattern: 'none', eyeColor: '#ff4f6e',
+    hat: 'gothic', outfit: 'gothic', outfitColor: '#2a1f3a',
+    favoritePalettes: ['night'], favoriteShapes: ['heart', 'star', 'square'],
+    orderRule: { glazes: ['black'], label: { uk: 'чорні торти', ja: '黒いケーキ' } },
+  },
+  {
+    id: 'drimko', name: { uk: 'Звіздар Дрімко', ja: '星見のネムリン' }, firstDay: 4, voicePitch: 1.2,
+    fur: '#f7efdf', furAccent: '#e2c597', pattern: 'points', eyeColor: '#7fb8ff',
+    hat: 'nightcap', outfit: 'pajamas', outfitColor: '#4a5bc8',
+    favoritePalettes: ['night', 'sea', 'lavender'], favoriteShapes: ['star'],
+    orderRule: { shapes: ['star'], label: { uk: 'торти-зірки', ja: '星のケーキ' } },
   },
 ];
 
@@ -164,22 +83,6 @@ export const MOON_QUEEN: CatDef = {
   fur: '#d6deff', furAccent: '#aab6ec', pattern: 'none', eyeColor: '#c08cff',
   hat: 'crown', outfit: 'gown', outfitColor: '#8f9cf8',
   favoritePalettes: ['night', 'lavender', 'sea'], favoriteShapes: ['star', 'heart'],
-  lines: {
-    uk: {
-      hello: ['Я чула, що тут печуть найчарівніші торти.'],
-      ask: 'Ось мій королівський торт:',
-      good: ['Відтепер це кафе — під захистом Місяця!'],
-      ok: ['Гідно. Місяць усміхається.'],
-      bad: ['Місяць сьогодні в хмарах…'],
-    },
-    ja: {
-      hello: ['ここでいちばん魔法のようなケーキが焼かれると聞きました。'],
-      ask: 'これがわたくしの王家のケーキです：',
-      good: ['これよりこのカフェは月の加護のもとにあります！'],
-      ok: ['見事です。月がほほえんでいます。'],
-      bad: ['今宵の月は雲の中…'],
-    },
-  },
 };
 
 /** The player's mascot on the title screen. */

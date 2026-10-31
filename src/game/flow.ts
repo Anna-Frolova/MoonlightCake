@@ -2,7 +2,7 @@
 import { setBusEnabled } from '../audio/engine';
 import { restartMusic } from '../audio/music';
 import { sfx } from '../audio/sfx';
-import { loc, setLanguage, type Language } from '../core/language';
+import { language, loc, setLanguage, type Language } from '../core/language';
 import { pickRandom } from '../core/math';
 import { burst } from '../core/particles';
 import { pointer } from '../core/ui';
@@ -13,7 +13,8 @@ import type { QueuedGuest, ShopItemDef } from '../data/types';
 import { goToScene, showModal, showToast } from '../scenes/sceneManager';
 import { countLayers, CREAM_DONE_COVERAGE } from './cake';
 import { buildDailyMenu } from './dailyMenu';
-import { generateOrder } from './orders';
+import { catLine, pickWithoutRepeat } from './lines';
+import { canTakeOrder, generateOrder } from './orders';
 import { createNewSave } from './save';
 import { scoreCake } from './scoring';
 import { decorTipBonus, isOwned, progress, resetProgress, runtime, saveProgress } from './state';
@@ -30,7 +31,8 @@ const CREAM_MISSING_COVERAGE = 0.3;
 /** Today's guests in order: random regulars (never the same one twice in a row), plus scripted ones. */
 function buildGuestQueue(day: number): QueuedGuest[] {
   const storyDay = Math.min(day, STORY_DAYS), count = guestsPerDay(day);
-  const pool = GUESTS.filter(cat => cat.firstDay <= storyDay).map(cat => cat.id);
+  // picky guests stay home on days when the menu can't make their kind of cake
+  const pool = GUESTS.filter(cat => cat.firstDay <= storyDay && canTakeOrder(cat)).map(cat => cat.id);
   const queue: QueuedGuest[] = [];
   let previous: string | null = null;
   while (queue.length < count) {
@@ -87,7 +89,7 @@ export function spawnNextGuest(): void {
   if (progress.guestIndex >= queue.length) { endDay(); return; }
   const next = queue[progress.guestIndex], cat = catById(next.cat);
   runtime.customer = {
-    cat, order: generateOrder(cat, progress.day, next.tutorial), greeting: pickRandom(loc(cat.lines).hello),
+    cat, order: generateOrder(cat, progress.day, next.tutorial), greeting: catLine(cat, 'hello'),
     state: 'entering', x: GUEST_ENTRY_X, time: 0, mood: 'neutral', speech: null,
     orderShownFor: 0, reactionTime: 0, score: null, servedCake: null, hasPaid: false, orderPicture: null,
   };
@@ -134,7 +136,7 @@ function handOverCake(): void {
   customer.mood = 'thinking';
   runtime.draggedTopping = null;
   runtime.isPipingCream = false;
-  goToScene('hall', () => say(pickRandom(t().thinking)));
+  goToScene('hall', () => say(pickWithoutRepeat('thinking:' + language(), t().thinking)));
 }
 
 /** Adds the guest's payment to the coins and stats (once). */

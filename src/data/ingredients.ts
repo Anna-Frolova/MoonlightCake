@@ -80,6 +80,7 @@ export const GLAZE_COLORS: GlazeColorDef[] = [
   { id: 'plum',   name: { uk: 'Темно-фіолетова',     ja: '濃い紫' },       recipe: { red: 1, blue: 1, dark: 1 } },
   { id: 'forest', name: { uk: 'Темно-зелена',        ja: '深緑' },         recipe: { yellow: 1, blue: 1, dark: 1 } },
   { id: 'cherry', name: { uk: 'Бордова',             ja: 'ワインレッド' }, recipe: { red: 1, dark: 1 } },
+  { id: 'black',  name: { uk: 'Чорна',               ja: '黒' },           recipe: { dark: 1 } },
 ];
 export const glazeColorById = (id: GlazeColorId): GlazeColorDef => GLAZE_COLORS.find(c => c.id === id)!;
 
@@ -90,4 +91,5 @@ export const MIXING_TIPS: { a: EssenceId; b: EssenceId; result: GlazeColorId }[]
   { a: 'red', b: 'blue', result: 'purple' },
   { a: 'red', b: 'white', result: 'pink' },
   { a: 'blue', b: 'dark', result: 'night' },
+  { a: 'dark', b: 'dark', result: 'black' },
 ];
