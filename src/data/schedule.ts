@@ -8,14 +8,17 @@ export const STORY_DAYS = 5;
 const GUESTS_PER_DAY = [5, 5, 6, 6, 7];
 export const guestsPerDay = (day: number): number => GUESTS_PER_DAY[Math.min(day, STORY_DAYS) - 1] ?? 7;
 
-/** Items unlocked on each day (index 0 = day 1). */
+/**
+ * Items unlocked on each day (index 0 = day 1). Creams — like glaze essences and magic elements
+ * (`unlockDay` in ingredients.ts / elements.ts) — are all there from day 1; layers and toppings come gradually.
+ */
 export const UNLOCKS: {
   shapes: ShapeId[][]; flavors: FlavorId[][]; fillings: FillingId[][]; creams: CreamId[][]; toppings: ToppingId[][];
 } = {
   shapes:   [['round', 'square'], ['heart'], [], ['star'], []],
   flavors:  [['vanilla', 'chocolate', 'strawberry'], ['lavender'], ['mint'], ['sky'], ['starry']],
   fillings: [['jam', 'caramel'], ['blueberry'], ['honey'], ['jelly'], []],
-  creams:   [['butter', 'berry'], ['cloud'], [], ['moon'], []],
+  creams:   [['butter', 'berry', 'cloud', 'moon'], [], [], [], []],
   toppings: [['strawberry', 'leaves', 'pearl'], ['blueberry', 'rosePink'], ['currant', 'lavender'], ['raspberry', 'goldPearl'], ['roseWhite']],
 };
 
@@ -24,7 +27,7 @@ export const MENU_SIZE: Record<MenuCategory, number[]> = {
   shapes:   [2, 2, 2, 3, 3],
   flavors:  [3, 4, 4, 4, 5],
   fillings: [2, 2, 3, 3, 3],
-  creams:   [2, 2, 2, 3, 3],
+  creams:   [4, 4, 4, 4, 4],
   toppings: [3, 4, 5, 5, 6],
 };
 

@@ -20,8 +20,8 @@ const TUTORIAL_ORDERS: Record<1 | 2, Order> = {
 };
 
 /** Chance that a guest picks one of their favourite palettes / shapes when available. */
-const FAVORITE_PALETTE_CHANCE = 0.75;
-const FAVORITE_SHAPE_CHANCE = 0.7;
+const FAVORITE_PALETTE_CHANCE = 0.9;
+const FAVORITE_SHAPE_CHANCE = 0.85;
 /** Chance of a single topping kind (otherwise two) after day 1. */
 const SINGLE_TOPPING_KIND_CHANCE = 0.55;
 /** Weights by position in a palette list: the first items are the palette's signature ones. */

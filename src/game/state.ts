@@ -3,7 +3,7 @@
 //  • `runtime`  — what only lives while the page is open (current scene, cake being built, animations…)
 import type { Vec2 } from '../core/math';
 import { ELEMENTS } from '../data/elements';
-import { ESSENCES, GLAZE_COLORS } from '../data/ingredients';
+import { CREAMS, ESSENCES, GLAZE_COLORS } from '../data/ingredients';
 import { SHOP_ITEMS } from '../data/shop';
 import type {
   Cake, CatDef, CreamId, ElementId, EssenceId, GlazeColorDef, Mood, Order, SaveData, ShopItemId, ToppingId,
@@ -19,6 +19,9 @@ ensureMenuForToday();
 
 export function ensureMenuForToday(): void {
   if (!progress.menu || progress.menu.day !== progress.day) progress.menu = buildDailyMenu(progress.day, null, progress.seed);
+  // a menu saved before every cream became available from day 1: give it the full list right away
+  const allCreams = Object.keys(CREAMS) as CreamId[];
+  if (progress.menu.creams.length < allCreams.length) progress.menu.creams = allCreams;
 }
 
 /** Replaces the whole progress object's contents (new game) while keeping the same reference. */

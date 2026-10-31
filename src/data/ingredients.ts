@@ -42,8 +42,8 @@ export const ESSENCES: Record<EssenceId, EssenceDef> = {
   red:    { name: { uk: 'Червона', ja: '赤' }, color: '#e8434d', unlockDay: 1 },
   yellow: { name: { uk: 'Жовта',   ja: '黄' }, color: '#f7c832', unlockDay: 1 },
   blue:   { name: { uk: 'Синя',    ja: '青' }, color: '#3a6fe0', unlockDay: 1 },
-  white:  { name: { uk: 'Біла',    ja: '白' }, color: '#fbf8ff', unlockDay: 2 },
-  dark:   { name: { uk: 'Темна',   ja: '黒' }, color: '#2a2140', unlockDay: 3 },
+  white:  { name: { uk: 'Біла',    ja: '白' }, color: '#fbf8ff', unlockDay: 1 },
+  dark:   { name: { uk: 'Темна',   ja: '黒' }, color: '#2a2140', unlockDay: 1 },
 };
 export const ESSENCE_ORDER: EssenceId[] = ['red', 'yellow', 'blue', 'white', 'dark'];
 
