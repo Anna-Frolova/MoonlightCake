@@ -46,6 +46,9 @@ export function heartPath(x: number, y: number, size: number): void {
 
 // ---------------- text ----------------
 
+/** Fitted text never shrinks below this share of its intended size. */
+const MIN_FIT_SCALE = 0.7;
+
 export function font(size: number, weight = 800): string {
   return `${weight} ${size}px ${FONT_FAMILY}`;
 }
@@ -59,6 +62,21 @@ export function drawText(
   ctx.textAlign = align;
   ctx.textBaseline = baseline;
   ctx.fillText(text, x, y);
+}
+
+/** `size`, or smaller if the text at that size would be wider than `maxWidth` (never below 70%). */
+export function fittedFontSize(text: string, size: number, maxWidth: number, weight = 800): number {
+  ctx.font = font(size, weight);
+  const width = ctx.measureText(text).width;
+  return width <= maxWidth ? size : Math.max(size * MIN_FIT_SCALE, size * (maxWidth / width));
+}
+
+/** Like `drawText`, but shrinks the font to keep the text within `maxWidth`. */
+export function drawFittedText(
+  text: string, x: number, y: number, size: number, maxWidth: number, color: string,
+  align: CanvasTextAlign = 'center', weight = 800,
+): void {
+  drawText(text, x, y, fittedFontSize(text, size, maxWidth, weight), color, align, weight);
 }
 
 /** Big rounded title font with a soft glow and a white-to-colour gradient. */

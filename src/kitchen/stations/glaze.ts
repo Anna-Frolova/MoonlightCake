@@ -3,7 +3,7 @@ import { sfx } from '../../audio/sfx';
 import { ctx } from '../../core/canvas';
 import { clock } from '../../core/clock';
 import { rgbToHex, shade, withAlpha } from '../../core/color';
-import { drawGlassPill, drawGlow, drawText, ellipsePath, font, roundRectPath, starPath, wrapText } from '../../core/draw';
+import { drawFittedText, drawGlassPill, drawGlow, drawText, ellipsePath, font, roundRectPath, starPath } from '../../core/draw';
 import { loc } from '../../core/language';
 import { clamp, easeOutCubic, lerp, type Point } from '../../core/math';
 import { burst } from '../../core/particles';
@@ -13,7 +13,7 @@ import { ESSENCE_ORDER, ESSENCES, glazeColorById, MIXING_TIPS } from '../../data
 import { t } from '../../data/strings';
 import type { Cake, EssenceId } from '../../data/types';
 import { cakeHeight, countLayers } from '../../game/cake';
-import { mixDrops, NAMED_COLOR_DISTANCE, nearestGlazeColor, recipeToDrops, totalDrops } from '../../game/colorMixing';
+import { glazeRgb, mixDrops, NAMED_COLOR_DISTANCE, nearestGlazeColor, recipeToDrops, totalDrops } from '../../game/colorMixing';
 import { availableEssences, isOwned, runtime } from '../../game/state';
 import { BOTTLE_NECK_TOP, drawPotionBottle } from '../../render/potionBottle';
 import { showToast } from '../../scenes/sceneManager';
@@ -29,6 +29,7 @@ const POUR_TIMING = { tiltEnd: 0.3, dropAdded: 0.62, pourEnd: 0.98, end: 1.32 };
 const POUR_TILT = 1.95;
 const RETURN_TO_SHELF_SECONDS = 0.28;
 const GLAZE_ARC_SECONDS = 1;
+const CAULDRON_LABEL_SIZE = 19;
 /** Bottle grab area around its resting point. */
 const BOTTLE_HIT = { halfWidth: 30, above: 62, below: 38 };
 /** The bottle's body rests this far above the shelf board. */
@@ -155,7 +156,7 @@ function drawElixirShelf(): void {
     } else {
       ctx.save(); ctx.globalAlpha = 0.28; drawPotionBottle(essence, home.x, home.y, ELIXIR_SHELF.bottleScale, true); ctx.restore();
     }
-    drawText(isUnlocked ? loc(ESSENCES[essence].name) : t().essenceLockedDay(ESSENCES[essence].unlockDay), home.x, ELIXIR_SHELF.y + 13, 11, isUnlocked ? TEXT.main : TEXT.muted, 'center', 900);
+    drawFittedText(isUnlocked ? loc(ESSENCES[essence].name) : t().lockedDay(ESSENCES[essence].unlockDay), home.x, ELIXIR_SHELF.y + 15, 15, ELIXIR_SHELF.spacing - 6, isUnlocked ? TEXT.main : TEXT.muted, 'center', 900);
   });
 }
 
@@ -197,11 +198,11 @@ function drawCauldron(cake: Cake): void {
     const nearest = nearestGlazeColor(mix);
     label = nearest.distance < NAMED_COLOR_DISTANCE ? t().colorLabel(loc(nearest.color.name)) : t().unusualShade;
   }
-  ctx.font = font(16, 800);
+  ctx.font = font(CAULDRON_LABEL_SIZE, 800);
   const labelWidth = ctx.measureText(label).width + (mixHex ? 52 : 32);
-  drawGlassPill(x - labelWidth / 2, y + 14, labelWidth, 32, 0.9);
-  if (mixHex) { ellipsePath(x - labelWidth / 2 + 18, y + 30, 7, 7); ctx.fillStyle = mixHex; ctx.fill(); }
-  drawText(label, x + (mixHex ? 10 : 0), y + 30, 16, TEXT.main, 'center', 800);
+  drawGlassPill(x - labelWidth / 2, y + 12, labelWidth, 40, 0.9);
+  if (mixHex) { ellipsePath(x - labelWidth / 2 + 19, y + 32, 8, 8); ctx.fillStyle = mixHex; ctx.fill(); }
+  drawText(label, x + (mixHex ? 10 : 0), y + 33, CAULDRON_LABEL_SIZE, TEXT.main, 'center', 800);
 }
 
 /** Shelf and cauldron; faded in/out with the glaze station layout. */
@@ -316,50 +317,52 @@ export function drawGlazeArc(cake: Cake): void {
 }
 
 export const glazeStation: Station = {
-  get name() { return t().stations.glaze.name; },
-  get hint() { return t().stations.glaze.hint; },
+  get name() { return t().stations.glaze; },
   helper: 'glaze',
   isDone: cake => !!cake.glaze,
 
   drawTools(panel, cake) {
     const { x, y, w, h } = panel;
     const drops = cake.cauldron, total = totalDrops(drops);
-    wrapText(t().glazeHowTo, w - 40, 15, 700)
-      .forEach((line, i) => drawText(line, x + 20, y + 58 + i * 20, 15, TEXT.muted, 'left', 700));
-    // drops in the cauldron
-    drawText(t().inCauldron(total, CAULDRON_CAPACITY), x + 20, y + 110, 15, TEXT.label, 'left', 900);
-    const dropsY = y + 134;
+    // drops in the cauldron: a slot per possible drop
+    const dropsY = y + 66, dropSpacing = 18;
     for (let n = 0; n < CAULDRON_CAPACITY; n++) {
-      ellipsePath(x + 26 + n * 16, dropsY, 6, 6); ctx.fillStyle = 'rgba(255,255,255,0.08)'; ctx.fill();
+      ellipsePath(x + 28 + n * dropSpacing, dropsY, 7, 7); ctx.fillStyle = 'rgba(255,255,255,0.08)'; ctx.fill();
     }
-    let dropX = x + 26;
+    let dropX = x + 28;
     for (const essence of ESSENCE_ORDER) {
       for (let n = 0; n < drops[essence]; n++) {
-        drawGlow(dropX, dropsY, 12, ESSENCES[essence].color, 0.4);
-        ellipsePath(dropX, dropsY, 6, 6); ctx.fillStyle = ESSENCES[essence].color; ctx.fill();
-        dropX += 16;
+        drawGlow(dropX, dropsY, 14, ESSENCES[essence].color, 0.4);
+        ellipsePath(dropX, dropsY, 7, 7); ctx.fillStyle = ESSENCES[essence].color; ctx.fill();
+        dropX += dropSpacing;
       }
     }
     // current mix
     const mix = mixDrops(drops);
     if (mix) {
-      const nearest = nearestGlazeColor(mix);
-      ellipsePath(x + 30, y + 160, 9, 9); ctx.fillStyle = rgbToHex(mix); ctx.fill();
+      const nearest = nearestGlazeColor(mix), mixY = y + 102;
+      ellipsePath(x + 31, mixY, 11, 11); ctx.fillStyle = rgbToHex(mix); ctx.fill();
       ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 1.5; ctx.stroke();
-      drawText(nearest.distance < NAMED_COLOR_DISTANCE ? loc(nearest.color.name) : t().unusualShade, x + 46, y + 160, 15, TEXT.main, 'left', 800);
+      drawFittedText(nearest.distance < NAMED_COLOR_DISTANCE ? loc(nearest.color.name) : t().unusualShade, x + 52, mixY, 20, w - 72, TEXT.main, 'left', 800);
     }
     // cheat sheet: only tips whose essences are already unlocked
-    drawText(t().cheatSheet, x + 20, y + 190, 15, TEXT.label, 'left', 900);
+    drawText(t().cheatSheet, x + 20, y + 142, 18, TEXT.label, 'left', 900);
     const essences = availableEssences();
     MIXING_TIPS.filter(tip => essences.includes(tip.a) && essences.includes(tip.b)).forEach((tip, i) => {
-      const tipX = x + (i < 3 ? 0 : 172), tipY = y + 214 + (i % 3) * 22;
-      ellipsePath(tipX + 30, tipY, 7, 7); ctx.fillStyle = ESSENCES[tip.a].color; ctx.fill();
-      drawText('+', tipX + 46, tipY, 14, TEXT.muted);
-      ellipsePath(tipX + 62, tipY, 7, 7); ctx.fillStyle = ESSENCES[tip.b].color; ctx.fill();
-      drawText('= ' + loc(glazeColorById(tip.result).name), tipX + 76, tipY, 13, TEXT.main, 'left', 700);
+      const tipX = x + (i < 3 ? 0 : 172), tipY = y + 172 + (i % 3) * 32;
+      // essence + essence = a swatch of the resulting glaze (no names: the colours say it)
+      ctx.strokeStyle = 'rgba(255,255,255,0.4)'; ctx.lineWidth = 1.5; // outline keeps the dark essence visible
+      ellipsePath(tipX + 32, tipY, 10, 10); ctx.fillStyle = ESSENCES[tip.a].color; ctx.fill(); ctx.stroke();
+      drawText('+', tipX + 54, tipY, 20, TEXT.muted, 'center', 900);
+      ellipsePath(tipX + 76, tipY, 10, 10); ctx.fillStyle = ESSENCES[tip.b].color; ctx.fill(); ctx.stroke();
+      drawText('=', tipX + 100, tipY, 20, TEXT.muted, 'center', 900);
+      const result = rgbToHex(glazeRgb(tip.result));
+      drawGlow(tipX + 128, tipY, 22, result, 0.35);
+      ellipsePath(tipX + 128, tipY, 13, 13); ctx.fillStyle = result; ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = 1.5; ctx.stroke();
     });
-    button('emptyCauldron', x + 14, y + h - 56, 130, 46, t().pourOut, { color: BUTTON_COLOR.secondary, fontSize: 16, disabled: total === 0, onClick: emptyCauldron });
-    button('pourGlaze', x + 154, y + h - 56, 192, 46, t().pourOnCake, { color: BUTTON_COLOR.pink, fontSize: 17, disabled: total === 0 || !countLayers(cake), onClick: pourGlaze });
+    button('emptyCauldron', x + 14, y + h - 56, 130, 46, t().pourOut, { color: BUTTON_COLOR.secondary, fontSize: 19, disabled: total === 0, onClick: emptyCauldron });
+    button('pourGlaze', x + 154, y + h - 56, 192, 46, t().pourOnCake, { color: BUTTON_COLOR.pink, fontSize: 20, disabled: total === 0 || !countLayers(cake), onClick: pourGlaze });
   },
 
   /** The smart cauldron mixes the ordered colour and pours it. */

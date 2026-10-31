@@ -32,12 +32,12 @@ export function renderFinale(): void {
   withPopIn(runtime.sceneStartTime, x + w / 2, y + h / 2, () => {
     drawPanel(x, y, w, h);
     drawTitle(t().finaleTitle, x + w / 2, y + 48, 28, TEXT.main);
-    const lines = wrapText(t().finaleText, w - 60, 18, 700);
-    lines.forEach((line, i) => drawText(line, x + 30, y + 98 + i * 26, 18, TEXT.main, 'left', 700));
-    const totals = progress.totals, statsY = y + 110 + lines.length * 26;
-    drawText(t().cakesBaked(totals.served), x + 30, statsY + 14, 18, TEXT.muted, 'left', 800);
-    drawText(t().heartsReceived(totals.hearts), x + 30, statsY + 42, 18, TEXT.muted, 'left', 800);
-    drawText(t().coinsEarned(totals.earned), x + 30, statsY + 70, 18, TEXT.muted, 'left', 800);
-    button('keepPlaying', x + 30, y + h - 82, w - 60, 60, t().keepPlaying, { color: BUTTON_COLOR.confirm, glow: true, onClick: finishFinale });
+    const lines = wrapText(t().finaleText, w - 60, 20, 700);
+    lines.forEach((line, i) => drawText(line, x + 30, y + 98 + i * 28, 20, TEXT.main, 'left', 700));
+    const totals = progress.totals, statsY = y + 104 + lines.length * 28;
+    drawText(t().cakesBaked(totals.served), x + 30, statsY + 14, 20, TEXT.muted, 'left', 800);
+    drawText(t().heartsReceived(totals.hearts), x + 30, statsY + 44, 20, TEXT.muted, 'left', 800);
+    drawText(t().coinsEarned(totals.earned), x + 30, statsY + 74, 20, TEXT.muted, 'left', 800);
+    button('keepPlaying', x + 30, y + h - 82, w - 60, 60, t().keepPlaying, { color: BUTTON_COLOR.confirm, fontSize: 23, glow: true, onClick: finishFinale });
   });
 }

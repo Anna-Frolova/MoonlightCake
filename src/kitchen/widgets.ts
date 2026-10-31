@@ -1,6 +1,6 @@
 // Small UI pieces used inside the kitchen tool panel.
 import { ctx } from '../core/canvas';
-import { drawGlow, drawText, roundRectPath } from '../core/draw';
+import { drawFittedText, drawGlow, roundRectPath } from '../core/draw';
 import { TEXT } from '../core/theme';
 import { button } from '../core/ui';
 
@@ -26,6 +26,9 @@ export interface ToolCardOptions {
   labelSize?: number;
 }
 
+/** Caption size on tool cards (shrinks to fit narrow cards). */
+const TOOL_LABEL_SIZE = 15;
+
 /** A clickable card with an icon and a caption under it. `drawIcon` gets the icon centre. */
 export function toolCard(
   id: string, x: number, y: number, w: number, h: number,
@@ -38,7 +41,7 @@ export function toolCard(
       const iconY = by + bh / 2 - 8;
       drawGlow(bx + bw / 2, iconY, bw * 0.45, '#ffffff', 0.12);
       drawIcon(bx + bw / 2, iconY);
-      drawText(label, bx + bw / 2, by + bh - 12, options.labelSize ?? 13, TEXT.main, 'center', 800);
+      drawFittedText(label, bx + bw / 2, by + bh - 12, options.labelSize ?? TOOL_LABEL_SIZE, bw - 6, TEXT.main, 'center', 800);
     },
   });
 }

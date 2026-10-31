@@ -26,14 +26,14 @@ export const GUESTS: CatDef[] = [
     fur: '#a9b4c8', furAccent: '#6f7a92', pattern: 'stripes', eyeColor: '#ffc24a',
     hat: 'captain', outfit: 'sailor', outfitColor: '#2f5fc8',
     favoritePalettes: ['sea', 'night'], favoriteShapes: ['square', 'star'],
-    orderRule: { glazes: ['blue', 'sky', 'teal'], label: { uk: 'блакитні торти', ja: '青いケーキ' } },
+    orderRule: { glazes: ['blue', 'sky', 'teal'] },
   },
   {
     id: 'mzhychka', name: { uk: 'Відьмочка Мжичка', ja: '魔女っ子キリサメ' }, firstDay: 2, voicePitch: 1.1, isDarkFur: true,
     fur: '#3a3150', furAccent: '#241d36', pattern: 'none', eyeColor: '#ffe14a',
     hat: 'witch', outfit: 'cloak', outfitColor: '#7a3fd0',
     favoritePalettes: ['night', 'lavender', 'forest'], favoriteShapes: ['star', 'heart'],
-    orderRule: { glazes: ['purple', 'plum', 'lilac'], label: { uk: 'фіолетові торти', ja: '紫のケーキ' } },
+    orderRule: { glazes: ['purple', 'plum', 'lilac'] },
   },
   {
     id: 'bulochka', name: { uk: 'Тітонька Булочка', ja: 'マフィンおばさん' }, firstDay: 2, voicePitch: 0.95, ordersBigCakes: true,
@@ -46,14 +46,14 @@ export const GUESTS: CatDef[] = [
     fur: '#a07e56', furAccent: '#6e5236', pattern: 'stripes', eyeColor: '#9be85a',
     hat: 'mushroom', outfit: 'leafy', outfitColor: '#3f8f4e',
     favoritePalettes: ['forest'], favoriteShapes: ['round', 'heart'],
-    orderRule: { glazes: ['green', 'lime', 'forest'], label: { uk: 'зелені торти', ja: '緑のケーキ' } },
+    orderRule: { glazes: ['green', 'lime', 'forest'] },
   },
   {
     id: 'serdenko', name: { uk: 'Поет Серденько', ja: '詩人ココロ' }, firstDay: 2, voicePitch: 1.15,
     fur: '#dcd5ea', furAccent: '#a99fc0', pattern: 'stripes', eyeColor: '#ff8fc8',
     hat: 'beret', outfit: 'vest', outfitColor: '#b0304f',
     favoritePalettes: ['berry', 'lavender', 'chocolate'], favoriteShapes: ['heart'],
-    orderRule: { shapes: ['heart'], label: { uk: 'торти-сердечка', ja: 'ハートのケーキ' } },
+    orderRule: { shapes: ['heart'] },
   },
   {
     id: 'murlin', name: { uk: 'Професор Мурлін', ja: 'ニャーリン教授' }, firstDay: 3, voicePitch: 0.9, isGenerous: true,
@@ -66,14 +66,14 @@ export const GUESTS: CatDef[] = [
     fur: '#2c2536', furAccent: '#1a1522', pattern: 'none', eyeColor: '#ff4f6e',
     hat: 'gothic', outfit: 'gothic', outfitColor: '#2a1f3a',
     favoritePalettes: ['night'], favoriteShapes: ['heart', 'star', 'square'],
-    orderRule: { glazes: ['black'], label: { uk: 'чорні торти', ja: '黒いケーキ' } },
+    orderRule: { glazes: ['black'] },
   },
   {
     id: 'drimko', name: { uk: 'Звіздар Дрімко', ja: '星見のネムリン' }, firstDay: 4, voicePitch: 1.2,
     fur: '#f7efdf', furAccent: '#e2c597', pattern: 'points', eyeColor: '#7fb8ff',
     hat: 'nightcap', outfit: 'pajamas', outfitColor: '#4a5bc8',
     favoritePalettes: ['night', 'sea', 'lavender'], favoriteShapes: ['star'],
-    orderRule: { shapes: ['star'], label: { uk: 'торти-зірки', ja: '星のケーキ' } },
+    orderRule: { shapes: ['star'] },
   },
 ];
 

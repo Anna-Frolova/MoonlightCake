@@ -3,7 +3,7 @@ import { initAudio } from '../audio/engine';
 import { sfx } from '../audio/sfx';
 import { ctx, fillView, SCREEN_H, SCREEN_W } from '../core/canvas';
 import { clock } from '../core/clock';
-import { drawCoin, drawGlassPill, drawGlow, drawPanel, drawText, font, roundRectPath, starPath, withPopIn, wrapText } from '../core/draw';
+import { drawCoin, drawFittedText, drawGlassPill, drawGlow, drawPanel, drawText, font, roundRectPath, starPath, withPopIn, wrapText } from '../core/draw';
 import { language, LANGUAGES } from '../core/language';
 import { easeOutBack } from '../core/math';
 import { BUTTON_COLOR, TEXT } from '../core/theme';
@@ -14,6 +14,8 @@ import { progress, runtime } from '../game/state';
 import { CAKE_CENTER_X } from '../kitchen/layout';
 
 const DISABLED_ICON_COLOR = '#6e6488';
+const TOAST_SIZE = 22;
+const MODAL_TEXT_SIZE = 24;
 
 export function drawCoinCounter(x: number, y: number): void {
   const bump = 1 + 0.18 * Math.sin(runtime.coinBump * Math.PI);
@@ -91,7 +93,7 @@ export function drawDayCounter(): void {
   const queueLength = progress.guestQueue?.length ?? 0;
   const guestNumber = Math.min(progress.guestIndex + (runtime.customer?.hasPaid ? 0 : 1), queueLength);
   drawGlassPill(16, 12, 236, 44);
-  drawText(t().dayAndGuest(progress.day, guestNumber, queueLength), 134, 35, 19, TEXT.main, 'center', 800);
+  drawFittedText(t().dayAndGuest(progress.day, guestNumber, queueLength), 134, 35, 21, 216, TEXT.main, 'center', 800);
 }
 
 export function drawToast(): void {
@@ -101,8 +103,8 @@ export function drawToast(): void {
   const scale = 0.7 + 0.3 * easeOutBack(age * 5);
   ctx.save();
   ctx.globalAlpha = Math.min(1, toast.remaining * 3);
-  ctx.font = font(19, 800);
-  const w = ctx.measureText(toast.text).width + 64, h = 46;
+  ctx.font = font(TOAST_SIZE, 800);
+  const w = ctx.measureText(toast.text).width + 64, h = 50;
   // in the kitchen it sits over the cake area, elsewhere at the top centre
   const top = runtime.scene === 'kitchen' ? 116 : 74, centerX = runtime.scene === 'kitchen' ? CAKE_CENTER_X + 60 : SCREEN_W / 2;
   ctx.translate(centerX, top + h / 2); ctx.scale(scale, scale); ctx.translate(-centerX, -(top + h / 2));
@@ -110,7 +112,7 @@ export function drawToast(): void {
   drawGlassPill(centerX - w / 2, top, w, h, 0.95);
   ctx.shadowBlur = 0;
   ctx.fillStyle = TEXT.label; starPath(centerX - w / 2 + 22, top + h / 2, 8, 3, 4, clock.time * 2); ctx.fill();
-  drawText(toast.text, centerX + 10, top + h / 2, 19, TEXT.main);
+  drawText(toast.text, centerX + 10, top + h / 2, TOAST_SIZE, TEXT.main);
   ctx.restore();
 }
 
@@ -120,14 +122,14 @@ export function drawModal(): void {
   if (!modal) return;
   ui.layer = 1;
   ctx.fillStyle = 'rgba(8,4,26,0.62)'; fillView();
-  const lines = wrapText(modal.text, 440, 22, 800);
-  const w = 520, h = 150 + lines.length * 30, x = SCREEN_W / 2 - w / 2, y = SCREEN_H / 2 - h / 2;
+  const lines = wrapText(modal.text, 440, MODAL_TEXT_SIZE, 800);
+  const w = 520, h = 150 + lines.length * 33, x = SCREEN_W / 2 - w / 2, y = SCREEN_H / 2 - h / 2;
   withPopIn(modal.startTime, SCREEN_W / 2, SCREEN_H / 2, () => {
     drawPanel(x, y, w, h, { light: true });
-    lines.forEach((line, i) => drawText(line, SCREEN_W / 2, y + 50 + i * 30, 22, TEXT.main));
-    button('modalCancel', x + 40, y + h - 80, 200, 56, modal.cancelLabel, { color: BUTTON_COLOR.secondary, onClick: () => { runtime.modal = null; } });
+    lines.forEach((line, i) => drawText(line, SCREEN_W / 2, y + 50 + i * 33, MODAL_TEXT_SIZE, TEXT.main));
+    button('modalCancel', x + 40, y + h - 80, 200, 56, modal.cancelLabel, { color: BUTTON_COLOR.secondary, fontSize: 22, onClick: () => { runtime.modal = null; } });
     button('modalConfirm', x + 280, y + h - 80, 200, 56, modal.confirmLabel, {
-      color: modal.danger ? BUTTON_COLOR.danger : BUTTON_COLOR.confirm,
+      color: modal.danger ? BUTTON_COLOR.danger : BUTTON_COLOR.confirm, fontSize: 22,
       onClick: () => { runtime.modal = null; modal.onConfirm(); },
     });
   });

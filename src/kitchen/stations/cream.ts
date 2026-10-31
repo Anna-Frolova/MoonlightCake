@@ -97,22 +97,20 @@ export function updateAutoCream(dt: number): void {
 }
 
 export const creamStation: Station = {
-  get name() { return t().stations.cream.name; },
-  get hint() { return t().stations.cream.hint; },
+  get name() { return t().stations.cream; },
   helper: 'cream',
   isDone: cake => cake.creamCoverage >= CREAM_DONE_COVERAGE,
 
   drawTools(panel, cake) {
-    const { x, y, w, h } = panel;
+    const { x, y, h } = panel;
     todaysMenu().creams.forEach((cream, i) => toolCard(
       'cream_' + cream, x + 14 + (i % 2) * 168, y + 50 + Math.floor(i / 2) * 92, 162, 86, loc(CREAMS[cream].name),
       (cx, cy) => drawCreamIcon(cream, cx, cy, 1.1), () => selectCream(cream), { selected: runtime.selectedCream === cream },
     ));
-    const barY = y + h - 64;
-    drawText(t().creamBorders, x + 20, barY, 16, TEXT.label, 'left', 900);
-    drawProgressBar(x + 110, barY - 10, 220, 20, cake.creamCoverage, cake.creamCoverage >= CREAM_DONE_COVERAGE ? BUTTON_COLOR.confirm : BUTTON_COLOR.gold);
-    drawText(Math.round(cake.creamCoverage * 100) + '%', x + 220, barY + 1, 14, '#fff', 'center', 900);
-    drawText(runtime.selectedCream ? t().creamHowTo : t().pickCreamFirst, x + w / 2, barY + 34, 15, TEXT.muted, 'center', 700);
+    const barY = y + h - 40;
+    drawText(t().creamBorders, x + 20, barY, 19, TEXT.label, 'left', 900);
+    drawProgressBar(x + 110, barY - 12, 220, 24, cake.creamCoverage, cake.creamCoverage >= CREAM_DONE_COVERAGE ? BUTTON_COLOR.confirm : BUTTON_COLOR.gold);
+    drawText(Math.round(cake.creamCoverage * 100) + '%', x + 220, barY + 1, 17, '#fff', 'center', 900);
   },
 
   /** The enchanted whisk pipes the ordered cream bead by bead. */

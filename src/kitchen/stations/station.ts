@@ -8,16 +8,14 @@ export interface Panel { x: number; y: number; w: number; h: number }
 export interface Station {
   /** Tab caption. */
   name: string;
-  /** One-line instruction shown above the cake. */
-  hint: string;
   /** Shop helper that adds an "Auto" button to this station. */
   helper: HelperId;
   /** Shown as a tick on the tab. */
   isDone(cake: Cake): boolean;
   /** Panel title (defaults to `name`). */
   title?(cake: Cake): string;
-  /** Overrides `hint` in special situations. */
-  currentHint?(cake: Cake): string;
+  /** A message shown above the cake in special situations (null = nothing to say; the tutorial teaches the basics). */
+  currentHint?(cake: Cake): string | null;
   /** Draws the station's tools inside the left panel. */
   drawTools(panel: Panel, cake: Cake): void;
   /** Extra buttons in the panel header (e.g. undo), left of the "Auto" button. `rightEdge` is where they must end. */

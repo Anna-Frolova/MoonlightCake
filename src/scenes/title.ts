@@ -40,15 +40,14 @@ export function renderTitle(): void {
     ctx.fillStyle = `rgba(220,245,255,${twinkle})`;
     starPath(370 + i * 180 + (i % 2) * 40, 62 + (i % 2) * 70 + bob, 6 + twinkle * 5, 2, 4, 0); ctx.fill();
   }
-  drawText(t().tagline, 640, 152, 24, TEXT.pink, 'center', 800);
+  drawText(t().tagline, 640, 154, 27, TEXT.pink, 'center', 800);
 
   if (hasSave() && hasProgressWorthContinuing()) {
-    button('continue', 340, BUTTONS_Y, 290, 66, t().continueDay(progress.day), { color: BUTTON_COLOR.confirm, glow: true, onClick: continueGame });
-    button('newGame', 650, BUTTONS_Y, 290, 66, t().newGame, { color: BUTTON_COLOR.secondary, onClick: askStartNewGame });
+    button('continue', 340, BUTTONS_Y, 290, 66, t().continueDay(progress.day), { color: BUTTON_COLOR.confirm, fontSize: 23, glow: true, onClick: continueGame });
+    button('newGame', 650, BUTTONS_Y, 290, 66, t().newGame, { color: BUTTON_COLOR.secondary, fontSize: 23, onClick: askStartNewGame });
   } else {
-    button('newGame', 490, BUTTONS_Y, 300, 66, t().openCafe, { color: BUTTON_COLOR.confirm, glow: true, onClick: startNewGame });
+    button('newGame', 490, BUTTONS_Y, 300, 66, t().openCafe, { color: BUTTON_COLOR.confirm, fontSize: 24, glow: true, onClick: startNewGame });
   }
-  drawText(t().autosaveNote, 640, 684, 16, 'rgba(220,210,255,0.6)', 'center', 700);
   drawText(__BUILD_ID__, SCREEN_W - 16, 706, 11, 'rgba(220,210,255,0.35)', 'right', 700); // which build is running (phones cache old ones)
   drawSoundButtons(SCREEN_W - 124, 16);
   drawLanguageSwitch(SCREEN_W - 124 - LANGUAGE_SWITCH_W - 8, 16);

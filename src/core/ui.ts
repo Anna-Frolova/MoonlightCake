@@ -3,7 +3,7 @@
 import { ctx } from './canvas';
 import { clock } from './clock';
 import { shade, withAlpha } from './color';
-import { drawText, roundRectPath, starPath } from './draw';
+import { drawFittedText, roundRectPath, starPath } from './draw';
 import { BUTTON_COLOR } from './theme';
 
 export interface ButtonHitArea {
@@ -31,6 +31,8 @@ export const pointer = { x: -99, y: -99, isDown: false };
 const springs = new Map<string, { scale: number; velocity: number }>();
 const SPRING_STIFFNESS = 300;
 const SPRING_DAMPING = 17;
+/** Button captions shrink to stay this far inside the button. */
+const BUTTON_TEXT_PADDING = 18;
 
 /** Moves the element's scale towards `target` with a little bounce; returns the current scale. */
 export function springScale(id: string, target: number): number {
@@ -133,6 +135,6 @@ export function button(id: string, x: number, y: number, w: number, h: number, l
     starPath(x + 14, y + h - 10, 3 + (1 - twinkle) * 2, 1.2, 4, 0); ctx.fill();
   }
   ctx.shadowColor = 'rgba(30,0,70,0.55)'; ctx.shadowBlur = 5; ctx.shadowOffsetY = 1.5;
-  drawText(label, x + w / 2, y + h / 2 + 1, options.fontSize ?? 20, disabled ? 'rgba(230,225,255,0.45)' : (options.textColor ?? '#fff'), 'center', 900);
+  drawFittedText(label, x + w / 2, y + h / 2 + 1, options.fontSize ?? 20, w - BUTTON_TEXT_PADDING, disabled ? 'rgba(230,225,255,0.45)' : (options.textColor ?? '#fff'), 'center', 900);
   ctx.restore();
 }

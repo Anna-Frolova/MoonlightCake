@@ -101,22 +101,15 @@ export function drawMagicStationCircle(): void {
 }
 
 export const magicStation: Station = {
-  get name() { return t().stations.magic.name; },
-  get hint() { return t().stations.magic.hint; },
+  get name() { return t().stations.magic; },
   helper: 'magic',
   isDone: cake => cake.magicQuality !== null,
 
-  drawTools({ x, y, w }, cake) {
+  drawTools({ x, y, w }) {
     const order = currentOrder(), time = clock.time;
-    if (cake.element && cake.magicQuality !== null) {
-      const def = ELEMENTS[cake.element];
-      drawText(t().enchanted(loc(def.name), qualityWord(cake.magicQuality)), x + 20, y + 58, 15, shade(def.color, 0.3), 'left', 900);
-    } else {
-      drawText(t().guestWants(loc(ELEMENTS[order.element].name)), x + 20, y + 58, 15, TEXT.gold, 'left', 800);
-    }
     ELEMENT_ORDER.forEach((element, i) => {
       const def = ELEMENTS[element], isOpen = def.unlockDay <= progress.day, isWanted = order.element === element;
-      const rowY = y + 76 + i * 52;
+      const rowY = y + 52 + i * 56;
       ctx.save();
       if (isWanted) { ctx.shadowColor = def.color; ctx.shadowBlur = 14 + 6 * Math.sin(time * 4); }
       const fill = ctx.createLinearGradient(0, rowY, 0, rowY + 46);
@@ -127,8 +120,8 @@ export const magicStation: Station = {
       ctx.globalAlpha = isOpen ? 1 : 0.35;
       drawGlow(x + 44, rowY + 23, 26, def.color, 0.25);
       drawSign(element, x + 44, rowY + 23, 30, def.color, 2.6);
-      drawText(loc(def.name), x + 76, rowY + 15, 16, TEXT.main, 'left', 900);
-      drawText(isOpen ? t().signLabel(loc(def.signName)) : t().opensOnDay(def.unlockDay), x + 76, rowY + 33, 13, TEXT.muted, 'left', 700);
+      drawText(loc(def.name), x + 76, rowY + 24, 21, TEXT.main, 'left', 900);
+      if (!isOpen) drawText(t().lockedDay(def.unlockDay), x + w - 32, rowY + 24, 17, TEXT.muted, 'right', 800);
       ctx.restore();
     });
   },

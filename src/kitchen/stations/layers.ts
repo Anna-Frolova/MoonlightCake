@@ -79,12 +79,11 @@ function removeTopItem(): void {
 }
 
 export const layersStation: Station = {
-  get name() { return t().stations.layers.name; },
-  get hint() { return t().stations.layers.hint; },
+  get name() { return t().stations.layers; },
   helper: 'layers',
   isDone: cake => countLayers(cake) > 0,
   title: cake => t().layersTitle(countLayers(cake), MAX_LAYERS),
-  currentHint: cake => isStackLocked(cake) ? t().lockedHint : layersStation.hint,
+  currentHint: cake => isStackLocked(cake) ? t().lockedHint : null,
 
   drawHeaderButtons(panel, cake, rightEdge) {
     button('undo', rightEdge - 46, panel.y + 7, 46, 38, '↶', {
@@ -96,16 +95,16 @@ export const layersStation: Station = {
     const menu = todaysMenu();
     menu.shapes.forEach((shape, i) => toolCard(
       'shape_' + shape, x + 14 + i * 84, y + 48, 78, 58, loc(SHAPES[shape].name),
-      (cx, cy) => drawShapeIcon(shape, cx, cy + 2, 0.8), () => setShape(shape), { selected: cake.shape === shape, labelSize: 12 },
+      (cx, cy) => drawShapeIcon(shape, cx, cy + 2, 0.8), () => setShape(shape), { selected: cake.shape === shape },
     ));
     menu.flavors.forEach((flavor, i) => toolCard(
       'flavor_' + flavor, x + 14 + (i % 4) * 84, y + 112 + Math.floor(i / 4) * 68, 78, 62, loc(FLAVORS[flavor].name),
-      (cx, cy) => drawFlavorIcon(flavor, cx, cy, 0.85), () => addLayer(flavor), { silent: true, labelSize: 11 },
+      (cx, cy) => drawFlavorIcon(flavor, cx, cy, 0.85), () => addLayer(flavor), { silent: true },
     ));
-    drawText(t().fillingsLabel, x + 20, y + 256, 14, TEXT.label, 'left', 900);
+    drawText(t().fillingsLabel, x + 20, y + 254, 17, TEXT.label, 'left', 900);
     menu.fillings.forEach((filling, i) => toolCard(
       'filling_' + filling, x + 14 + i * 67, y + 268, 62, 66, loc(FILLINGS[filling].shortName),
-      (cx, cy) => drawFillingIcon(filling, cx, cy + 2, 0.75), () => addFilling(filling), { silent: true, labelSize: 11 },
+      (cx, cy) => drawFillingIcon(filling, cx, cy + 2, 0.75), () => addFilling(filling), { silent: true },
     ));
   },
 

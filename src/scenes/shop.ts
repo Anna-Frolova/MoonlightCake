@@ -18,7 +18,7 @@ import { drawShopItemIcon } from '../render/icons';
 import { dimBackground, drawCoinCounter, drawSoundButtons } from './hud';
 
 const TAB_IDS = ['decor', 'helpers'] as const;
-const CARD = { w: 284, h: 140, gap: 12, rowGap: 14, columns: 4, gridX: 60, gridY: 186 };
+const CARD = { w: 284, h: 140, gap: 12, rowGap: 14, columns: 4, gridX: 60, gridY: 172 };
 const DISABLED_COLOR = '#4c4478';
 
 function drawItemCard(item: ShopItemDef, index: number): void {
@@ -39,14 +39,18 @@ function drawItemCard(item: ShopItemDef, index: number): void {
   roundRectPath(x, y, w, h, 20); ctx.stroke();
   drawGlow(x + 46, y + 52, 46, '#c9b6ff', 0.3);
   drawShopItemIcon(item.id, x + 46, y + 52, 0.95);
-  const nameLines = wrapText(loc(item.name), w - 100, 16, 900).slice(0, 2);
-  nameLines.forEach((line, j) => drawText(line, x + 92, y + 22 + j * 19, 16, TEXT.main, 'left', 900));
-  const description = loc(item.description) + (item.tipBonus ? t().tipBonus(Math.round(item.tipBonus * 100)) : '');
-  wrapText(description, w - 100, 13, 700).slice(0, 3)
-    .forEach((line, j) => drawText(line, x + 92, y + 24 + nameLines.length * 19 + j * 16, 13, TEXT.muted, 'left', 700));
+  const nameLines = wrapText(loc(item.name), w - 100, 18, 900).slice(0, 2);
+  nameLines.forEach((line, j) => drawText(line, x + 92, y + 22 + j * 21, 18, TEXT.main, 'left', 900));
+  // decor: just its tip bonus; helpers: a few words about what they do
+  const descriptionY = y + 28 + nameLines.length * 21;
+  if (item.tipBonus) drawText(t().tipBonus(Math.round(item.tipBonus * 100)), x + 92, descriptionY, 18, TEXT.gold, 'left', 900);
+  else if (item.description) {
+    wrapText(loc(item.description), w - 100, 15, 700).slice(0, 2)
+      .forEach((line, j) => drawText(line, x + 92, descriptionY + j * 18, 15, TEXT.muted, 'left', 700));
+  }
   ctx.restore();
 
-  if (owned) { drawText(t().owned, x + w - 16, y + h - 22, 16, '#5ff0c8', 'right', 900); return; }
+  if (owned) { drawText(t().owned, x + w - 16, y + h - 22, 18, '#5ff0c8', 'right', 900); return; }
   const canAfford = progress.coins >= item.price;
   button('buy_' + item.id, x + w - 132, y + h - 48, 120, 40, '', {
     disabled: !canAfford, silent: true, color: BUTTON_COLOR.gold, onClick: () => buyItem(item),
@@ -61,7 +65,7 @@ function drawItemCard(item: ShopItemDef, index: number): void {
       ctx.fillStyle = 'rgba(255,255,255,0.3)'; roundRectPath(bx + 8, by + 3, bw - 16, bh * 0.4, bh / 3); ctx.fill();
       ctx.restore();
       drawCoin(bx + 24, by + bh / 2, 11);
-      drawText(String(item.price), bx + 74, by + bh / 2 + 1, 19, canAfford ? '#4a2a00' : 'rgba(230,225,255,0.45)', 'center', 900);
+      drawText(String(item.price), bx + 74, by + bh / 2 + 1, 21, canAfford ? '#4a2a00' : 'rgba(230,225,255,0.45)', 'center', 900);
     },
   });
 }
@@ -74,16 +78,14 @@ export function renderShop(): void {
     drawTitle(t().shopTitle, 60, 116, 32, TEXT.main, 'left');
     TAB_IDS.forEach((tab, i) => {
       const isActive = runtime.shopTab === tab;
-      button('shopTab_' + tab, 760 + i * 236, 92, 226, 48, t().shopTabs[tab].label, {
-        color: isActive ? BUTTON_COLOR.magic : '#3d2d82', textColor: isActive ? '#fff' : TEXT.muted, fontSize: 17, sound: 'tab',
+      button('shopTab_' + tab, 760 + i * 236, 92, 226, 48, t().shopTabs[tab], {
+        color: isActive ? BUTTON_COLOR.magic : '#3d2d82', textColor: isActive ? '#fff' : TEXT.muted, fontSize: 20, sound: 'tab',
         onClick: () => { runtime.shopTab = tab; },
       });
     });
-    drawText(t().shopTabs[runtime.shopTab].description, 60, 160, 17, TEXT.muted, 'left', 700);
     SHOP_ITEMS.filter(item => item.tab === runtime.shopTab).forEach(drawItemCard);
     drawCoinCounter(60, 586);
-    drawText(t().shopFootnote, 226, 608, 15, TEXT.muted, 'left', 700);
-    button('nextDay', SCREEN_W - 340, 578, 280, 56, t().startDay(progress.day + 1), { color: BUTTON_COLOR.confirm, glow: true, onClick: startNextDay });
+    button('nextDay', SCREEN_W - 340, 578, 280, 56, t().startDay(progress.day + 1), { color: BUTTON_COLOR.confirm, fontSize: 22, glow: true, onClick: startNextDay });
   });
   drawSoundButtons(SCREEN_W - 124, 12);
 }

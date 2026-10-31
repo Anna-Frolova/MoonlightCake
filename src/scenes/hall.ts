@@ -2,7 +2,7 @@
 import { sfx } from '../audio/sfx';
 import { ctx, SCREEN_W } from '../core/canvas';
 import { clock } from '../core/clock';
-import { drawCoin, drawGlassPill, drawHeart, drawPanel, drawText, drawTitle, ellipsePath, font, roundRectPath, withPopIn, wrapText } from '../core/draw';
+import { drawCoin, drawFittedText, drawHeart, drawPanel, drawText, drawTitle, ellipsePath, font, roundRectPath, withPopIn, wrapText } from '../core/draw';
 import { loc } from '../core/language';
 import { clamp, easeOutBack } from '../core/math';
 import { burst, drawMotes, floatingText } from '../core/particles';
@@ -32,8 +32,9 @@ const JUDGING_SECONDS = 1.5;
 const HEART_FIRST = 0.4;
 const HEART_INTERVAL = 0.22;
 
-const BUBBLE = { x: 770, w: 480, textWidth: 440, lineHeight: 26, orderPictureHeight: 222, centerY: 255, minY: 70, maxY: 420 };
+const BUBBLE = { x: 770, w: 480, textWidth: 440, lineHeight: 30, textSize: 22, orderPictureHeight: 222, centerY: 255, minY: 70, maxY: 420 };
 const RESULT_CARD = { x: 36, y: 92, w: 380, h: 440 };
+const NAME_TAG_SIZE = 20;
 /** Heart row on the result card. */
 const RESULT_HEARTS = { firstX: RESULT_CARD.x + 66, spacing: 62, y: RESULT_CARD.y + 76 };
 
@@ -157,8 +158,8 @@ export function renderHall(): void {
   if (customer) {
     if (customer.speech) drawSpeechBubble(customer);
     if (customer.state === 'ordering' && customer.orderShownFor > 0.25) {
-      button('acceptOrder', BUBBLE.x, runtime.speechBubbleBottom + 16, BUBBLE.w, 58, t().acceptOrder, {
-        color: BUTTON_COLOR.confirm, glow: progress.day === 1 && progress.guestIndex === 0, onClick: acceptOrder,
+      button('acceptOrder', BUBBLE.x, runtime.speechBubbleBottom + 16, BUBBLE.w, 62, t().acceptOrder, {
+        color: BUTTON_COLOR.confirm, fontSize: 23, glow: progress.day === 1 && progress.guestIndex === 0, onClick: acceptOrder,
       });
     }
     if (customer.state === 'reacting') drawResultCard(customer);
@@ -171,7 +172,7 @@ export function renderHall(): void {
 /** Speech bubble with the cat's name, typed text and — while ordering — the order picture. */
 function drawSpeechBubble(customer: Customer): void {
   const speech = customer.speech!;
-  const lines = wrapText(speech.text, BUBBLE.textWidth, 19, 700);
+  const lines = wrapText(speech.text, BUBBLE.textWidth, BUBBLE.textSize, 700);
   const showsOrder = customer.state === 'ordering';
   const pictureH = showsOrder ? BUBBLE.orderPictureHeight : 0;
   const { x, w } = BUBBLE, h = 52 + lines.length * BUBBLE.lineHeight + pictureH;
@@ -189,29 +190,21 @@ function drawSpeechBubble(customer: Customer): void {
   ctx.fillStyle = 'rgba(40,26,96,0.95)'; traceTail(x + 3); ctx.fill();
   ctx.strokeStyle = 'rgba(159,234,255,0.6)'; ctx.lineWidth = 2; traceTail(x + 1); ctx.stroke();
   // name tag
-  ctx.font = font(17, 900);
-  const catName = loc(customer.cat.name), tagW = ctx.measureText(catName).width + 30;
+  ctx.font = font(NAME_TAG_SIZE, 900);
+  const catName = loc(customer.cat.name), tagW = ctx.measureText(catName).width + 32;
   ctx.shadowColor = 'rgba(255,111,181,0.7)'; ctx.shadowBlur = 14;
   const tag = ctx.createLinearGradient(x + 20, 0, x + 20 + tagW, 0);
   tag.addColorStop(0, '#ff6fb5'); tag.addColorStop(1, '#9b6bff');
-  ctx.fillStyle = tag; roundRectPath(x + 20, y - 16, tagW, 30, 15); ctx.fill();
+  ctx.fillStyle = tag; roundRectPath(x + 20, y - 18, tagW, 34, 17); ctx.fill();
   ctx.shadowBlur = 0;
-  drawText(catName, x + 20 + tagW / 2, y - 1, 17, '#fff', 'center', 900);
-  const rule = customer.cat.orderRule;
-  if (rule) { // a picky guest: what they always order, as a gold tag next to the name
-    const ruleText = t().pickyTag(loc(rule.label));
-    ctx.font = font(14, 900);
-    const ruleX = x + 28 + tagW, ruleW = ctx.measureText(ruleText).width + 24;
-    drawGlassPill(ruleX, y - 13, ruleW, 24, 0.95);
-    drawText(ruleText, ruleX + ruleW / 2, y - 1, 14, TEXT.gold, 'center', 900);
-  }
+  drawText(catName, x + 20 + tagW / 2, y - 1, NAME_TAG_SIZE, '#fff', 'center', 900);
   // text typed so far
   // each line's offset in the text: a break may eat a space (Ukrainian) or nothing (Japanese)
   const visibleChars = Math.floor(speech.visibleChars);
   let lineStart = 0, lineY = y + 34;
   for (const line of lines) {
     lineStart = Math.max(lineStart, speech.text.indexOf(line, lineStart));
-    drawText(line.slice(0, Math.max(0, visibleChars - lineStart)), x + 22, lineY, 19, TEXT.main, 'left', 700);
+    drawText(line.slice(0, Math.max(0, visibleChars - lineStart)), x + 22, lineY, BUBBLE.textSize, TEXT.main, 'left', 700);
     lineStart += line.length;
     lineY += BUBBLE.lineHeight;
   }
@@ -230,7 +223,7 @@ function drawResultCard(customer: Customer): void {
   const { x, y, w, h } = RESULT_CARD;
   withPopIn(clock.time - elapsed, x + w / 2, y + h / 2, () => {
     drawPanel(x, y, w, h);
-    drawTitle(t().guestScore, x + w / 2, y + 32, 22, TEXT.main);
+    drawTitle(t().guestScore, x + w / 2, y + 32, 25, TEXT.main);
     for (let i = 0; i < 5; i++) {
       const appearAt = heartAppearTime(i), isOn = i < score.hearts && elapsed >= appearAt;
       const scale = isOn ? easeOutBack((elapsed - appearAt) * 4) : 1;
@@ -242,32 +235,32 @@ function drawResultCard(customer: Customer): void {
     let rowY = y + 120;
     for (const part of score.parts) {
       const color = part.score >= 0.85 ? BUTTON_COLOR.confirm : part.score >= 0.5 ? BUTTON_COLOR.gold : BUTTON_COLOR.danger;
-      drawText(t().scoreParts[part.kind], x + 26, rowY, 17, TEXT.main, 'left', 800);
+      drawFittedText(t().scoreParts[part.kind], x + 26, rowY, 19, 136, TEXT.main, 'left', 800);
       ctx.fillStyle = 'rgba(255,255,255,0.1)'; roundRectPath(x + 170, rowY - 8, 150, 16, 8); ctx.fill();
       ctx.save();
       ctx.shadowColor = color; ctx.shadowBlur = 8; ctx.fillStyle = color;
       roundRectPath(x + 170, rowY - 8, Math.max(16, 150 * part.score * clamp(elapsed * 2, 0, 1)), 16, 8); ctx.fill();
       ctx.restore();
-      drawText(part.score >= 0.85 ? '✓' : part.score >= 0.5 ? '~' : '✗', x + 342, rowY, 18, color, 'center', 900);
-      rowY += 27;
+      drawText(part.score >= 0.85 ? '✓' : part.score >= 0.5 ? '~' : '✗', x + 342, rowY, 20, color, 'center', 900);
+      rowY += 28;
     }
     if (elapsed > paymentAppearTime(score.hearts)) {
       rowY += 6;
       ctx.strokeStyle = 'rgba(159,234,255,0.25)'; ctx.lineWidth = 2;
       ctx.beginPath(); ctx.moveTo(x + 24, rowY - 14); ctx.lineTo(x + w - 24, rowY - 14); ctx.stroke();
       for (const [label, value] of [[t().payment, '+' + score.payment], [t().tips, '+' + score.tips], [t().ingredients, '−' + score.ingredientCost]]) {
-        drawText(label, x + 26, rowY, 17, TEXT.muted, 'left', 700);
-        drawText(value, x + w - 26, rowY, 17, TEXT.muted, 'right', 800);
-        rowY += 23;
+        drawText(label, x + 26, rowY, 19, TEXT.muted, 'left', 700);
+        drawText(value, x + w - 26, rowY, 19, TEXT.muted, 'right', 800);
+        rowY += 25;
       }
-      drawText(t().total, x + 26, rowY + 4, 20, TEXT.main, 'left', 900);
+      drawText(t().total, x + 26, rowY + 4, 22, TEXT.main, 'left', 900);
       drawCoin(x + w - 96, rowY + 4, 11);
       drawText((score.net >= 0 ? '+' : '') + score.net, x + w - 26, rowY + 4, 22, score.net >= 0 ? '#5ff0c8' : '#ff7f9f', 'right', 900);
     }
   });
   if (elapsed > 1.4 + score.hearts * HEART_INTERVAL || elapsed > 2.6) {
-    button('nextGuest', BUBBLE.x, runtime.speechBubbleBottom + 16, 300, 58, isLastGuestOfDay() ? t().finishDay : t().nextGuest, {
-      color: BUTTON_COLOR.confirm, onClick: sendGuestAway,
+    button('nextGuest', BUBBLE.x, runtime.speechBubbleBottom + 16, 320, 62, isLastGuestOfDay() ? t().finishDay : t().nextGuest, {
+      color: BUTTON_COLOR.confirm, fontSize: 23, onClick: sendGuestAway,
     });
   }
 }

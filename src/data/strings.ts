@@ -5,7 +5,6 @@ import { loc, type Localized } from '../core/language';
 import type { HelperId, MenuCategory } from './types';
 
 type ScorePartKind = 'shape' | 'layers' | 'filling' | 'cream' | 'glaze' | 'toppings' | 'magic';
-type StationTexts = { name: string; hint: string };
 
 const uk = {
   gameTitle: 'Місячний Корж',
@@ -17,7 +16,6 @@ const uk = {
   continueDay: (day: number) => `Продовжити · день ${day}`,
   newGame: 'Нова гра',
   openCafe: 'Відкрити кафе',
-  autosaveNote: 'Прогрес зберігається автоматично',
   confirmNewGame: 'Почати заново? Увесь прогрес буде втрачено.',
   start: 'Почати',
   cancel: 'Скасувати',
@@ -27,20 +25,14 @@ const uk = {
   dayTitle: (day: number) => `День ${day}`,
   storyDaySubtitle: (storyDays: number, guests: number) => `із ${storyDays} · гостей сьогодні: ${guests}`,
   endlessDaySubtitle: (guests: number) => `нескінченний режим · гостей: ${guests}`,
-  welcomeNote: 'Ласкаво просимо до «Місячного Коржа»! Гості покажуть картинку торта, який хочуть. Меню щодня змінюється само.',
   newGuestsNote: (names: string[]) => `Нові гості: ${names.join(', ')}.`,
-  pickyTag: (what: string) => `★ лише ${what}`,
   newEssenceNote: (names: string[]) => `У казані нова есенція: ${names.map(n => n.toLowerCase()).join(', ')}!`,
-  firstMagicNote: 'Кожен торт треба зачарувати! Вогонь — намалюй трикутник, лід — коло.',
   newElementNote: (element: string, sign: string) => `Нова стихія — ${element.toLowerCase()}! Її знак: «${sign}».`,
   queenRumorNote: 'Ходять чутки, що сьогодні завітає сама Місячна Королева…',
   menuTitle: 'Меню дня',
   menuLabels: { shapes: 'Форми', flavors: 'Коржі', fillings: 'Начинки', creams: 'Креми', toppings: 'Прикраси' } as Record<MenuCategory, string>,
   badgeNew: 'НОВЕ',
   badgeAgain: 'ЗНОВУ',
-  restingItem: (category: MenuCategory, name: string) =>
-    name + (category === 'flavors' ? ' корж' : category === 'creams' ? ' крем' : ''),
-  restingToday: (items: string[]) => 'Сьогодні відпочивають: ' + items.join(', ').toLowerCase(),
   dayFinished: (day: number) => `День ${day} завершено!`,
   guestsServed: 'Гостей обслуговано',
   averageScore: 'Середня оцінка',
@@ -84,12 +76,12 @@ const uk = {
   keepWorking: 'Доробити',
 
   stations: {
-    layers: { name: 'Коржі', hint: 'Обери форму, клацай на коржі. Начинку клади між коржами.' },
-    cream: { name: 'Крем', hint: 'Обери крем і веди по краях торта — зверху й біля основи.' },
-    glaze: { name: 'Глазур', hint: 'Перетягни еліксир із полиці в казан, змішай колір і полий торт.' },
-    toppings: { name: 'Прикраси', hint: 'Перетягуй прикраси куди завгодно на торт — зверху чи збоку. Стягни, щоб прибрати.' },
-    magic: { name: 'Чари', hint: 'Намалюй знак стихії прямо на торті — одним рухом.' },
-  } as Record<HelperId, StationTexts>,
+    layers: 'Коржі',
+    cream: 'Крем',
+    glaze: 'Глазур',
+    toppings: 'Прикраси',
+    magic: 'Чари',
+  } as Record<HelperId, string>,
 
   // layers station
   layersTitle: (count: number, max: number) => `Коржі · ${count}/${max}`,
@@ -105,15 +97,11 @@ const uk = {
 
   // cream station
   creamBorders: 'Бортики',
-  creamHowTo: 'Веди по верхньому краю й по низу',
-  pickCreamFirst: 'Спершу обери крем',
   pickCreamLeft: 'Обери крем зліва',
   niceBorders: 'Гарні бортики!',
   oldCreamRemoved: 'Старий крем знято — обводь новим',
 
   // glaze station
-  glazeHowTo: 'Перетягни колбу з полиці до казана — кожна колба додає одну краплю.',
-  inCauldron: (count: number, capacity: number) => `У казані: ${count}/${capacity}`,
   cauldronEmpty: 'Казан порожній',
   colorLabel: (name: string) => 'Колір: ' + name,
   unusualShade: 'Незвичайний відтінок',
@@ -122,11 +110,10 @@ const uk = {
   pourOnCake: 'Полити торт',
   cauldronFull: 'Казан повний! Вилий або полий торт.',
   addEssenceFirst: 'Додай есенції в казан',
-  essenceLockedDay: (day: number) => `день ${day}`,
+  lockedDay: (day: number) => `день ${day}`,
 
   // toppings station
   onTheCake: 'На торті:',
-  nothingYet: 'поки нічого',
   removeAll: 'Зняти всі',
   noRoomForToppings: 'Більше прикрас не влізе!',
 
@@ -135,22 +122,17 @@ const uk = {
   qualityGreat: 'чудово',
   qualityOk: 'непогано',
   castShout: (element: string, quality: string) => `${element}! ${quality[0].toUpperCase() + quality.slice(1)}`,
-  enchanted: (element: string, quality: string) => `Накладено: ${element.toLowerCase()} · ${quality}`,
-  guestWants: (element: string) => `Гість хоче: ${element.toLowerCase()}`,
-  signLabel: (sign: string) => `знак: ${sign}`,
-  opensOnDay: (day: number) => `відкриється в день ${day}`,
   elementLocked: (element: string, day: number) => `Стихія «${element}» відкриється в день ${day}`,
   signNotRecognized: 'Знак не розпізнано — спробуй ще раз, одним рухом',
 
   // shop
   shopTitle: 'Крамниця чарівника',
   shopTabs: {
-    decor: { label: 'Затишок', description: 'Робить кафе чарівнішим і збільшує чайові.' },
-    helpers: { label: 'Автоматизація', description: 'Дорогі чарівні помічники: кнопка «Авто» на станції.' },
+    decor: 'Затишок',
+    helpers: 'Автоматизація',
   },
-  tipBonus: (percent: number) => ` +${percent}% чайових.`,
+  tipBonus: (percent: number) => `+${percent}% чайових`,
   owned: '✓ Є в кафе',
-  shopFootnote: 'Нові смаки, форми й прикраси з’являються самі — дивись меню дня.',
   startDay: (day: number) => `Почати день ${day}`,
   notEnoughCoins: 'Не вистачає монеток',
   bought: (name: string) => `Придбано: ${name}!`,
@@ -193,7 +175,6 @@ const ja: UiStrings = {
   continueDay: day => `つづきから · ${day}日目`,
   newGame: 'はじめから',
   openCafe: 'お店をひらく',
-  autosaveNote: '進行は自動でセーブされます',
   confirmNewGame: 'はじめからやり直す？これまでの進行はすべて消えます。',
   start: 'はじめる',
   cancel: 'キャンセル',
@@ -202,20 +183,14 @@ const ja: UiStrings = {
   dayTitle: day => `${day}日目`,
   storyDaySubtitle: (storyDays, guests) => `全${storyDays}日 · 今日のお客さん：${guests}匹`,
   endlessDaySubtitle: guests => `エンドレスモード · お客さん：${guests}匹`,
-  welcomeNote: '「ムーンライトケーキ」へようこそ！お客さんがほしいケーキの絵を見せてくれます。メニューは毎日かわります。',
   newGuestsNote: names => `新しいお客さん：${names.join('、')}。`,
-  pickyTag: what => `★ ${what}だけ`,
   newEssenceNote: names => `大釜に新しいエッセンス：${names.join('、')}！`,
-  firstMagicNote: 'ケーキには必ず魔法をかけよう！炎は三角、氷は円を描いてね。',
   newElementNote: (element, sign) => `新しい属性「${element}」！しるしは「${sign}」。`,
   queenRumorNote: '今日はあの月の女王がやって来るといううわさ…',
   menuTitle: '今日のメニュー',
   menuLabels: { shapes: '形', flavors: 'スポンジ', fillings: 'フィリング', creams: 'クリーム', toppings: 'トッピング' },
   badgeNew: 'NEW',
   badgeAgain: '再登場',
-  restingItem: (category, name) =>
-    category === 'flavors' ? `${name}のスポンジ` : category === 'creams' ? `${name}クリーム` : name,
-  restingToday: items => '今日お休み：' + items.join('、'),
   dayFinished: day => `${day}日目おしまい！`,
   guestsServed: 'おもてなししたお客さん',
   averageScore: '平均評価',
@@ -257,11 +232,11 @@ const ja: UiStrings = {
   keepWorking: 'つづける',
 
   stations: {
-    layers: { name: 'スポンジ', hint: '形を選んで、スポンジをタップ。フィリングはスポンジの間に。' },
-    cream: { name: 'クリーム', hint: 'クリームを選んで、ケーキのふちをなぞろう — 上と下の両方。' },
-    glaze: { name: 'グレーズ', hint: '棚のエリクサーを大釜へ運んで、色を混ぜてケーキにかけよう。' },
-    toppings: { name: 'トッピング', hint: 'トッピングをケーキの上や横に好きにドラッグ。外へ出すと取れるよ。' },
-    magic: { name: '魔法', hint: 'ケーキの上に属性のしるしを描こう — ひと筆で。' },
+    layers: 'スポンジ',
+    cream: 'クリーム',
+    glaze: 'グレーズ',
+    toppings: 'トッピング',
+    magic: '魔法',
   },
 
   layersTitle: (count, max) => `スポンジ · ${count}/${max}`,
@@ -276,14 +251,10 @@ const ja: UiStrings = {
   fillingNoRoom: 'フィリングはスポンジの間に。もう3枚あるよ',
 
   creamBorders: 'ふち',
-  creamHowTo: '上のふちと下のふちをなぞってね',
-  pickCreamFirst: 'まずクリームを選んでね',
   pickCreamLeft: '左からクリームを選んでね',
   niceBorders: 'きれいなふち！',
   oldCreamRemoved: '前のクリームを取ったよ — 新しいのでなぞってね',
 
-  glazeHowTo: '棚のびんを大釜へドラッグ — 1本で1しずく入るよ。',
-  inCauldron: (count, capacity) => `大釜の中：${count}/${capacity}`,
   cauldronEmpty: '大釜はからっぽ',
   colorLabel: name => '色：' + name,
   unusualShade: 'ふしぎな色合い',
@@ -292,10 +263,9 @@ const ja: UiStrings = {
   pourOnCake: 'ケーキにかける',
   cauldronFull: '大釜がいっぱい！捨てるかケーキにかけてね。',
   addEssenceFirst: '大釜にエッセンスを入れてね',
-  essenceLockedDay: day => `${day}日目`,
+  lockedDay: day => `${day}日目`,
 
   onTheCake: 'ケーキの上：',
-  nothingYet: 'まだなし',
   removeAll: 'ぜんぶ取る',
   noRoomForToppings: 'もうトッピングがのらないよ！',
 
@@ -303,21 +273,16 @@ const ja: UiStrings = {
   qualityGreat: 'すばらしい',
   qualityOk: 'まあまあ',
   castShout: (element, quality) => `${element}！${quality}！`,
-  enchanted: (element, quality) => `かけた魔法：${element} · ${quality}`,
-  guestWants: element => `お客さんの希望：${element}`,
-  signLabel: sign => `しるし：${sign}`,
-  opensOnDay: day => `${day}日目に解放`,
   elementLocked: (element, day) => `属性「${element}」は${day}日目に解放されます`,
   signNotRecognized: 'しるしが読み取れなかったよ — ひと筆でもう一度',
 
   shopTitle: '魔法使いのお店',
   shopTabs: {
-    decor: { label: 'インテリア', description: 'カフェがもっと素敵になって、チップが増えるよ。' },
-    helpers: { label: 'おてつだい', description: 'ちょっと高い魔法の助っ人：ステーションに「オート」ボタンが付くよ。' },
+    decor: 'インテリア',
+    helpers: 'おてつだい',
   },
-  tipBonus: percent => ` チップ+${percent}%。`,
+  tipBonus: percent => `チップ+${percent}%`,
   owned: '✓ お店にあるよ',
-  shopFootnote: '新しい味や形、トッピングは自然に増えるよ — 今日のメニューを見てね。',
   startDay: day => `${day}日目をはじめる`,
   notEnoughCoins: 'コインが足りないよ',
   bought: name => `${name}を買ったよ！`,

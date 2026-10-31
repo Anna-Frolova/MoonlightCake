@@ -28,13 +28,13 @@ interface TutorialStep {
 
 /** Where the hint panel sits: clear of the cake, the tools and the speech bubble. */
 const COACH = {
-  kitchen: { x: 930, y: 170, w: 334 },
+  kitchen: { x: 914, y: 150, w: 350 },
   hallOrder: { x: 36, y: 130, w: 380 },
   /** Under the "next guest" button while the result card fills the left side. */
   hallResult: { x: 770, offsetBelowBubble: 90, w: 480 },
 };
-const COACH_TEXT_SIZE = 16;
-const COACH_LINE_HEIGHT = 22;
+const COACH_TEXT_SIZE = 19;
+const COACH_LINE_HEIGHT = 26;
 /** The result-card hint waits until the hearts have popped in. */
 const SCORE_HINT_DELAY = 1.6;
 
@@ -152,16 +152,16 @@ export function drawTutorial(): void {
   withPopIn(tutorial.shownAt, x + w / 2, y + h / 2, () => {
     drawPanel(x, y, w, h, { light: true, noStars: true });
     ctx.fillStyle = TEXT.gold; starPath(x + 26, y + 24, 8, 3.2); ctx.fill();
-    drawText(t().tutorial.title, x + 40, y + 25, 14, TEXT.gold, 'left', 900);
-    lines.forEach((line, i) => drawText(line, x + 20, y + 54 + i * COACH_LINE_HEIGHT, COACH_TEXT_SIZE, TEXT.main, 'left', 700));
+    drawText(t().tutorial.title, x + 40, y + 25, 17, TEXT.gold, 'left', 900);
+    lines.forEach((line, i) => drawText(line, x + 20, y + 56 + i * COACH_LINE_HEIGHT, COACH_TEXT_SIZE, TEXT.main, 'left', 700));
     const buttonY = y + h - 50;
     if (step.needsConfirm) {
       button('tutorialGotIt', x + w - 140, buttonY, 124, 38, t().tutorial.gotIt, {
-        color: BUTTON_COLOR.confirm, fontSize: 16, onClick: () => { tutorial.confirmed = true; },
+        color: BUTTON_COLOR.confirm, fontSize: 19, onClick: () => { tutorial.confirmed = true; },
       });
     }
     button('tutorialSkip', x + 16, buttonY, 196, 38, t().tutorial.skip, {
-      color: BUTTON_COLOR.secondary, fontSize: 14, onClick: finishTutorial,
+      color: BUTTON_COLOR.secondary, fontSize: 17, onClick: finishTutorial,
     });
   });
 }

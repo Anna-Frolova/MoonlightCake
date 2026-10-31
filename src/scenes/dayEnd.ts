@@ -1,7 +1,7 @@
 // End of a day: stats and the way to the shop (or to the finale after day 5).
 import { ctx, SCREEN_H, SCREEN_W } from '../core/canvas';
 import { clock } from '../core/clock';
-import { drawPanel, drawText, drawTitle, roundRectPath, withPopIn } from '../core/draw';
+import { drawFittedText, drawPanel, drawText, drawTitle, roundRectPath, withPopIn } from '../core/draw';
 import { clamp, easeOutCubic } from '../core/math';
 import { drawMotes } from '../core/particles';
 import { BUTTON_COLOR, TEXT } from '../core/theme';
@@ -34,16 +34,16 @@ export function renderDayEnd(): void {
       ctx.save();
       ctx.globalAlpha *= appear; ctx.translate((1 - easeOutCubic(appear)) * 40, 0);
       ctx.fillStyle = 'rgba(255,255,255,0.07)'; roundRectPath(x + 40, rowY - 22, w - 80, 44, 22); ctx.fill();
-      drawText(label, x + 64, rowY, 19, TEXT.main, 'left', 800);
-      drawText(value, x + w - 64, rowY, 22, color, 'right', 900);
+      drawFittedText(label, x + 64, rowY, 21, w - 260, TEXT.main, 'left', 800);
+      drawText(value, x + w - 64, rowY, 24, color, 'right', 900);
       ctx.restore();
     });
     const comment = average >= 4.3 ? t().dayCommentGreat
       : average >= 3.3 ? t().dayCommentGood : t().dayCommentCozy;
-    drawText(comment, SCREEN_W / 2, y + 352, 17, TEXT.muted, 'center', 700);
+    drawFittedText(comment, SCREEN_W / 2, y + 352, 19, w - 60, TEXT.muted, 'center', 700);
     const isFinaleNext = progress.day === STORY_DAYS && !progress.finaleSeen;
     button('toShop', SCREEN_W / 2 - 160, y + h - 84, 320, 62, isFinaleNext ? t().next : t().toShop, {
-      color: BUTTON_COLOR.confirm, glow: true, onClick: isFinaleNext ? showFinale : goToShop,
+      color: BUTTON_COLOR.confirm, fontSize: 23, glow: true, onClick: isFinaleNext ? showFinale : goToShop,
     });
   });
   drawCoinCounter(16, 12);

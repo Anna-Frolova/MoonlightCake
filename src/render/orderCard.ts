@@ -50,7 +50,7 @@ export function drawOrderCard(customer: Customer, x: number, y: number, w: numbe
 
   for (const [topping, count] of Object.entries(order.toppings) as [ToppingId, number][]) {
     drawTopping(topping, cursorX + 10, rowY + 8, 0.95);
-    drawText('×' + count, cursorX + 23, rowY + 1, 15, TEXT.main, 'left', 900);
+    drawText('×' + count, cursorX + 23, rowY + 1, 18, TEXT.main, 'left', 900);
     cursorX += 58;
   }
 }

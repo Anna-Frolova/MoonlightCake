@@ -2,7 +2,7 @@
 import { sfx } from '../../audio/sfx';
 import { ctx } from '../../core/canvas';
 import { clock } from '../../core/clock';
-import { drawGlow, drawText } from '../../core/draw';
+import { drawFittedText, drawGlow, drawText } from '../../core/draw';
 import { loc } from '../../core/language';
 import { lerp, type Point } from '../../core/math';
 import { burst } from '../../core/particles';
@@ -77,8 +77,7 @@ function countByKind(cake: Cake): [ToppingId, number][] {
 }
 
 export const toppingsStation: Station = {
-  get name() { return t().stations.toppings.name; },
-  get hint() { return t().stations.toppings.hint; },
+  get name() { return t().stations.toppings; },
   helper: 'toppings',
   isDone: cake => cake.toppings.length > 0,
 
@@ -97,22 +96,21 @@ export const toppingsStation: Station = {
       drawGlow(slotX + w / 2, slotY + 40, 40, '#ffffff', 0.12);
       drawTopping(topping, slotX + 36, slotY + 44, 1.2);
       drawTopping(topping, slotX + 66, slotY + 48, 1.2);
-      drawText(loc(TOPPINGS[topping].name), slotX + w / 2, slotY + 72, 13, TEXT.main, 'center', 800);
+      drawFittedText(loc(TOPPINGS[topping].name), slotX + w / 2, slotY + 72, 16, w - 8, TEXT.main, 'center', 800);
       ctx.restore();
     });
 
     // what is on the cake now
     const listY = y + 50 + Math.ceil(toppings.length / TRAY_SLOT.columns) * TRAY_SLOT.gapY + 10;
-    drawText(t().onTheCake, x + 20, listY, 15, TEXT.label, 'left', 900);
     const counts = countByKind(cake);
-    if (!counts.length) drawText(t().nothingYet, x + 110, listY, 15, TEXT.muted, 'left', 700);
+    if (counts.length) drawText(t().onTheCake, x + 20, listY, 18, TEXT.label, 'left', 900);
     counts.forEach(([topping, count], i) => {
-      const entryX = x + 100 + (i % 3) * 82, entryY = listY + Math.floor(i / 3) * 26;
+      const entryX = x + 120 + (i % 3) * 78, entryY = listY + Math.floor(i / 3) * 28;
       drawTopping(topping, entryX + 8, entryY + 8, 0.8);
-      drawText('× ' + count, entryX + 22, entryY, 16, TEXT.main, 'left', 900);
+      drawText('× ' + count, entryX + 22, entryY, 19, TEXT.main, 'left', 900);
     });
     button('clearToppings', x + 14, y + h - 56, 170, 46, t().removeAll, {
-      color: BUTTON_COLOR.secondary, fontSize: 16, disabled: !cake.toppings.length,
+      color: BUTTON_COLOR.secondary, fontSize: 19, disabled: !cake.toppings.length,
       onClick: () => { cake.toppings = []; sfx.poof(); },
     });
   },

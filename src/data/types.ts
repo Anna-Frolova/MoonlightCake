@@ -97,18 +97,17 @@ export interface CatDef extends CatLook {
   orderRule?: OrderRule;
 }
 
-/** "Only these glaze colours" and/or "only these shapes". The guest skips days when today's menu can't make it. */
+/** "Only these glaze colours" and/or "only these shapes" — the order picture shows it, no text needed. The guest skips days when today's menu can't make it. */
 export interface OrderRule {
   glazes?: GlazeColorId[];
   shapes?: ShapeId[];
-  /** What the guest orders, for the day's news: "фіолетові торти" / "紫のケーキ". */
-  label: Localized;
 }
 
 /** What a guest says; every list is used up before any line repeats (see game/lines.ts). */
 export interface CatLines { hello: string[]; ask: string[]; good: string[]; ok: string[]; bad: string[] }
 
-export interface ShopItemDef { id: ShopItemId; tab: 'decor' | 'helpers'; name: Localized; description: Localized; price: number; tipBonus?: number }
+/** Decor shows its tip bonus instead of a description; helpers have a short description. */
+export interface ShopItemDef { id: ShopItemId; tab: 'decor' | 'helpers'; name: Localized; description?: Localized; price: number; tipBonus?: number }
 
 // ---------------- runtime data ----------------
 
