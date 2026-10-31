@@ -15,11 +15,11 @@ import {
   cakeHeight, countLayers, CREAM_DONE_COVERAGE, CREAM_FULL_COVERAGE, createCreamDots, updateCreamCoverage,
 } from '../../game/cake';
 import { runtime, todaysMenu } from '../../game/state';
-import { drawCreamIcon } from '../../render/icons';
+import { drawCreamBowl } from '../../render/shelfItems';
 import { showToast } from '../../scenes/sceneManager';
 import { currentCake, currentOrder, requireLayer } from '../kitchen';
 import { CAKE_BASE_Y, CAKE_CENTER_X, CREAM_BRUSH_RADIUS, CREAM_ZONE } from '../layout';
-import { drawProgressBar, toolCard } from '../widgets';
+import { drawIngredientShelf, drawProgressBar, isOverShelfItem, shelfItemXs } from '../widgets';
 import type { Station } from './station';
 
 /** Minimum seconds between squish sounds while piping. */
@@ -101,16 +101,24 @@ export const creamStation: Station = {
   helper: 'cream',
   isDone: cake => cake.creamCoverage >= CREAM_DONE_COVERAGE,
 
+  /** Bowls of today's creams on the shelf above the cake; the chosen one is lifted. */
+  drawScenery() {
+    drawIngredientShelf(todaysMenu().creams, cream => loc(CREAMS[cream].name), drawCreamBowl, {
+      isHoverable: !runtime.isPipingCream, lifted: runtime.selectedCream, glowColor: cream => CREAMS[cream].color,
+    });
+  },
+
+  /** Piping progress, and the cream in the bag right now. */
   drawTools(panel, cake) {
-    const { x, y, h } = panel;
-    todaysMenu().creams.forEach((cream, i) => toolCard(
-      'cream_' + cream, x + 14 + (i % 2) * 168, y + 50 + Math.floor(i / 2) * 92, 162, 86, loc(CREAMS[cream].name),
-      (cx, cy) => drawCreamIcon(cream, cx, cy, 1.1), () => selectCream(cream), { selected: runtime.selectedCream === cream },
-    ));
-    const barY = y + h - 40;
+    const { x, y, w, h } = panel;
+    const barY = y + 74;
     drawText(t().creamBorders, x + 20, barY, 19, TEXT.label, 'left', 900);
     drawProgressBar(x + 110, barY - 12, 220, 24, cake.creamCoverage, cake.creamCoverage >= CREAM_DONE_COVERAGE ? BUTTON_COLOR.confirm : BUTTON_COLOR.gold);
     drawText(Math.round(cake.creamCoverage * 100) + '%', x + 220, barY + 1, 17, '#fff', 'center', 900);
+    if (runtime.selectedCream) {
+      drawGlow(x + w / 2, y + h - 110, 90, CREAMS[runtime.selectedCream].color, 0.3);
+      drawCreamBowl(runtime.selectedCream, x + w / 2, y + h - 40, 1.8);
+    }
   },
 
   /** The enchanted whisk pipes the ordered cream bead by bead. */
@@ -129,9 +137,12 @@ export const creamStation: Station = {
   },
 
   onPointerDown(point, cake) {
+    const creams = todaysMenu().creams, xs = shelfItemXs(creams.length);
+    const tapped = creams.find((_, i) => isOverShelfItem(point, xs[i]));
+    if (tapped) { selectCream(tapped); return true; }
     if (!isInCreamZone(point)) return false;
     if (!countLayers(cake)) { showToast(t().needLayerFirst); return true; }
-    if (!runtime.selectedCream) { showToast(t().pickCreamLeft); return true; }
+    if (!runtime.selectedCream) { showToast(t().pickCreamOnShelf); return true; }
     runtime.isPipingCream = true;
     pipeAt(point);
     return true;

@@ -37,3 +37,9 @@ export const CREAM_BRUSH_RADIUS = 28;
 export const MAGIC_DRAW_AREA = { left: 392, top: 64, bottom: 644 };
 /** Kitten helper sits on the table, left of the cake. */
 export const HELPER_KITTEN_SPOT = { x: 1010, y: 548, scale: 0.42 };
+
+/**
+ * Shelf above the cake on the cream and toppings stations (like the elixir shelf on the glaze one):
+ * items stand on the board at `y`, centred over the cake, `spacing` apart; names go under the board.
+ */
+export const INGREDIENT_SHELF = { y: 298, spacing: 104, boardHeight: 18, itemScale: 1.25, itemHalfWidth: 48, itemHeight: 100, labelSize: 16 };

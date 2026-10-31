@@ -7,11 +7,12 @@ import { BUTTON_COLOR, TEXT } from '../core/theme';
 import { button, ui } from '../core/ui';
 import { t } from '../data/strings';
 import { cakeHeight, countLayers } from '../game/cake';
-import { availableEssences, progress, runtime, type StationIndex } from '../game/state';
+import { availableEssences, progress, runtime, todaysMenu, type StationIndex } from '../game/state';
 import { finishTutorial, tutorial } from '../game/tutorial';
 import { totalDrops } from '../game/colorMixing';
 import { CAKE_BASE_Y, CAKE_CENTER_X, CREAM_ZONE, ELIXIR_SHELF, TOOL_PANEL } from '../kitchen/layout';
-import { STATIONS } from '../kitchen/stations';
+import { GLAZE_STATION_INDEX, STATIONS } from '../kitchen/stations';
+import { ingredientShelfRect } from '../kitchen/widgets';
 
 interface Rect { x: number; y: number; w: number; h: number }
 
@@ -28,7 +29,8 @@ interface TutorialStep {
 
 /** Where the hint panel sits: clear of the cake, the tools and the speech bubble. */
 const COACH = {
-  kitchen: { x: 914, y: 150, w: 350 },
+  /** Top right on the glaze station (the cake moves right, under it); lower elsewhere, clear of the ingredient shelf. */
+  kitchen: { x: 914, w: 350, glazeY: 150, y: 346 },
   hallOrder: { x: 36, y: 130, w: 380 },
   /** Under the "next guest" button while the result card fills the left side. */
   hallResult: { x: 770, offsetBelowBubble: 90, w: 480 },
@@ -68,14 +70,14 @@ const STEPS: TutorialStep[] = [
     target: () => buttonRect('acceptOrder'),
   },
   stationStep(0, () => t().tutorial.layers, () => TOOL_PANEL),
-  stationStep(1, () => t().tutorial.cream, () => (runtime.selectedCream ? cakeRect() : TOOL_PANEL)),
+  stationStep(1, () => t().tutorial.cream, () => (runtime.selectedCream ? cakeRect() : ingredientShelfRect(todaysMenu().creams.length))),
   stationStep(2,
     () => (runtime.cake && totalDrops(runtime.cake.cauldron) ? t().tutorial.glazePour : t().tutorial.glazeMix),
     () => runtime.cake && totalDrops(runtime.cake.cauldron) ? buttonRect('pourGlaze') : {
       x: ELIXIR_SHELF.firstX - 40, y: ELIXIR_SHELF.y - 100,
       w: (availableEssences().length - 1) * ELIXIR_SHELF.spacing + 80, h: 124,
     }),
-  stationStep(3, () => t().tutorial.toppings, () => TOOL_PANEL),
+  stationStep(3, () => t().tutorial.toppings, () => ingredientShelfRect(todaysMenu().toppings.length)),
   stationStep(4, () => t().tutorial.magic, cakeRect),
   {
     isRelevant: inKitchen,
@@ -110,7 +112,10 @@ export function updateTutorial(): void {
 }
 
 function coachPosition(): { x: number; y: number; w: number } {
-  if (runtime.scene === 'kitchen') return COACH.kitchen;
+  if (runtime.scene === 'kitchen') {
+    const { x, w, glazeY, y } = COACH.kitchen;
+    return { x, w, y: runtime.station === GLAZE_STATION_INDEX ? glazeY : y };
+  }
   if (runtime.customer?.state === 'reacting') {
     const { x, w, offsetBelowBubble } = COACH.hallResult;
     return { x, y: runtime.speechBubbleBottom + offsetBelowBubble, w };

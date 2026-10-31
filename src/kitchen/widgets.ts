@@ -1,8 +1,10 @@
-// Small UI pieces used inside the kitchen tool panel.
+// Small UI pieces of the kitchen: tool cards and progress bars in the left panel, the ingredient shelf above the cake.
 import { ctx } from '../core/canvas';
+import { clock } from '../core/clock';
 import { drawFittedText, drawGlow, roundRectPath } from '../core/draw';
 import { TEXT } from '../core/theme';
-import { button } from '../core/ui';
+import { button, pointer, springScale } from '../core/ui';
+import { CAKE_CENTER_X, INGREDIENT_SHELF } from './layout';
 
 /** Background of a tool card / topping tray slot. */
 export function drawCardBackground(x: number, y: number, w: number, h: number, selected: boolean, hovered: boolean): void {
@@ -53,4 +55,47 @@ export function drawProgressBar(x: number, y: number, w: number, h: number, valu
   ctx.shadowColor = color; ctx.shadowBlur = 10; ctx.fillStyle = color;
   roundRectPath(x, y, Math.max(h, w * value), h, h / 2); ctx.fill();
   ctx.restore();
+}
+
+// ---------------- ingredient shelf above the cake ----------------
+
+const SHELF_WOOD = '#4a2c80';
+const SHELF_HIGHLIGHT = '#6a46a8';
+
+/** X of each of `count` items on the ingredient shelf. */
+export const shelfItemXs = (count: number): number[] =>
+  Array.from({ length: count }, (_, i) => CAKE_CENTER_X + (i - (count - 1) / 2) * INGREDIENT_SHELF.spacing);
+
+/** Area of the shelf with `count` items, names included (for highlighting it). */
+export function ingredientShelfRect(count: number): { x: number; y: number; w: number; h: number } {
+  const w = count * INGREDIENT_SHELF.spacing + 20, { y, itemHeight } = INGREDIENT_SHELF;
+  return { x: CAKE_CENTER_X - w / 2, y: y - itemHeight, w, h: itemHeight + 40 };
+}
+
+/** Is the point on the item standing at `x` (or its name tag)? */
+export const isOverShelfItem = (point: { x: number; y: number }, x: number): boolean =>
+  Math.abs(point.x - x) < INGREDIENT_SHELF.itemHalfWidth
+  && point.y > INGREDIENT_SHELF.y - INGREDIENT_SHELF.itemHeight && point.y < INGREDIENT_SHELF.y + 36;
+
+/**
+ * Draws the shelf board and each item on it with a springy hover, plus its name underneath.
+ * `drawItem` gets the item's base point; `lifted` items float a little (the selected cream).
+ */
+export function drawIngredientShelf<T extends string>(
+  items: readonly T[], label: (item: T) => string, drawItem: (item: T, x: number, y: number, scale: number) => void,
+  options: { isHoverable: boolean; lifted?: T | null; glowColor?: (item: T) => string },
+): void {
+  const { y, boardHeight, spacing, labelSize, itemScale } = INGREDIENT_SHELF;
+  const w = items.length * spacing + 20, left = CAKE_CENTER_X - w / 2;
+  ctx.fillStyle = SHELF_WOOD; roundRectPath(left, y, w, boardHeight, boardHeight / 2); ctx.fill();
+  ctx.fillStyle = SHELF_HIGHLIGHT; roundRectPath(left, y, w, boardHeight * 0.4, boardHeight * 0.2); ctx.fill();
+  shelfItemXs(items.length).forEach((x, i) => {
+    const item = items[i], isLifted = options.lifted === item;
+    const hovered = options.isHoverable && isOverShelfItem(pointer, x);
+    const scale = springScale('shelf_' + item, hovered ? 1.12 : isLifted ? 1.06 : 1);
+    const bob = Math.sin(clock.time * 2 + i) * 1.5 - (isLifted ? 12 : 0);
+    if (isLifted || hovered) drawGlow(x, y - 44, 64, options.glowColor?.(item) ?? '#ffffff', isLifted ? 0.5 : 0.3);
+    drawItem(item, x, y + bob, scale * itemScale);
+    drawFittedText(label(item), x, y + boardHeight + 13, labelSize, spacing - 6, isLifted ? TEXT.label : TEXT.main, 'center', 900);
+  });
 }

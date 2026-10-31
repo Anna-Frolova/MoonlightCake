@@ -54,6 +54,7 @@ export function renderKitchen(): void {
   drawGlazeStationScenery(cake);
   if (isOwned('helper:toppings') && runtime.glazeLayoutBlend < 0.3) drawHelperKitten();
   drawMagicStationCircle();
+  station.drawScenery?.(cake);
   drawCake(cake, runtime.cakeX, CAKE_BASE_Y, runtime.cakeScale);
   station.drawOverlay?.(cake);
   drawMotes();

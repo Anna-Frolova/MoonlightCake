@@ -1,0 +1,63 @@
+// Ingredients standing on the kitchen shelf as real objects: bowls of cream and dishes of toppings.
+// Each is drawn with (x, y) at the middle of its base, standing on the shelf board.
+import { ctx } from '../core/canvas';
+import { shade } from '../core/color';
+import { drawGlow, ellipsePath, starPath } from '../core/draw';
+import { CREAMS } from '../data/ingredients';
+import type { CreamId, ToppingId } from '../data/types';
+import { drawTopping } from './toppings';
+
+const PORCELAIN = '#f1ecff';
+const PORCELAIN_SHADOW = '#b9aee6';
+const PORCELAIN_RIM = '#8e82c8';
+
+/** A ceramic bowl heaped with a swirl of cream. */
+export function drawCreamBowl(cream: CreamId, x: number, y: number, scale = 1): void {
+  const color = CREAMS[cream].color, dark = shade(color, -0.25);
+  ctx.save();
+  ctx.translate(x, y); ctx.scale(scale, scale);
+  if (CREAMS[cream].glows) drawGlow(0, -40, 46, '#d8c8ff', 0.45);
+
+  // cream swirl: three tiers and a curled tip, peeking out of the bowl
+  ctx.strokeStyle = dark; ctx.lineWidth = 1.6;
+  const tiers: [number, number, number][] = [[0, -30, 26], [0, -44, 19], [2, -55, 12]];
+  for (const [tierX, tierY, radius] of tiers) {
+    ellipsePath(tierX, tierY, radius, radius * 0.62);
+    const fill = ctx.createLinearGradient(0, tierY - radius, 0, tierY + radius * 0.6);
+    fill.addColorStop(0, shade(color, 0.3)); fill.addColorStop(1, color);
+    ctx.fillStyle = fill; ctx.fill(); ctx.stroke();
+  }
+  ctx.beginPath(); ctx.moveTo(-3, -60); ctx.quadraticCurveTo(4, -74, 10, -64); ctx.quadraticCurveTo(6, -62, 3, -59); ctx.closePath();
+  ctx.fillStyle = shade(color, 0.3); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = 'rgba(255,255,255,0.7)'; ellipsePath(-9, -48, 5, 3); ctx.fill();
+  if (CREAMS[cream].glows) { ctx.fillStyle = '#ffffff'; starPath(12, -50, 5, 2, 4, 0); ctx.fill(); }
+
+  // bowl
+  ctx.beginPath(); ctx.moveTo(-34, -26); ctx.quadraticCurveTo(-32, 2, 0, 2); ctx.quadraticCurveTo(32, 2, 34, -26); ctx.closePath();
+  const bowl = ctx.createLinearGradient(-34, 0, 34, 0);
+  bowl.addColorStop(0, PORCELAIN); bowl.addColorStop(0.7, PORCELAIN); bowl.addColorStop(1, PORCELAIN_SHADOW);
+  ctx.fillStyle = bowl; ctx.fill();
+  ctx.strokeStyle = PORCELAIN_RIM; ctx.lineWidth = 2; ctx.stroke();
+  ctx.fillStyle = color; ctx.fillRect(-30, -16, 60, 5); // band in the cream's colour
+  ellipsePath(0, -26, 34, 6); ctx.fillStyle = shade(color, -0.1); ctx.fill(); ctx.stroke(); // rim with cream inside
+  ctx.restore();
+}
+
+/** Where the toppings lie on a dish (offsets from its centre), front ones last. */
+const DISH_PILE: [number, number][] = [[-14, -10], [14, -10], [0, -14], [-6, -4], [8, -3]];
+
+/** A shallow porcelain dish with a little heap of one topping. */
+export function drawToppingDish(topping: ToppingId, x: number, y: number, scale = 1): void {
+  ctx.save();
+  ctx.translate(x, y); ctx.scale(scale, scale);
+  // foot and plate
+  ellipsePath(0, 0, 18, 5); ctx.fillStyle = PORCELAIN_SHADOW; ctx.fill();
+  ellipsePath(0, -6, 36, 10);
+  const plate = ctx.createLinearGradient(-36, 0, 36, 0);
+  plate.addColorStop(0, PORCELAIN); plate.addColorStop(0.75, PORCELAIN); plate.addColorStop(1, PORCELAIN_SHADOW);
+  ctx.fillStyle = plate; ctx.fill();
+  ctx.strokeStyle = PORCELAIN_RIM; ctx.lineWidth = 2; ctx.stroke();
+  ellipsePath(0, -7, 27, 6); ctx.fillStyle = 'rgba(142,130,200,0.25)'; ctx.fill();
+  for (const [dx, dy] of DISH_PILE) drawTopping(topping, dx, dy, 1.15);
+  ctx.restore();
+}

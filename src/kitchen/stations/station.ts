@@ -27,6 +27,8 @@ export interface Station {
   onPointerMove?(point: Point, cake: Cake): void;
   /** Pointer released (or the gesture was cancelled). */
   onPointerUp?(point: Point, cake: Cake): void;
+  /** Drawn behind the cake while the station is open (the ingredient shelf). */
+  drawScenery?(cake: Cake): void;
   /** Drawn over the cake area (cursor previews, dragged items…). */
   drawOverlay?(cake: Cake): void;
 }
