@@ -45,4 +45,7 @@ npm.cmd run build        # typecheck + сборка в dist/index.html
 
 - Remote `origin` = https://github.com/Anna-Frolova/MoonlightCake, основная ветка `master`.
 - Новую работу делаем в отдельной ветке, в `master` — после проверки. Пушить только по просьбе пользователя.
-- Опубликованная версия игры (Artifact): https://claude.ai/artifact/BXDxd3K77RCCwGa1dyBEf5 — обновляется из `dist/index.html` после `build`, по просьбе пользователя.
+- **Основная опубликованная версия — GitHub Pages:** https://anna-frolova.github.io/MoonlightCake/ (репозиторий публичный). Workflow `.github/workflows/pages.yml` сам собирает и выкладывает игру при каждом пуше в `master`, поэтому пуш в `master` = обновление игры для игроков. Ручной запуск — Actions → «Deploy to GitHub Pages» → Run workflow.
+- Пользователь играет на iPhone: ссылку открывает в Safari и добавляет на экран «Домой» (полный экран, без панелей браузера). Внутри приложения Claude и во встроенном браузере игра зажата панелями — это не баг игры.
+- Какая сборка открыта на телефоне, видно по отметке времени (UTC) в правом нижнем углу титульного экрана (`__BUILD_ID__`, задаётся в `vite.config.ts`).
+- Запасная версия (Artifact): https://claude.ai/artifact/BXDxd3K77RCCwGa1dyBEf5 — обновляется из `dist/index.html` после `build`, только по просьбе пользователя. Внутри просмотрщика claude.ai игра всегда в рамке.
