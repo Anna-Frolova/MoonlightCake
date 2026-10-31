@@ -49,6 +49,7 @@ export function renderTitle(): void {
     button('newGame', 490, BUTTONS_Y, 300, 66, t().openCafe, { color: BUTTON_COLOR.confirm, glow: true, onClick: startNewGame });
   }
   drawText(t().autosaveNote, 640, 684, 16, 'rgba(220,210,255,0.6)', 'center', 700);
+  drawText(__BUILD_ID__, SCREEN_W - 16, 706, 11, 'rgba(220,210,255,0.35)', 'right', 700); // which build is running (phones cache old ones)
   drawSoundButtons(SCREEN_W - 124, 16);
   drawLanguageSwitch(SCREEN_W - 124 - LANGUAGE_SWITCH_W - 8, 16);
 }

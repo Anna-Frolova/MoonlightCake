@@ -7,4 +7,5 @@ export default defineConfig({
   plugins: [viteSingleFile()],
   server: { port: 8765, open: false },
   build: { target: 'es2022' },
+  define: { __BUILD_ID__: JSON.stringify(new Date().toISOString().slice(0, 16).replace('T', ' ')) },
 });

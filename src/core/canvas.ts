@@ -4,6 +4,8 @@
 
 export const SCREEN_W = 1280;
 export const SCREEN_H = 720;
+/** Backing-store pixels per CSS pixel are capped here (iPhone screens are 3×). */
+const MAX_PIXEL_RATIO = 3;
 
 export const canvas = document.getElementById('game') as HTMLCanvasElement;
 export const ctx = canvas.getContext('2d')!;
@@ -35,7 +37,9 @@ let lastSizeKey = '';
  * on iPhones `resize` can fire before the new size is known (rotation, Safari's bars sliding away).
  */
 export function fitCanvasToWindow(): void {
-  const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+  // iPhones have 3 device pixels per CSS pixel; if Safari zoomed the page in, render sharper still
+  const zoom = Math.max(1, window.visualViewport?.scale ?? 1);
+  const pixelRatio = Math.min((window.devicePixelRatio || 1) * zoom, MAX_PIXEL_RATIO);
   const width = window.innerWidth, height = window.innerHeight;
   const insets = safeAreaInsets();
   const sizeKey = [width, height, pixelRatio, insets.top, insets.right, insets.bottom, insets.left].join();
