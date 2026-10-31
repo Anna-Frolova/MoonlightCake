@@ -17,6 +17,7 @@ import { catLine, pickWithoutRepeat } from './lines';
 import { canTakeOrder, generateOrder } from './orders';
 import { createNewSave } from './save';
 import { scoreCake } from './scoring';
+import { resetTutorial } from './tutorial';
 import { decorTipBonus, isOwned, progress, resetProgress, runtime, saveProgress } from './state';
 import { setUpKitchen } from '../kitchen/kitchen';
 
@@ -56,6 +57,7 @@ export function hasProgressWorthContinuing(): boolean {
 export function startNewGame(): void {
   const { musicOn, soundOn } = progress;
   resetProgress({ ...createNewSave(), musicOn, soundOn });
+  resetTutorial();
   progress.menu = buildDailyMenu(1, null, progress.seed);
   saveProgress();
   runtime.displayedCoins = 0;

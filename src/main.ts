@@ -20,6 +20,7 @@ import { renderDayStart } from './scenes/dayStart';
 import { renderFinale } from './scenes/finale';
 import { renderHall, updateHall } from './scenes/hall';
 import { drawModal, drawToast } from './scenes/hud';
+import { drawTutorial, updateTutorial } from './scenes/tutorial';
 import { renderKitchen, updateKitchenLayout } from './scenes/kitchen';
 import { renderShop } from './scenes/shop';
 import { renderTitle } from './scenes/title';
@@ -64,6 +65,7 @@ function update(dt: number): void {
   updateKitchenLayout(dt);
   updateMusic(progress.musicOn);
   updateHall(dt);
+  updateTutorial();
   updateCakeAnimations(dt);
 }
 
@@ -98,6 +100,7 @@ function render(): void {
   runtime.toppingTray = [];
 
   SCENE_RENDERERS[runtime.scene]();
+  drawTutorial();
   drawParticles();
   drawToast();
   drawModal();
