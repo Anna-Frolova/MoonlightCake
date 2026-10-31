@@ -4,10 +4,12 @@ import { ctx } from '../../core/canvas';
 import { clock } from '../../core/clock';
 import { shade, withAlpha } from '../../core/color';
 import { drawGlow, drawText, roundRectPath } from '../../core/draw';
+import { loc } from '../../core/language';
 import { pickRandom, randomRange, type Point, type Vec2 } from '../../core/math';
 import { burst, emitParticle, floatingText } from '../../core/particles';
 import { TEXT } from '../../core/theme';
 import { ELEMENT_ORDER, ELEMENTS } from '../../data/elements';
+import { t } from '../../data/strings';
 import type { ElementId } from '../../data/types';
 import { cakeHeight, countLayers } from '../../game/cake';
 import { recognizeSign } from '../../game/signRecognition';
@@ -27,7 +29,7 @@ const STROKE_FADE_SECONDS = 0.7;
 const MIN_POINT_SPACING = 4;
 const SCRIBBLE_SOUND_INTERVAL = 0.07;
 
-const qualityWord = (quality: number): string => quality >= 1 ? 'ідеально' : quality >= 0.8 ? 'чудово' : 'непогано';
+const qualityWord = (quality: number): string => quality >= 1 ? t().qualityPerfect : quality >= 0.8 ? t().qualityGreat : t().qualityOk;
 
 /** Puts the element's magic on the cake with the given quality (0..1). */
 function castMagic(element: ElementId, quality: number): void {
@@ -38,8 +40,7 @@ function castMagic(element: ElementId, quality: number): void {
   sfx.magic(element);
   burst(CAKE_CENTER_X, top, 26 + quality * 20, [def.color, '#ffffff', shade(def.color, 0.4)],
     { kind: 'star', gravity: element === 'fire' ? -120 : 40, maxSpeed: 300 });
-  const word = qualityWord(quality);
-  floatingText(CAKE_CENTER_X, top - 70, `${def.name}! ${word[0].toUpperCase() + word.slice(1)}`, shade(def.color, 0.3), 30);
+  floatingText(CAKE_CENTER_X, top - 70, t().castShout(loc(def.name), qualityWord(quality)), shade(def.color, 0.3), 30);
   if (element === 'bolt' || quality >= 1) runtime.shake = 0.25;
 }
 
@@ -51,7 +52,7 @@ function finishStroke(): void {
   runtime.fadingStroke = { points, startTime: clock.time, color: recognized ? ELEMENTS[recognized.element].color : FAILED_STROKE_COLOR };
   if (points.length < 4) return; // just a tap
   if (!recognized) {
-    showToast('Знак не розпізнано — спробуй ще раз, одним рухом');
+    showToast(t().signNotRecognized);
     sfx.fail();
     const [lastX, lastY] = points[points.length - 1];
     burst(lastX, lastY, 10, '#8a7aa8', { gravity: -30 });
@@ -59,7 +60,7 @@ function finishStroke(): void {
   }
   if (!availableElements().includes(recognized.element)) {
     const def = ELEMENTS[recognized.element];
-    showToast(`Стихія «${def.name}» відкриється в день ${def.unlockDay}`);
+    showToast(t().elementLocked(loc(def.name), def.unlockDay));
     sfx.fail();
     return;
   }
@@ -100,8 +101,8 @@ export function drawMagicStationCircle(): void {
 }
 
 export const magicStation: Station = {
-  name: 'Чари',
-  hint: 'Намалюй знак стихії прямо на торті — одним рухом.',
+  get name() { return t().stations.magic.name; },
+  get hint() { return t().stations.magic.hint; },
   helper: 'magic',
   isDone: cake => cake.magicQuality !== null,
 
@@ -109,9 +110,9 @@ export const magicStation: Station = {
     const order = currentOrder(), time = clock.time;
     if (cake.element && cake.magicQuality !== null) {
       const def = ELEMENTS[cake.element];
-      drawText(`Накладено: ${def.name.toLowerCase()} · ${qualityWord(cake.magicQuality)}`, x + 20, y + 58, 15, shade(def.color, 0.3), 'left', 900);
+      drawText(t().enchanted(loc(def.name), qualityWord(cake.magicQuality)), x + 20, y + 58, 15, shade(def.color, 0.3), 'left', 900);
     } else {
-      drawText(`Гість хоче: ${ELEMENTS[order.element].name.toLowerCase()}`, x + 20, y + 58, 15, TEXT.gold, 'left', 800);
+      drawText(t().guestWants(loc(ELEMENTS[order.element].name)), x + 20, y + 58, 15, TEXT.gold, 'left', 800);
     }
     ELEMENT_ORDER.forEach((element, i) => {
       const def = ELEMENTS[element], isOpen = def.unlockDay <= progress.day, isWanted = order.element === element;
@@ -126,8 +127,8 @@ export const magicStation: Station = {
       ctx.globalAlpha = isOpen ? 1 : 0.35;
       drawGlow(x + 44, rowY + 23, 26, def.color, 0.25);
       drawSign(element, x + 44, rowY + 23, 30, def.color, 2.6);
-      drawText(def.name, x + 76, rowY + 15, 16, TEXT.main, 'left', 900);
-      drawText(isOpen ? `знак: ${def.signName}` : `відкриється в день ${def.unlockDay}`, x + 76, rowY + 33, 13, TEXT.muted, 'left', 700);
+      drawText(loc(def.name), x + 76, rowY + 15, 16, TEXT.main, 'left', 900);
+      drawText(isOpen ? t().signLabel(loc(def.signName)) : t().opensOnDay(def.unlockDay), x + 76, rowY + 33, 13, TEXT.muted, 'left', 700);
       ctx.restore();
     });
   },
@@ -140,7 +141,7 @@ export const magicStation: Station = {
 
   onPointerDown(point, cake) {
     if (point.x <= MAGIC_DRAW_AREA.left || point.y <= MAGIC_DRAW_AREA.top || point.y >= MAGIC_DRAW_AREA.bottom) return false;
-    if (!countLayers(cake)) { showToast('Спершу поклади корж'); return true; }
+    if (!countLayers(cake)) { showToast(t().needLayerFirst); return true; }
     runtime.magicStroke = { points: [[point.x, point.y]], lastSoundTime: 0 };
     runtime.fadingStroke = null;
     return true;

@@ -4,11 +4,13 @@ import { ctx } from '../../core/canvas';
 import { clock } from '../../core/clock';
 import { rgbToHex, shade, withAlpha } from '../../core/color';
 import { drawGlassPill, drawGlow, drawText, ellipsePath, font, roundRectPath, starPath, wrapText } from '../../core/draw';
+import { loc } from '../../core/language';
 import { clamp, easeOutCubic, lerp, type Point } from '../../core/math';
 import { burst } from '../../core/particles';
 import { BUTTON_COLOR, TEXT } from '../../core/theme';
 import { button, pointer, springScale } from '../../core/ui';
 import { ESSENCE_ORDER, ESSENCES, glazeColorById, MIXING_TIPS } from '../../data/ingredients';
+import { t } from '../../data/strings';
 import type { Cake, EssenceId } from '../../data/types';
 import { cakeHeight, countLayers } from '../../game/cake';
 import { mixDrops, NAMED_COLOR_DISTANCE, nearestGlazeColor, recipeToDrops, totalDrops } from '../../game/colorMixing';
@@ -31,7 +33,6 @@ const GLAZE_ARC_SECONDS = 1;
 const BOTTLE_HIT = { halfWidth: 30, above: 62, below: 38 };
 /** The bottle's body rests this far above the shelf board. */
 const BOTTLE_REST_HEIGHT = 26.5 * ELIXIR_SHELF.bottleScale;
-const CAULDRON_FULL_MESSAGE = 'Казан повний! Вилий або полий торт.';
 
 const bottleHome = (essence: EssenceId): Point => ({
   x: ELIXIR_SHELF.firstX + ESSENCE_ORDER.indexOf(essence) * ELIXIR_SHELF.spacing,
@@ -53,7 +54,7 @@ function bottleTip(x: number, y: number, rotation: number): Point {
 
 function addDrop(essence: EssenceId): void {
   const drops = currentCake().cauldron;
-  if (totalDrops(drops) >= CAULDRON_CAPACITY) { showToast(CAULDRON_FULL_MESSAGE); sfx.fail(); return; }
+  if (totalDrops(drops) >= CAULDRON_CAPACITY) { showToast(t().cauldronFull); sfx.fail(); return; }
   drops[essence]++;
   sfx.drop();
   setTimeout(sfx.bubble, 120);
@@ -73,7 +74,7 @@ function pourGlaze(): void {
   const cake = currentCake();
   const color = mixDrops(cake.cauldron);
   if (!requireLayer(cake)) return;
-  if (!color) { showToast('Додай есенції в казан'); sfx.fail(); return; }
+  if (!color) { showToast(t().addEssenceFirst); sfx.fail(); return; }
   cake.glaze = color;
   cake.glazeProgress = -0.45; // waits for the arc to land
   sfx.whoosh();
@@ -105,7 +106,7 @@ function releaseBottle(): void {
   if (!held) return;
   const canPour = isOverCauldron(held.x, held.y);
   const isFull = totalDrops(currentCake().cauldron) >= CAULDRON_CAPACITY;
-  if (canPour && isFull) showToast(CAULDRON_FULL_MESSAGE);
+  if (canPour && isFull) showToast(t().cauldronFull);
   if (canPour && !isFull) {
     runtime.pouringPotion = { essence: held.essence, time: 0, startX: held.x, startY: held.y, dropAdded: false };
     sfx.whoosh();
@@ -154,7 +155,7 @@ function drawElixirShelf(): void {
     } else {
       ctx.save(); ctx.globalAlpha = 0.28; drawPotionBottle(essence, home.x, home.y, ELIXIR_SHELF.bottleScale, true); ctx.restore();
     }
-    drawText(isUnlocked ? ESSENCES[essence].name : `день ${ESSENCES[essence].unlockDay}`, home.x, ELIXIR_SHELF.y + 13, 11, isUnlocked ? TEXT.main : TEXT.muted, 'center', 900);
+    drawText(isUnlocked ? loc(ESSENCES[essence].name) : t().essenceLockedDay(ESSENCES[essence].unlockDay), home.x, ELIXIR_SHELF.y + 13, 11, isUnlocked ? TEXT.main : TEXT.muted, 'center', 900);
   });
 }
 
@@ -191,10 +192,10 @@ function drawCauldron(cake: Cake): void {
     }
   }
   // label under the pot
-  let label = 'Казан порожній';
+  let label = t().cauldronEmpty;
   if (mix) {
     const nearest = nearestGlazeColor(mix);
-    label = nearest.distance < NAMED_COLOR_DISTANCE ? 'Колір: ' + nearest.color.name : 'Незвичайний відтінок';
+    label = nearest.distance < NAMED_COLOR_DISTANCE ? t().colorLabel(loc(nearest.color.name)) : t().unusualShade;
   }
   ctx.font = font(16, 800);
   const labelWidth = ctx.measureText(label).width + (mixHex ? 52 : 32);
@@ -315,18 +316,18 @@ export function drawGlazeArc(cake: Cake): void {
 }
 
 export const glazeStation: Station = {
-  name: 'Глазур',
-  hint: 'Перетягни еліксир із полиці в казан, змішай колір і полий торт.',
+  get name() { return t().stations.glaze.name; },
+  get hint() { return t().stations.glaze.hint; },
   helper: 'glaze',
   isDone: cake => !!cake.glaze,
 
   drawTools(panel, cake) {
     const { x, y, w, h } = panel;
     const drops = cake.cauldron, total = totalDrops(drops);
-    wrapText('Перетягни колбу з полиці до казана — кожна колба додає одну краплю.', w - 40, 15, 700)
+    wrapText(t().glazeHowTo, w - 40, 15, 700)
       .forEach((line, i) => drawText(line, x + 20, y + 58 + i * 20, 15, TEXT.muted, 'left', 700));
     // drops in the cauldron
-    drawText(`У казані: ${total}/${CAULDRON_CAPACITY}`, x + 20, y + 110, 15, TEXT.label, 'left', 900);
+    drawText(t().inCauldron(total, CAULDRON_CAPACITY), x + 20, y + 110, 15, TEXT.label, 'left', 900);
     const dropsY = y + 134;
     for (let n = 0; n < CAULDRON_CAPACITY; n++) {
       ellipsePath(x + 26 + n * 16, dropsY, 6, 6); ctx.fillStyle = 'rgba(255,255,255,0.08)'; ctx.fill();
@@ -345,20 +346,20 @@ export const glazeStation: Station = {
       const nearest = nearestGlazeColor(mix);
       ellipsePath(x + 30, y + 160, 9, 9); ctx.fillStyle = rgbToHex(mix); ctx.fill();
       ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 1.5; ctx.stroke();
-      drawText(nearest.distance < NAMED_COLOR_DISTANCE ? nearest.color.name : 'Незвичайний відтінок', x + 46, y + 160, 15, TEXT.main, 'left', 800);
+      drawText(nearest.distance < NAMED_COLOR_DISTANCE ? loc(nearest.color.name) : t().unusualShade, x + 46, y + 160, 15, TEXT.main, 'left', 800);
     }
     // cheat sheet: only tips whose essences are already unlocked
-    drawText('Шпаргалка', x + 20, y + 190, 15, TEXT.label, 'left', 900);
+    drawText(t().cheatSheet, x + 20, y + 190, 15, TEXT.label, 'left', 900);
     const essences = availableEssences();
     MIXING_TIPS.filter(tip => essences.includes(tip.a) && essences.includes(tip.b)).forEach((tip, i) => {
       const tipX = x + (i < 3 ? 0 : 172), tipY = y + 214 + (i % 3) * 22;
       ellipsePath(tipX + 30, tipY, 7, 7); ctx.fillStyle = ESSENCES[tip.a].color; ctx.fill();
       drawText('+', tipX + 46, tipY, 14, TEXT.muted);
       ellipsePath(tipX + 62, tipY, 7, 7); ctx.fillStyle = ESSENCES[tip.b].color; ctx.fill();
-      drawText('= ' + tip.result, tipX + 76, tipY, 13, TEXT.main, 'left', 700);
+      drawText('= ' + loc(glazeColorById(tip.result).name), tipX + 76, tipY, 13, TEXT.main, 'left', 700);
     });
-    button('emptyCauldron', x + 14, y + h - 56, 130, 46, 'Вилити', { color: BUTTON_COLOR.secondary, fontSize: 16, disabled: total === 0, onClick: emptyCauldron });
-    button('pourGlaze', x + 154, y + h - 56, 192, 46, 'Полити торт', { color: BUTTON_COLOR.pink, fontSize: 17, disabled: total === 0 || !countLayers(cake), onClick: pourGlaze });
+    button('emptyCauldron', x + 14, y + h - 56, 130, 46, t().pourOut, { color: BUTTON_COLOR.secondary, fontSize: 16, disabled: total === 0, onClick: emptyCauldron });
+    button('pourGlaze', x + 154, y + h - 56, 192, 46, t().pourOnCake, { color: BUTTON_COLOR.pink, fontSize: 17, disabled: total === 0 || !countLayers(cake), onClick: pourGlaze });
   },
 
   /** The smart cauldron mixes the ordered colour and pours it. */

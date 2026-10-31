@@ -7,6 +7,7 @@ import { drawMotes, emitParticle } from '../core/particles';
 import { BUTTON_COLOR, TEXT } from '../core/theme';
 import { button } from '../core/ui';
 import { MOON_QUEEN } from '../data/cats';
+import { t } from '../data/strings';
 import { finishFinale } from '../game/flow';
 import { progress, runtime } from '../game/state';
 import { drawCat, drawPaws } from '../render/cat';
@@ -30,13 +31,13 @@ export function renderFinale(): void {
   }
   withPopIn(runtime.sceneStartTime, x + w / 2, y + h / 2, () => {
     drawPanel(x, y, w, h);
-    drawTitle('Королівське визнання!', x + w / 2, y + 48, 28, TEXT.main);
-    const lines = wrapText('Місячна Королева оголосила «Місячний Корж» найчарівнішим кафе королівства. Коти з усіх куточків уже пакують валізи, щоб скуштувати твоїх тортів!', w - 60, 18, 700);
+    drawTitle(t().finaleTitle, x + w / 2, y + 48, 28, TEXT.main);
+    const lines = wrapText(t().finaleText, w - 60, 18, 700);
     lines.forEach((line, i) => drawText(line, x + 30, y + 98 + i * 26, 18, TEXT.main, 'left', 700));
     const totals = progress.totals, statsY = y + 110 + lines.length * 26;
-    drawText(`Тортів спечено: ${totals.served}`, x + 30, statsY + 14, 18, TEXT.muted, 'left', 800);
-    drawText(`Сердечок отримано: ${totals.hearts}`, x + 30, statsY + 42, 18, TEXT.muted, 'left', 800);
-    drawText(`Монеток зароблено: ${totals.earned}`, x + 30, statsY + 70, 18, TEXT.muted, 'left', 800);
-    button('keepPlaying', x + 30, y + h - 82, w - 60, 60, 'Грати далі', { color: BUTTON_COLOR.confirm, glow: true, onClick: finishFinale });
+    drawText(t().cakesBaked(totals.served), x + 30, statsY + 14, 18, TEXT.muted, 'left', 800);
+    drawText(t().heartsReceived(totals.hearts), x + 30, statsY + 42, 18, TEXT.muted, 'left', 800);
+    drawText(t().coinsEarned(totals.earned), x + 30, statsY + 70, 18, TEXT.muted, 'left', 800);
+    button('keepPlaying', x + 30, y + h - 82, w - 60, 60, t().keepPlaying, { color: BUTTON_COLOR.confirm, glow: true, onClick: finishFinale });
   });
 }

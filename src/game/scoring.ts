@@ -7,8 +7,8 @@ import { glazeRgb } from './colorMixing';
 import { totalToppingCount } from './orders';
 
 export interface ScorePart {
-  /** Label shown on the result card. */
-  label: string;
+  /** Which part of the cake; its label comes from `t().scoreParts`. */
+  kind: keyof typeof WEIGHTS;
   /** 0..1 */
   score: number;
   weight: number;
@@ -47,7 +47,7 @@ export function scoreCake(cake: Cake, order: Order, cat: CatDef, decorTipBonus: 
   const layers = cake.stack.filter(item => item.kind === 'layer');
   const parts: ScorePart[] = [];
 
-  parts.push({ label: 'Форма', score: cake.shape === order.shape ? 1 : 0, weight: WEIGHTS.shape });
+  parts.push({ kind: 'shape', score: cake.shape === order.shape ? 1 : 0, weight: WEIGHTS.shape });
 
   let layerScore = 0;
   if (layers.length) {
@@ -55,12 +55,12 @@ export function scoreCake(cake: Cake, order: Order, cat: CatDef, decorTipBonus: 
     const flavorScore = layers.filter(layer => layer.flavor === order.flavor).length / layers.length;
     layerScore = countScore * 0.5 + flavorScore * 0.5;
   }
-  parts.push({ label: 'Коржі', score: layerScore, weight: WEIGHTS.layers });
+  parts.push({ kind: 'layers', score: layerScore, weight: WEIGHTS.layers });
 
   if (order.layerCount >= 2) {
     const gaps = fillingsBetweenLayers(cake);
     const fillingScore = gaps.length ? gaps.filter(gap => gap === order.filling).length / gaps.length : 0;
-    parts.push({ label: 'Начинка', score: fillingScore, weight: WEIGHTS.filling });
+    parts.push({ kind: 'filling', score: fillingScore, weight: WEIGHTS.filling });
   }
 
   let creamScore = 0;
@@ -68,12 +68,12 @@ export function scoreCake(cake: Cake, order: Order, cat: CatDef, decorTipBonus: 
     const coverage = clamp((cake.creamCoverage - 0.15) / 0.7, 0, 1);
     creamScore = cake.cream === order.cream ? 0.6 + 0.4 * coverage : 0.15 + 0.35 * coverage;
   }
-  parts.push({ label: 'Крем', score: creamScore, weight: WEIGHTS.cream });
+  parts.push({ kind: 'cream', score: creamScore, weight: WEIGHTS.cream });
 
   const glazeScore = cake.glaze
     ? clamp(1 - (colorDistance(cake.glaze, glazeRgb(order.glaze)) - GLAZE_PERFECT_DISTANCE) / GLAZE_ZERO_DISTANCE_RANGE, 0, 1)
     : 0;
-  parts.push({ label: 'Глазур', score: glazeScore, weight: WEIGHTS.glaze });
+  parts.push({ kind: 'glaze', score: glazeScore, weight: WEIGHTS.glaze });
 
   // toppings: how close each ordered count is, minus a penalty per unwanted kind
   const placed: Partial<Record<ToppingId, number>> = {};
@@ -86,11 +86,11 @@ export function scoreCake(cake: Cake, order: Order, cat: CatDef, decorTipBonus: 
   }
   accuracy /= orderedKinds.length;
   const extraKinds = (Object.keys(placed) as ToppingId[]).filter(kind => !order.toppings[kind]).length;
-  parts.push({ label: 'Прикраси', score: clamp(accuracy - extraKinds * 0.15, 0, 1), weight: WEIGHTS.toppings });
+  parts.push({ kind: 'toppings', score: clamp(accuracy - extraKinds * 0.15, 0, 1), weight: WEIGHTS.toppings });
 
   const quality = cake.magicQuality ?? 0;
   const magicScore = !cake.element ? 0 : cake.element === order.element ? quality : quality * 0.3;
-  parts.push({ label: 'Магія', score: magicScore, weight: WEIGHTS.magic });
+  parts.push({ kind: 'magic', score: magicScore, weight: WEIGHTS.magic });
 
   const totalWeight = parts.reduce((sum, p) => sum + p.weight, 0);
   const score = clamp(parts.reduce((sum, p) => sum + p.score * p.weight, 0) / totalWeight, 0, 1);

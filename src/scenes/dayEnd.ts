@@ -7,6 +7,7 @@ import { drawMotes } from '../core/particles';
 import { BUTTON_COLOR, TEXT } from '../core/theme';
 import { button } from '../core/ui';
 import { STORY_DAYS } from '../data/schedule';
+import { t } from '../data/strings';
 import { goToShop, showFinale } from '../game/flow';
 import { progress, runtime } from '../game/state';
 import { drawCounter, drawHallBackground } from '../render/environment';
@@ -20,13 +21,13 @@ export function renderDayEnd(): void {
   dimBackground();
   withPopIn(runtime.sceneStartTime, SCREEN_W / 2, SCREEN_H / 2, () => {
     drawPanel(x, y, w, h);
-    drawTitle(`День ${progress.day} завершено!`, SCREEN_W / 2, y + 60, 38, TEXT.main);
+    drawTitle(t().dayFinished(progress.day), SCREEN_W / 2, y + 60, 38, TEXT.main);
     const stats = progress.dayStats, average = stats.served ? stats.hearts / stats.served : 0;
     const rows: [label: string, value: string, color: string][] = [
-      ['Гостей обслуговано', String(stats.served), TEXT.main],
-      ['Середня оцінка', average.toFixed(1) + ' з 5', TEXT.main],
-      ['Найкращий торт', '♥'.repeat(stats.bestHearts) || '—', '#ff7ac0'],
-      ['Зароблено сьогодні', (stats.earned >= 0 ? '+' : '') + stats.earned, '#5ff0c8'],
+      [t().guestsServed, String(stats.served), TEXT.main],
+      [t().averageScore, t().outOfFive(average.toFixed(1)), TEXT.main],
+      [t().bestCake, '♥'.repeat(stats.bestHearts) || '—', '#ff7ac0'],
+      [t().earnedToday, (stats.earned >= 0 ? '+' : '') + stats.earned, '#5ff0c8'],
     ];
     rows.forEach(([label, value, color], i) => { // rows slide in one after another
       const appear = clamp((time - runtime.sceneStartTime - 0.2 - i * 0.12) * 4, 0, 1), rowY = y + 130 + i * 52;
@@ -37,11 +38,11 @@ export function renderDayEnd(): void {
       drawText(value, x + w - 64, rowY, 22, color, 'right', 900);
       ctx.restore();
     });
-    const comment = average >= 4.3 ? 'Коти в захваті! Про твоє кафе вже говорить усе місто.'
-      : average >= 3.3 ? 'Чудовий день! Гості пішли ситі й задоволені.' : 'Затишний день. Завтра вийде ще смачніше!';
+    const comment = average >= 4.3 ? t().dayCommentGreat
+      : average >= 3.3 ? t().dayCommentGood : t().dayCommentCozy;
     drawText(comment, SCREEN_W / 2, y + 352, 17, TEXT.muted, 'center', 700);
     const isFinaleNext = progress.day === STORY_DAYS && !progress.finaleSeen;
-    button('toShop', SCREEN_W / 2 - 160, y + h - 84, 320, 62, isFinaleNext ? 'Далі' : 'До крамниці', {
+    button('toShop', SCREEN_W / 2 - 160, y + h - 84, 320, 62, isFinaleNext ? t().next : t().toShop, {
       color: BUTTON_COLOR.confirm, glow: true, onClick: isFinaleNext ? showFinale : goToShop,
     });
   });

@@ -3,11 +3,11 @@ import type { ElementDef, ElementId } from './types';
 
 /** Elemental magic. Each element is cast by drawing its sign on the cake. */
 export const ELEMENTS: Record<ElementId, ElementDef> = {
-  fire:   { name: 'Вогонь',    color: '#ff8a3d', signName: 'трикутник', unlockDay: 1 },
-  ice:    { name: 'Лід',       color: '#8fe6ff', signName: 'коло',      unlockDay: 1 },
-  bolt:   { name: 'Блискавка', color: '#ffe95a', signName: 'зигзаг',    unlockDay: 2 },
-  nature: { name: 'Природа',   color: '#6be08a', signName: 'хвиля',     unlockDay: 3 },
-  star:   { name: 'Зоряна',    color: '#d6b6ff', signName: 'зірка',     unlockDay: 4 },
+  fire:   { name: { uk: 'Вогонь',    ja: '炎' },   color: '#ff8a3d', signName: { uk: 'трикутник', ja: '三角' },     unlockDay: 1 },
+  ice:    { name: { uk: 'Лід',       ja: '氷' },   color: '#8fe6ff', signName: { uk: 'коло',      ja: '円' },       unlockDay: 1 },
+  bolt:   { name: { uk: 'Блискавка', ja: '雷' },   color: '#ffe95a', signName: { uk: 'зигзаг',    ja: 'ジグザグ' }, unlockDay: 2 },
+  nature: { name: { uk: 'Природа',   ja: '自然' }, color: '#6be08a', signName: { uk: 'хвиля',     ja: '波' },       unlockDay: 3 },
+  star:   { name: { uk: 'Зоряна',    ja: '星' },   color: '#d6b6ff', signName: { uk: 'зірка',     ja: '星形' },     unlockDay: 4 },
 };
 export const ELEMENT_ORDER: ElementId[] = ['fire', 'ice', 'bolt', 'nature', 'star'];
 

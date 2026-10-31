@@ -2,13 +2,15 @@
 import { ctx, SCREEN_H, SCREEN_W } from '../core/canvas';
 import { clock } from '../core/clock';
 import { drawPanel, drawText, drawTitle, font, roundRectPath, withPopIn, wrapText } from '../core/draw';
+import { loc } from '../core/language';
 import { drawMotes } from '../core/particles';
 import { BUTTON_COLOR, TEXT } from '../core/theme';
 import { button } from '../core/ui';
 import { GUESTS } from '../data/cats';
 import { ELEMENT_ORDER, ELEMENTS } from '../data/elements';
 import { CREAMS, ESSENCE_ORDER, ESSENCES, FILLINGS, FLAVORS, SHAPES, TOPPINGS } from '../data/ingredients';
-import { guestsPerDay, MENU_CATEGORIES, MENU_LABELS, STORY_DAYS } from '../data/schedule';
+import { guestsPerDay, MENU_CATEGORIES, STORY_DAYS } from '../data/schedule';
+import { t } from '../data/strings';
 import type { CreamId, FillingId, FlavorId, MenuCategory, ShapeId, ToppingId } from '../data/types';
 import { openCafe } from '../game/flow';
 import { progress, runtime, todaysMenu } from '../game/state';
@@ -22,18 +24,18 @@ const MENU_ROW_SPACING = 92;
 
 function menuItemName(category: MenuCategory, id: string): string {
   switch (category) {
-    case 'shapes': return SHAPES[id as ShapeId].name;
-    case 'flavors': return FLAVORS[id as FlavorId].name;
-    case 'fillings': return FILLINGS[id as FillingId].shortName;
-    case 'creams': return CREAMS[id as CreamId].name;
-    case 'toppings': return TOPPINGS[id as ToppingId].name;
+    case 'shapes': return loc(SHAPES[id as ShapeId].name);
+    case 'flavors': return loc(FLAVORS[id as FlavorId].name);
+    case 'fillings': return loc(FILLINGS[id as FillingId].shortName);
+    case 'creams': return loc(CREAMS[id as CreamId].name);
+    case 'toppings': return loc(TOPPINGS[id as ToppingId].name);
   }
 }
 
-/** One row of the menu: category label + item tiles, with "НОВЕ" / "ЗНОВУ" badges. */
+/** One row of the menu: category label + item tiles, with "new" / "again" badges. */
 function drawMenuRow(category: MenuCategory, x: number, y: number): void {
   const menu = todaysMenu();
-  drawText(MENU_LABELS[category], x, y + 26, 16, TEXT.label, 'left', 900);
+  drawText(t().menuLabels[category], x, y + 26, 16, TEXT.label, 'left', 900);
   (menu[category] as string[]).forEach((id, i) => {
     const tileX = x + MENU_TILE.labelOffset + i * MENU_TILE.spacing;
     const isFresh = (menu.fresh[category] as string[]).includes(id), isReturning = (menu.returning[category] as string[]).includes(id);
@@ -45,7 +47,7 @@ function drawMenuRow(category: MenuCategory, x: number, y: number): void {
     drawMenuItemIcon(category, id, tileX + MENU_TILE.w / 2, y + 26 + lift, 0.72);
     drawText(menuItemName(category, id), tileX + MENU_TILE.w / 2, y + 56 + lift, 11, TEXT.main, 'center', 800);
     if (isFresh || isReturning) {
-      const label = isFresh ? 'НОВЕ' : 'ЗНОВУ';
+      const label = isFresh ? t().badgeNew : t().badgeAgain;
       ctx.font = font(10, 900);
       const badgeW = ctx.measureText(label).width + 12, badgeX = tileX + MENU_TILE.w - badgeW + 4;
       ctx.save();
@@ -60,17 +62,17 @@ function drawMenuRow(category: MenuCategory, x: number, y: number): void {
 /** Short notes about what's new today. */
 function todaysNews(day: number): string[] {
   const notes: string[] = [];
-  if (day === 1) notes.push('Ласкаво просимо до «Місячного Коржа»! Гості покажуть картинку торта, який хочуть. Меню щодня змінюється само.');
-  const newGuests = GUESTS.filter(cat => cat.firstDay === day && day > 1).map(cat => cat.name);
-  if (newGuests.length) notes.push(`Нові гості: ${newGuests.join(', ')}.`);
+  if (day === 1) notes.push(t().welcomeNote);
+  const newGuests = GUESTS.filter(cat => cat.firstDay === day && day > 1).map(cat => loc(cat.name));
+  if (newGuests.length) notes.push(t().newGuestsNote(newGuests));
   const newEssences = ESSENCE_ORDER.filter(e => ESSENCES[e].unlockDay === day && day > 1);
-  if (newEssences.length) notes.push(`У казані нова есенція: ${newEssences.map(e => ESSENCES[e].name.toLowerCase()).join(', ')}!`);
-  if (day === 1) notes.push('Кожен торт треба зачарувати! Вогонь — намалюй трикутник, лід — коло.');
+  if (newEssences.length) notes.push(t().newEssenceNote(newEssences.map(e => loc(ESSENCES[e].name))));
+  if (day === 1) notes.push(t().firstMagicNote);
   for (const element of ELEMENT_ORDER) {
     const def = ELEMENTS[element];
-    if (def.unlockDay === day && day > 1) notes.push(`Нова стихія — ${def.name.toLowerCase()}! Її знак: «${def.signName}».`);
+    if (def.unlockDay === day && day > 1) notes.push(t().newElementNote(loc(def.name), loc(def.signName)));
   }
-  if (day === STORY_DAYS) notes.push('Ходять чутки, що сьогодні завітає сама Місячна Королева…');
+  if (day === STORY_DAYS) notes.push(t().queenRumorNote);
   return notes;
 }
 
@@ -81,8 +83,8 @@ export function renderDayStart(): void {
   dimBackground();
   withPopIn(runtime.sceneStartTime, SCREEN_W / 2, SCREEN_H / 2, () => {
     drawPanel(x, y, w, h);
-    drawTitle(`День ${day}`, SCREEN_W / 2, y + 46, 44, TEXT.main);
-    drawText(day <= STORY_DAYS ? `із ${STORY_DAYS} · гостей сьогодні: ${guestsPerDay(day)}` : `нескінченний режим · гостей: ${guestsPerDay(day)}`,
+    drawTitle(t().dayTitle(day), SCREEN_W / 2, y + 46, 44, TEXT.main);
+    drawText(day <= STORY_DAYS ? t().storyDaySubtitle(STORY_DAYS, guestsPerDay(day)) : t().endlessDaySubtitle(guestsPerDay(day)),
       SCREEN_W / 2, y + 86, 17, TEXT.muted, 'center', 800);
 
     let textY = y + 120;
@@ -91,7 +93,7 @@ export function renderDayStart(): void {
     }
 
     const menuTitleY = Math.max(y + 176, textY + 14);
-    drawTitle('Меню дня', x + 46, menuTitleY, 22, TEXT.main, 'left');
+    drawTitle(t().menuTitle, x + 46, menuTitleY, 22, TEXT.main, 'left');
     const rowsY = menuTitleY + 30, leftX = x + 46, rightX = x + 560;
     drawMenuRow('flavors', leftX, rowsY);
     drawMenuRow('fillings', leftX, rowsY + MENU_ROW_SPACING);
@@ -100,12 +102,12 @@ export function renderDayStart(): void {
     drawMenuRow('toppings', rightX, rowsY + MENU_ROW_SPACING);
 
     const resting = MENU_CATEGORIES.flatMap(category => (menu.resting[category] as string[]).map(id =>
-      menuItemName(category, id) + (category === 'flavors' ? ' корж' : category === 'creams' ? ' крем' : '')));
+      t().restingItem(category, menuItemName(category, id))));
     if (resting.length) {
-      wrapText('Сьогодні відпочивають: ' + resting.join(', ').toLowerCase(), 420, 15, 700)
+      wrapText(t().restingToday(resting), 420, 15, 700)
         .forEach((line, i) => drawText(line, rightX, rowsY + 196 + i * 21, 15, TEXT.muted, 'left', 700));
     }
-    button('openCafe', SCREEN_W / 2 - 160, y + h - 84, 320, 64, 'Відкрити кафе', { color: BUTTON_COLOR.confirm, glow: true, onClick: openCafe });
+    button('openCafe', SCREEN_W / 2 - 160, y + h - 84, 320, 64, t().openCafe, { color: BUTTON_COLOR.confirm, glow: true, onClick: openCafe });
   });
   drawCoinCounter(16, 12);
   drawSoundButtons(SCREEN_W - 124, 16);

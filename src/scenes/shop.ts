@@ -1,13 +1,15 @@
-// The wizard's shop between days: decor (more tips) and helpers (the "Авто" buttons).
+// The wizard's shop between days: decor (more tips) and helpers (the "Auto" buttons).
 import { ctx, SCREEN_H, SCREEN_W } from '../core/canvas';
 import { clock } from '../core/clock';
 import { shade, withAlpha } from '../core/color';
 import { drawCoin, drawGlow, drawPanel, drawText, drawTitle, roundRectPath, withPopIn, wrapText } from '../core/draw';
 import { clamp, easeOutCubic } from '../core/math';
+import { loc } from '../core/language';
 import { drawMotes } from '../core/particles';
 import { BUTTON_COLOR, TEXT } from '../core/theme';
 import { button } from '../core/ui';
 import { SHOP_ITEMS } from '../data/shop';
+import { t } from '../data/strings';
 import type { ShopItemDef } from '../data/types';
 import { buyItem, startNextDay } from '../game/flow';
 import { isOwned, progress, runtime } from '../game/state';
@@ -15,10 +17,7 @@ import { drawKitchenBackground } from '../render/environment';
 import { drawShopItemIcon } from '../render/icons';
 import { dimBackground, drawCoinCounter, drawSoundButtons } from './hud';
 
-const TABS = [
-  { id: 'decor', label: 'Затишок', description: 'Робить кафе чарівнішим і збільшує чайові.' },
-  { id: 'helpers', label: 'Автоматизація', description: 'Дорогі чарівні помічники: кнопка «Авто» на станції.' },
-] as const;
+const TAB_IDS = ['decor', 'helpers'] as const;
 const CARD = { w: 284, h: 140, gap: 12, rowGap: 14, columns: 4, gridX: 60, gridY: 186 };
 const DISABLED_COLOR = '#4c4478';
 
@@ -40,14 +39,14 @@ function drawItemCard(item: ShopItemDef, index: number): void {
   roundRectPath(x, y, w, h, 20); ctx.stroke();
   drawGlow(x + 46, y + 52, 46, '#c9b6ff', 0.3);
   drawShopItemIcon(item.id, x + 46, y + 52, 0.95);
-  const nameLines = wrapText(item.name, w - 100, 16, 900).slice(0, 2);
+  const nameLines = wrapText(loc(item.name), w - 100, 16, 900).slice(0, 2);
   nameLines.forEach((line, j) => drawText(line, x + 92, y + 22 + j * 19, 16, TEXT.main, 'left', 900));
-  const description = item.description + (item.tipBonus ? ` +${Math.round(item.tipBonus * 100)}% чайових.` : '');
+  const description = loc(item.description) + (item.tipBonus ? t().tipBonus(Math.round(item.tipBonus * 100)) : '');
   wrapText(description, w - 100, 13, 700).slice(0, 3)
     .forEach((line, j) => drawText(line, x + 92, y + 24 + nameLines.length * 19 + j * 16, 13, TEXT.muted, 'left', 700));
   ctx.restore();
 
-  if (owned) { drawText('✓ Є в кафе', x + w - 16, y + h - 22, 16, '#5ff0c8', 'right', 900); return; }
+  if (owned) { drawText(t().owned, x + w - 16, y + h - 22, 16, '#5ff0c8', 'right', 900); return; }
   const canAfford = progress.coins >= item.price;
   button('buy_' + item.id, x + w - 132, y + h - 48, 120, 40, '', {
     disabled: !canAfford, silent: true, color: BUTTON_COLOR.gold, onClick: () => buyItem(item),
@@ -72,19 +71,19 @@ export function renderShop(): void {
   dimBackground(0.55);
   withPopIn(runtime.sceneStartTime, SCREEN_W / 2, SCREEN_H / 2, () => {
     drawPanel(30, 70, SCREEN_W - 60, 574);
-    drawTitle('Крамниця чарівника', 60, 116, 32, TEXT.main, 'left');
-    TABS.forEach((tab, i) => {
-      const isActive = runtime.shopTab === tab.id;
-      button('shopTab_' + tab.id, 760 + i * 236, 92, 226, 48, tab.label, {
+    drawTitle(t().shopTitle, 60, 116, 32, TEXT.main, 'left');
+    TAB_IDS.forEach((tab, i) => {
+      const isActive = runtime.shopTab === tab;
+      button('shopTab_' + tab, 760 + i * 236, 92, 226, 48, t().shopTabs[tab].label, {
         color: isActive ? BUTTON_COLOR.magic : '#3d2d82', textColor: isActive ? '#fff' : TEXT.muted, fontSize: 17, sound: 'tab',
-        onClick: () => { runtime.shopTab = tab.id; },
+        onClick: () => { runtime.shopTab = tab; },
       });
     });
-    drawText(TABS.find(tab => tab.id === runtime.shopTab)!.description, 60, 160, 17, TEXT.muted, 'left', 700);
+    drawText(t().shopTabs[runtime.shopTab].description, 60, 160, 17, TEXT.muted, 'left', 700);
     SHOP_ITEMS.filter(item => item.tab === runtime.shopTab).forEach(drawItemCard);
     drawCoinCounter(60, 586);
-    drawText('Нові смаки, форми й прикраси з’являються самі — дивись меню дня.', 226, 608, 15, TEXT.muted, 'left', 700);
-    button('nextDay', SCREEN_W - 340, 578, 280, 56, `Почати день ${progress.day + 1}`, { color: BUTTON_COLOR.confirm, glow: true, onClick: startNextDay });
+    drawText(t().shopFootnote, 226, 608, 15, TEXT.muted, 'left', 700);
+    button('nextDay', SCREEN_W - 340, 578, 280, 56, t().startDay(progress.day + 1), { color: BUTTON_COLOR.confirm, glow: true, onClick: startNextDay });
   });
   drawSoundButtons(SCREEN_W - 124, 12);
 }

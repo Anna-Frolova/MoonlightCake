@@ -1,6 +1,7 @@
 // Shared type definitions. Ids are string unions so the editor autocompletes them
 // and TypeScript catches typos (similar to enums in C#).
 import type { Rgb } from '../core/color';
+import type { Localized } from '../core/language';
 
 export type ShapeId = 'round' | 'square' | 'heart' | 'star';
 export type FlavorId = 'vanilla' | 'chocolate' | 'strawberry' | 'lavender' | 'mint' | 'sky' | 'starry';
@@ -28,18 +29,19 @@ export type Recipe = Partial<Drops>;
 
 // ---------------- definitions (static game data) ----------------
 
-export interface ShapeDef { name: string; noun: string }
-export interface FlavorDef { name: string; color: string; sparkles?: boolean }
-export interface FillingDef { name: string; shortName: string; color: string; glows?: boolean }
-export interface CreamDef { name: string; color: string; glows?: boolean }
-export interface EssenceDef { name: string; color: string; unlockDay: number }
-export interface ToppingDef { name: string }
-export interface GlazeColorDef { id: GlazeColorId; name: string; recipe: Recipe }
-export interface ElementDef { name: string; color: string; signName: string; unlockDay: number }
+// Every player-visible text is `Localized` ({ uk, ja }); read it with `loc(...)` from core/language.
+export interface ShapeDef { name: Localized; noun: Localized }
+export interface FlavorDef { name: Localized; color: string; sparkles?: boolean }
+export interface FillingDef { name: Localized; shortName: Localized; color: string; glows?: boolean }
+export interface CreamDef { name: Localized; color: string; glows?: boolean }
+export interface EssenceDef { name: Localized; color: string; unlockDay: number }
+export interface ToppingDef { name: Localized }
+export interface GlazeColorDef { id: GlazeColorId; name: Localized; recipe: Recipe }
+export interface ElementDef { name: Localized; color: string; signName: Localized; unlockDay: number }
 
 /** A colour palette: every order is built from one of them so its colours harmonise. */
 export interface PaletteDef {
-  name: string;
+  name: Localized;
   /** Three colours shown as dots on the order card. */
   swatches: [string, string, string];
   // Earlier entries in each list are the palette's signature items and are picked more often.
@@ -78,7 +80,7 @@ export interface CatLook {
 
 export interface CatDef extends CatLook {
   id: CatId;
-  name: string;
+  name: Localized;
   /** First day this guest visits the café. */
   firstDay: number;
   voicePitch: number;
@@ -88,10 +90,12 @@ export interface CatDef extends CatLook {
   isGenerous?: boolean;
   favoritePalettes: PaletteId[];
   favoriteShapes: ShapeId[];
-  lines: { hello: string[]; ask: string; good: string[]; ok: string[]; bad: string[] };
+  lines: Localized<CatLines>;
 }
 
-export interface ShopItemDef { id: ShopItemId; tab: 'decor' | 'helpers'; name: string; description: string; price: number; tipBonus?: number }
+export interface CatLines { hello: string[]; ask: string; good: string[]; ok: string[]; bad: string[] }
+
+export interface ShopItemDef { id: ShopItemId; tab: 'decor' | 'helpers'; name: Localized; description: Localized; price: number; tipBonus?: number }
 
 // ---------------- runtime data ----------------
 

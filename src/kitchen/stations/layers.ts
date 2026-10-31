@@ -1,10 +1,12 @@
 // Station 1: pick the shape and stack layers with fillings in between.
 import { sfx } from '../../audio/sfx';
 import { drawText } from '../../core/draw';
+import { loc } from '../../core/language';
 import { burst } from '../../core/particles';
 import { BUTTON_COLOR, TEXT } from '../../core/theme';
 import { button } from '../../core/ui';
 import { FILLINGS, FLAVORS, SHAPES } from '../../data/ingredients';
+import { t } from '../../data/strings';
 import type { FillingId, FlavorId, ShapeId } from '../../data/types';
 import { cakeHeight, countLayers, isStackLocked, MAX_LAYERS } from '../../game/cake';
 import { todaysMenu } from '../../game/state';
@@ -32,7 +34,7 @@ function complainIfLocked(message: string): boolean {
 function setShape(shape: ShapeId): void {
   const cake = currentCake();
   if (cake.shape === shape) return;
-  if (complainIfLocked('Торт уже прикрашено. Щоб змінити форму — «Скинути».')) return;
+  if (complainIfLocked(t().lockedShape)) return;
   cake.shape = shape;
   cake.creamDots = null;
   sfx.place();
@@ -41,8 +43,8 @@ function setShape(shape: ShapeId): void {
 
 function addLayer(flavor: FlavorId): void {
   const cake = currentCake();
-  if (complainIfLocked('Торт уже прикрашено. Щоб змінити коржі — «Скинути».')) return;
-  if (countLayers(cake) >= MAX_LAYERS) { showToast('Максимум — три коржі'); sfx.fail(); return; }
+  if (complainIfLocked(t().lockedLayers)) return;
+  if (countLayers(cake) >= MAX_LAYERS) { showToast(t().maxLayers); sfx.fail(); return; }
   cake.stack.push({ kind: 'layer', flavor, dropProgress: 0 });
   cake.creamDots = null;
   setTimeout(() => {
@@ -53,13 +55,13 @@ function addLayer(flavor: FlavorId): void {
 
 function addFilling(filling: FillingId): void {
   const cake = currentCake();
-  if (complainIfLocked('Торт уже прикрашено. Щоб змінити — «Скинути».')) return;
+  if (complainIfLocked(t().lockedStack)) return;
   const last = cake.stack[cake.stack.length - 1];
   if (!last || last.kind !== 'layer') {
-    showToast(last ? 'Начинка вже є — поклади зверху корж' : 'Спершу поклади корж');
+    showToast(last ? t().fillingAlreadyThere : t().needLayerFirst);
     sfx.fail(); return;
   }
-  if (countLayers(cake) >= MAX_LAYERS) { showToast('Начинка кладеться між коржами, а їх уже три'); sfx.fail(); return; }
+  if (countLayers(cake) >= MAX_LAYERS) { showToast(t().fillingNoRoom); sfx.fail(); return; }
   cake.stack.push({ kind: 'filling', filling, dropProgress: 0 });
   cake.creamDots = null;
   setTimeout(() => {
@@ -77,12 +79,12 @@ function removeTopItem(): void {
 }
 
 export const layersStation: Station = {
-  name: 'Коржі',
-  hint: 'Обери форму, клацай на коржі. Начинку клади між коржами.',
+  get name() { return t().stations.layers.name; },
+  get hint() { return t().stations.layers.hint; },
   helper: 'layers',
   isDone: cake => countLayers(cake) > 0,
-  title: cake => `Коржі · ${countLayers(cake)}/${MAX_LAYERS}`,
-  currentHint: cake => isStackLocked(cake) ? 'Торт уже прикрашено — щоб змінити коржі, натисни «Скинути».' : layersStation.hint,
+  title: cake => t().layersTitle(countLayers(cake), MAX_LAYERS),
+  currentHint: cake => isStackLocked(cake) ? t().lockedHint : layersStation.hint,
 
   drawHeaderButtons(panel, cake, rightEdge) {
     button('undo', rightEdge - 46, panel.y + 7, 46, 38, '↶', {
@@ -93,16 +95,16 @@ export const layersStation: Station = {
   drawTools({ x, y }, cake) {
     const menu = todaysMenu();
     menu.shapes.forEach((shape, i) => toolCard(
-      'shape_' + shape, x + 14 + i * 84, y + 48, 78, 58, SHAPES[shape].name,
+      'shape_' + shape, x + 14 + i * 84, y + 48, 78, 58, loc(SHAPES[shape].name),
       (cx, cy) => drawShapeIcon(shape, cx, cy + 2, 0.8), () => setShape(shape), { selected: cake.shape === shape, labelSize: 12 },
     ));
     menu.flavors.forEach((flavor, i) => toolCard(
-      'flavor_' + flavor, x + 14 + (i % 4) * 84, y + 112 + Math.floor(i / 4) * 68, 78, 62, FLAVORS[flavor].name,
+      'flavor_' + flavor, x + 14 + (i % 4) * 84, y + 112 + Math.floor(i / 4) * 68, 78, 62, loc(FLAVORS[flavor].name),
       (cx, cy) => drawFlavorIcon(flavor, cx, cy, 0.85), () => addLayer(flavor), { silent: true, labelSize: 11 },
     ));
-    drawText('Начинки', x + 20, y + 256, 14, TEXT.label, 'left', 900);
+    drawText(t().fillingsLabel, x + 20, y + 256, 14, TEXT.label, 'left', 900);
     menu.fillings.forEach((filling, i) => toolCard(
-      'filling_' + filling, x + 14 + i * 67, y + 268, 62, 66, FILLINGS[filling].shortName,
+      'filling_' + filling, x + 14 + i * 67, y + 268, 62, 66, loc(FILLINGS[filling].shortName),
       (cx, cy) => drawFillingIcon(filling, cx, cy + 2, 0.75), () => addFilling(filling), { silent: true, labelSize: 11 },
     ));
   },
@@ -110,7 +112,7 @@ export const layersStation: Station = {
   /** The magic spatula picks the shape and stacks the ordered layers with fillings. */
   autoComplete() {
     const cake = currentCake(), order = currentOrder();
-    if (complainIfLocked('Торт уже прикрашено — спершу «Скинути»')) return;
+    if (complainIfLocked(t().lockedAuto)) return;
     cake.shape = order.shape;
     cake.stack = [];
     cake.creamDots = null;

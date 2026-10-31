@@ -3,10 +3,12 @@ import { sfx } from '../audio/sfx';
 import { ctx, SCREEN_W } from '../core/canvas';
 import { clock } from '../core/clock';
 import { drawCoin, drawHeart, drawPanel, drawText, drawTitle, ellipsePath, font, roundRectPath, withPopIn, wrapText } from '../core/draw';
+import { loc } from '../core/language';
 import { clamp, easeOutBack, pickRandom } from '../core/math';
 import { burst, drawMotes, floatingText } from '../core/particles';
 import { BUTTON_COLOR, TEXT } from '../core/theme';
 import { button } from '../core/ui';
+import { t } from '../data/strings';
 import {
   acceptOrder, collectPayment, GUEST_COUNTER_X, isLastGuestOfDay, say, sendGuestAway, spawnNextGuest,
 } from '../game/flow';
@@ -55,7 +57,7 @@ export function updateHall(dt: number): void {
         customer.x = GUEST_COUNTER_X;
         customer.state = 'ordering';
         customer.orderShownFor = 0;
-        say(customer.greeting + ' ' + customer.cat.lines.ask);
+        say(t().orderSpeech(customer.greeting, loc(customer.cat.lines).ask));
         sfx.meow(customer.cat.voicePitch);
       }
       break;
@@ -84,7 +86,7 @@ function startReaction(customer: Customer): void {
   customer.reactionTime = 0;
   const mood = hearts >= 4 ? 'happy' : hearts === 3 ? 'neutral' : 'sad';
   customer.mood = mood;
-  const lines = customer.cat.lines;
+  const lines = loc(customer.cat.lines);
   say(pickRandom(hearts >= 4 ? lines.good : hearts === 3 ? lines.ok : lines.bad));
   sfx.meow(customer.cat.voicePitch, mood);
   collectPayment();
@@ -155,7 +157,7 @@ export function renderHall(): void {
   if (customer) {
     if (customer.speech) drawSpeechBubble(customer);
     if (customer.state === 'ordering' && customer.orderShownFor > 0.25) {
-      button('acceptOrder', BUBBLE.x, runtime.speechBubbleBottom + 16, BUBBLE.w, 58, 'Прийняти замовлення', {
+      button('acceptOrder', BUBBLE.x, runtime.speechBubbleBottom + 16, BUBBLE.w, 58, t().acceptOrder, {
         color: BUTTON_COLOR.confirm, glow: progress.day === 1 && progress.guestIndex === 0, onClick: acceptOrder,
       });
     }
@@ -188,18 +190,21 @@ function drawSpeechBubble(customer: Customer): void {
   ctx.strokeStyle = 'rgba(159,234,255,0.6)'; ctx.lineWidth = 2; traceTail(x + 1); ctx.stroke();
   // name tag
   ctx.font = font(17, 900);
-  const tagW = ctx.measureText(customer.cat.name).width + 30;
+  const catName = loc(customer.cat.name), tagW = ctx.measureText(catName).width + 30;
   ctx.shadowColor = 'rgba(255,111,181,0.7)'; ctx.shadowBlur = 14;
   const tag = ctx.createLinearGradient(x + 20, 0, x + 20 + tagW, 0);
   tag.addColorStop(0, '#ff6fb5'); tag.addColorStop(1, '#9b6bff');
   ctx.fillStyle = tag; roundRectPath(x + 20, y - 16, tagW, 30, 15); ctx.fill();
   ctx.shadowBlur = 0;
-  drawText(customer.cat.name, x + 20 + tagW / 2, y - 1, 17, '#fff', 'center', 900);
+  drawText(catName, x + 20 + tagW / 2, y - 1, 17, '#fff', 'center', 900);
   // text typed so far
-  let charsLeft = Math.floor(speech.visibleChars), lineY = y + 34;
+  // each line's offset in the text: a break may eat a space (Ukrainian) or nothing (Japanese)
+  const visibleChars = Math.floor(speech.visibleChars);
+  let lineStart = 0, lineY = y + 34;
   for (const line of lines) {
-    drawText(line.slice(0, Math.max(0, charsLeft)), x + 22, lineY, 19, TEXT.main, 'left', 700);
-    charsLeft -= line.length + 1;
+    lineStart = Math.max(lineStart, speech.text.indexOf(line, lineStart));
+    drawText(line.slice(0, Math.max(0, visibleChars - lineStart)), x + 22, lineY, 19, TEXT.main, 'left', 700);
+    lineStart += line.length;
     lineY += BUBBLE.lineHeight;
   }
   if (showsOrder && isSpeechFinished(customer)) { // order picture pops in
@@ -213,14 +218,14 @@ function drawSpeechBubble(customer: Customer): void {
 
 /** Hearts, a bar per part of the cake, and the money breakdown. */
 function drawResultCard(customer: Customer): void {
-  const score = customer.score!, t = customer.reactionTime;
+  const score = customer.score!, elapsed = customer.reactionTime;
   const { x, y, w, h } = RESULT_CARD;
-  withPopIn(clock.time - t, x + w / 2, y + h / 2, () => {
+  withPopIn(clock.time - elapsed, x + w / 2, y + h / 2, () => {
     drawPanel(x, y, w, h);
-    drawTitle('Оцінка гостя', x + w / 2, y + 32, 22, TEXT.main);
+    drawTitle(t().guestScore, x + w / 2, y + 32, 22, TEXT.main);
     for (let i = 0; i < 5; i++) {
-      const appearAt = heartAppearTime(i), isOn = i < score.hearts && t >= appearAt;
-      const scale = isOn ? easeOutBack((t - appearAt) * 4) : 1;
+      const appearAt = heartAppearTime(i), isOn = i < score.hearts && elapsed >= appearAt;
+      const scale = isOn ? easeOutBack((elapsed - appearAt) * 4) : 1;
       ctx.save();
       ctx.translate(RESULT_HEARTS.firstX + i * RESULT_HEARTS.spacing, RESULT_HEARTS.y); ctx.scale(scale, scale);
       drawHeart(0, 0, 44, '#ff5fa8', isOn ? 'filled' : 'empty');
@@ -229,31 +234,31 @@ function drawResultCard(customer: Customer): void {
     let rowY = y + 120;
     for (const part of score.parts) {
       const color = part.score >= 0.85 ? BUTTON_COLOR.confirm : part.score >= 0.5 ? BUTTON_COLOR.gold : BUTTON_COLOR.danger;
-      drawText(part.label, x + 26, rowY, 17, TEXT.main, 'left', 800);
+      drawText(t().scoreParts[part.kind], x + 26, rowY, 17, TEXT.main, 'left', 800);
       ctx.fillStyle = 'rgba(255,255,255,0.1)'; roundRectPath(x + 170, rowY - 8, 150, 16, 8); ctx.fill();
       ctx.save();
       ctx.shadowColor = color; ctx.shadowBlur = 8; ctx.fillStyle = color;
-      roundRectPath(x + 170, rowY - 8, Math.max(16, 150 * part.score * clamp(t * 2, 0, 1)), 16, 8); ctx.fill();
+      roundRectPath(x + 170, rowY - 8, Math.max(16, 150 * part.score * clamp(elapsed * 2, 0, 1)), 16, 8); ctx.fill();
       ctx.restore();
       drawText(part.score >= 0.85 ? '✓' : part.score >= 0.5 ? '~' : '✗', x + 342, rowY, 18, color, 'center', 900);
       rowY += 27;
     }
-    if (t > paymentAppearTime(score.hearts)) {
+    if (elapsed > paymentAppearTime(score.hearts)) {
       rowY += 6;
       ctx.strokeStyle = 'rgba(159,234,255,0.25)'; ctx.lineWidth = 2;
       ctx.beginPath(); ctx.moveTo(x + 24, rowY - 14); ctx.lineTo(x + w - 24, rowY - 14); ctx.stroke();
-      for (const [label, value] of [['Оплата', '+' + score.payment], ['Чайові', '+' + score.tips], ['Інгредієнти', '−' + score.ingredientCost]]) {
+      for (const [label, value] of [[t().payment, '+' + score.payment], [t().tips, '+' + score.tips], [t().ingredients, '−' + score.ingredientCost]]) {
         drawText(label, x + 26, rowY, 17, TEXT.muted, 'left', 700);
         drawText(value, x + w - 26, rowY, 17, TEXT.muted, 'right', 800);
         rowY += 23;
       }
-      drawText('Разом', x + 26, rowY + 4, 20, TEXT.main, 'left', 900);
+      drawText(t().total, x + 26, rowY + 4, 20, TEXT.main, 'left', 900);
       drawCoin(x + w - 96, rowY + 4, 11);
       drawText((score.net >= 0 ? '+' : '') + score.net, x + w - 26, rowY + 4, 22, score.net >= 0 ? '#5ff0c8' : '#ff7f9f', 'right', 900);
     }
   });
-  if (t > 1.4 + score.hearts * HEART_INTERVAL || t > 2.6) {
-    button('nextGuest', BUBBLE.x, runtime.speechBubbleBottom + 16, 300, 58, isLastGuestOfDay() ? 'Завершити день' : 'Наступний гість', {
+  if (elapsed > 1.4 + score.hearts * HEART_INTERVAL || elapsed > 2.6) {
+    button('nextGuest', BUBBLE.x, runtime.speechBubbleBottom + 16, 300, 58, isLastGuestOfDay() ? t().finishDay : t().nextGuest, {
       color: BUTTON_COLOR.confirm, onClick: sendGuestAway,
     });
   }

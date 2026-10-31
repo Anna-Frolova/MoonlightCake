@@ -5,9 +5,11 @@ import { sfx } from './audio/sfx';
 import { canvas, ctx, SCREEN_H, SCREEN_W, viewport } from './core/canvas';
 import { clock } from './core/clock';
 import { font } from './core/draw';
+import { applyLanguage } from './core/language';
 import { randomRange } from './core/math';
 import { drawParticles, updateMotes, updateParticles } from './core/particles';
 import { beginUiFrame, findButtonAt, pointer, ui } from './core/ui';
+import { t } from './data/strings';
 import { progress, runtime } from './game/state';
 import { setUpInput } from './input';
 import { updateAutoCream } from './kitchen/stations/cream';
@@ -112,7 +114,7 @@ function render(): void {
   if (offsetY > 70) {
     ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
     ctx.font = font(18, 800); ctx.fillStyle = '#c9b6ff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText('Поверни телефон горизонтально ↻', window.innerWidth / 2, offsetY / 2);
+    ctx.fillText(t().rotatePhone, window.innerWidth / 2, offsetY / 2);
   }
 }
 
@@ -127,6 +129,8 @@ function frame(now: number): void {
 
 setBusEnabled('music', progress.musicOn);
 setBusEnabled('sfx', progress.soundOn);
+applyLanguage();
+document.title = t().gameTitle;
 setUpInput();
 if (import.meta.env.DEV) void import('./debug');
 requestAnimationFrame(frame);

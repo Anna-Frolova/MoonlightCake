@@ -1,6 +1,7 @@
 // Shared kitchen state helpers used by all stations.
 import { sfx } from '../audio/sfx';
 import { burst } from '../core/particles';
+import { t } from '../data/strings';
 import type { Cake } from '../data/types';
 import { cakeHeight, countLayers, createCake } from '../game/cake';
 import { runtime, todaysMenu } from '../game/state';
@@ -30,12 +31,12 @@ export function setUpKitchen(): void {
 /** Shows a hint and returns false when the cake has no layers yet. */
 export function requireLayer(cake: Cake = currentCake()): boolean {
   if (countLayers(cake)) return true;
-  showToast('Спершу поклади корж');
+  showToast(t().needLayerFirst);
   sfx.fail();
   return false;
 }
 
-/** "Скинути": throws the cake away and starts over with the same shape. */
+/** "Reset": throws the cake away and starts over with the same shape. */
 export function resetCake(): void {
   const cake = runtime.cake;
   if (!cake) return;

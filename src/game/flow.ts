@@ -2,11 +2,13 @@
 import { setBusEnabled } from '../audio/engine';
 import { restartMusic } from '../audio/music';
 import { sfx } from '../audio/sfx';
+import { loc, setLanguage, type Language } from '../core/language';
 import { pickRandom } from '../core/math';
 import { burst } from '../core/particles';
 import { pointer } from '../core/ui';
 import { catById, GUESTS } from '../data/cats';
 import { guestsPerDay, STORY_DAYS } from '../data/schedule';
+import { t } from '../data/strings';
 import type { QueuedGuest, ShopItemDef } from '../data/types';
 import { goToScene, showModal, showToast } from '../scenes/sceneManager';
 import { countLayers, CREAM_DONE_COVERAGE } from './cake';
@@ -85,7 +87,7 @@ export function spawnNextGuest(): void {
   if (progress.guestIndex >= queue.length) { endDay(); return; }
   const next = queue[progress.guestIndex], cat = catById(next.cat);
   runtime.customer = {
-    cat, order: generateOrder(cat, progress.day, next.tutorial), greeting: pickRandom(cat.lines.hello),
+    cat, order: generateOrder(cat, progress.day, next.tutorial), greeting: pickRandom(loc(cat.lines).hello),
     state: 'entering', x: GUEST_ENTRY_X, time: 0, mood: 'neutral', speech: null,
     orderShownFor: 0, reactionTime: 0, score: null, servedCake: null, hasPaid: false, orderPicture: null,
   };
@@ -109,14 +111,14 @@ export function acceptOrder(): void {
 export function serveCake(): void {
   const cake = runtime.cake;
   if (!cake || runtime.isServing) return;
-  if (!countLayers(cake)) { showToast('Спершу поклади хоча б один корж!'); sfx.fail(); return; }
+  if (!countLayers(cake)) { showToast(t().needAnyLayer); sfx.fail(); return; }
   const missing: string[] = [];
-  if (cake.creamCoverage < CREAM_MISSING_COVERAGE) missing.push('без крему');
-  if (!cake.glaze) missing.push('без глазурі');
-  if (!cake.toppings.length) missing.push('без прикрас');
-  if (cake.magicQuality === null) missing.push('без чарів');
+  if (cake.creamCoverage < CREAM_MISSING_COVERAGE) missing.push(t().missingCream);
+  if (!cake.glaze) missing.push(t().missingGlaze);
+  if (!cake.toppings.length) missing.push(t().missingToppings);
+  if (cake.magicQuality === null) missing.push(t().missingMagic);
   if (missing.length) {
-    showModal(`Торт ще ${missing.join(', ')}. Усе одно подати?`, 'Подати', 'Доробити', handOverCake);
+    showModal(t().serveAnyway(missing), t().serve, t().keepWorking, handOverCake);
     sfx.tab();
   } else handOverCake();
 }
@@ -132,7 +134,7 @@ function handOverCake(): void {
   customer.mood = 'thinking';
   runtime.draggedTopping = null;
   runtime.isPipingCream = false;
-  goToScene('hall', () => say(pickRandom(['Хм-м…', 'Ану, ану…', 'Мрр… дай-но подивлюся…'])));
+  goToScene('hall', () => say(pickRandom(t().thinking)));
 }
 
 /** Adds the guest's payment to the coins and stats (once). */
@@ -196,13 +198,13 @@ export function startNextDay(): void {
 
 export function buyItem(item: ShopItemDef): void {
   if (isOwned(item.id)) return;
-  if (progress.coins < item.price) { showToast('Не вистачає монеток'); sfx.fail(); return; }
+  if (progress.coins < item.price) { showToast(t().notEnoughCoins); sfx.fail(); return; }
   progress.coins -= item.price;
   progress.owned[item.id] = true;
   saveProgress();
   sfx.buy();
   burst(pointer.x, pointer.y, 28, ['#ffd84a', '#ff9ce6', '#9feaff', '#fff'], { kind: 'star', gravity: 120 });
-  showToast(`Придбано: ${item.name}!`);
+  showToast(t().bought(loc(item.name)));
 }
 
 export function setMusicOn(on: boolean): void {
@@ -226,5 +228,11 @@ export function isCakeReady(): boolean {
 }
 
 export const askStartNewGame = (): void =>
-  showModal('Почати заново? Увесь прогрес буде втрачено.', 'Почати', 'Скасувати', startNewGame, true);
+  showModal(t().confirmNewGame, t().start, t().cancel, startNewGame, true);
 
+
+/** Language switch on the title screen. */
+export function switchLanguage(lang: Language): void {
+  setLanguage(lang);
+  document.title = t().gameTitle;
+}

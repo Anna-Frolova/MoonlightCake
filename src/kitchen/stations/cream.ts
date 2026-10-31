@@ -3,11 +3,13 @@ import { sfx } from '../../audio/sfx';
 import { ctx } from '../../core/canvas';
 import { clock } from '../../core/clock';
 import { drawGlow, drawText, ellipsePath } from '../../core/draw';
+import { loc } from '../../core/language';
 import { randomRange, type Point } from '../../core/math';
 import { burst, emitParticle, floatingText } from '../../core/particles';
 import { BUTTON_COLOR, TEXT } from '../../core/theme';
 import { pointer } from '../../core/ui';
 import { CREAMS } from '../../data/ingredients';
+import { t } from '../../data/strings';
 import type { Cake, CreamId } from '../../data/types';
 import {
   cakeHeight, countLayers, CREAM_DONE_COVERAGE, CREAM_FULL_COVERAGE, createCreamDots, updateCreamCoverage,
@@ -36,7 +38,7 @@ function celebrateCream(cake: Cake, withText: boolean): void {
   cake.creamCompleted = true;
   sfx.chime();
   burst(CAKE_CENTER_X, CAKE_BASE_Y - cakeHeight(cake) / 2, 20, ['#fff', CREAMS[cake.cream!].color], { kind: 'star', gravity: 60 });
-  if (withText) floatingText(CAKE_CENTER_X, CAKE_BASE_Y - cakeHeight(cake) - 60, 'Гарні бортики!', '#fff3c4', 24);
+  if (withText) floatingText(CAKE_CENTER_X, CAKE_BASE_Y - cakeHeight(cake) - 60, t().niceBorders, '#fff3c4', 24);
 }
 
 function selectCream(cream: CreamId): void {
@@ -47,7 +49,7 @@ function selectCream(cream: CreamId): void {
     cake.creamDots?.forEach(dot => { dot.isPiped = false; });
     updateCreamCoverage(cake);
     cake.creamCompleted = false;
-    showToast('Старий крем знято — обводь новим');
+    showToast(t().oldCreamRemoved);
     sfx.poof();
   }
   runtime.selectedCream = cream;
@@ -95,22 +97,22 @@ export function updateAutoCream(dt: number): void {
 }
 
 export const creamStation: Station = {
-  name: 'Крем',
-  hint: 'Обери крем і веди по краях торта — зверху й біля основи.',
+  get name() { return t().stations.cream.name; },
+  get hint() { return t().stations.cream.hint; },
   helper: 'cream',
   isDone: cake => cake.creamCoverage >= CREAM_DONE_COVERAGE,
 
   drawTools(panel, cake) {
     const { x, y, w, h } = panel;
     todaysMenu().creams.forEach((cream, i) => toolCard(
-      'cream_' + cream, x + 14 + (i % 2) * 168, y + 50 + Math.floor(i / 2) * 92, 162, 86, CREAMS[cream].name,
+      'cream_' + cream, x + 14 + (i % 2) * 168, y + 50 + Math.floor(i / 2) * 92, 162, 86, loc(CREAMS[cream].name),
       (cx, cy) => drawCreamIcon(cream, cx, cy, 1.1), () => selectCream(cream), { selected: runtime.selectedCream === cream },
     ));
     const barY = y + h - 64;
-    drawText('Бортики', x + 20, barY, 16, TEXT.label, 'left', 900);
+    drawText(t().creamBorders, x + 20, barY, 16, TEXT.label, 'left', 900);
     drawProgressBar(x + 110, barY - 10, 220, 20, cake.creamCoverage, cake.creamCoverage >= CREAM_DONE_COVERAGE ? BUTTON_COLOR.confirm : BUTTON_COLOR.gold);
     drawText(Math.round(cake.creamCoverage * 100) + '%', x + 220, barY + 1, 14, '#fff', 'center', 900);
-    drawText(runtime.selectedCream ? 'Веди по верхньому краю й по низу' : 'Спершу обери крем', x + w / 2, barY + 34, 15, TEXT.muted, 'center', 700);
+    drawText(runtime.selectedCream ? t().creamHowTo : t().pickCreamFirst, x + w / 2, barY + 34, 15, TEXT.muted, 'center', 700);
   },
 
   /** The enchanted whisk pipes the ordered cream bead by bead. */
@@ -130,8 +132,8 @@ export const creamStation: Station = {
 
   onPointerDown(point, cake) {
     if (!isInCreamZone(point)) return false;
-    if (!countLayers(cake)) { showToast('Спершу поклади корж'); return true; }
-    if (!runtime.selectedCream) { showToast('Обери крем зліва'); return true; }
+    if (!countLayers(cake)) { showToast(t().needLayerFirst); return true; }
+    if (!runtime.selectedCream) { showToast(t().pickCreamLeft); return true; }
     runtime.isPipingCream = true;
     pipeAt(point);
     return true;

@@ -77,18 +77,26 @@ export function drawTitle(text: string, x: number, y: number, size: number, colo
   ctx.restore();
 }
 
+/**
+ * Pieces a line may break between: a word with its trailing spaces, or a single Japanese character
+ * (Japanese has no spaces). Opening brackets stick to the next character and closing punctuation
+ * to the previous one, so a line never starts with 「、」 or 「。」.
+ */
+const CJK = '\u3000-\u30ff\u3400-\u9fff\uff00-\uffef';
+const WRAP_TOKEN = new RegExp(String.raw`[「『（]*[${CJK}][」』）、。！？：ー…・]*|[^\s${CJK}]+\s*|\s+`, 'g');
+
 /** Splits text into lines that fit `maxWidth` (also honours "\n"). */
 export function wrapText(text: string, maxWidth: number, size: number, weight = 700): string[] {
   ctx.font = font(size, weight);
   const lines: string[] = [];
   for (const paragraph of text.split('\n')) {
     let line = '';
-    for (const word of paragraph.split(' ')) {
-      const candidate = line ? line + ' ' + word : word;
-      if (ctx.measureText(candidate).width > maxWidth && line) { lines.push(line); line = word; }
+    for (const token of paragraph.match(WRAP_TOKEN) ?? []) {
+      const candidate = line + token;
+      if (line.trim() && ctx.measureText(candidate.trimEnd()).width > maxWidth) { lines.push(line.trimEnd()); line = token.trimStart(); }
       else line = candidate;
     }
-    lines.push(line);
+    lines.push(line.trimEnd());
   }
   return lines;
 }

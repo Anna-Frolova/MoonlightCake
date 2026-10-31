@@ -3,11 +3,13 @@ import { initAudio } from '../audio/engine';
 import { sfx } from '../audio/sfx';
 import { ctx, SCREEN_H, SCREEN_W } from '../core/canvas';
 import { clock } from '../core/clock';
-import { drawCoin, drawGlassPill, drawGlow, drawPanel, drawText, font, starPath, withPopIn, wrapText } from '../core/draw';
+import { drawCoin, drawGlassPill, drawGlow, drawPanel, drawText, font, roundRectPath, starPath, withPopIn, wrapText } from '../core/draw';
+import { language, LANGUAGES } from '../core/language';
 import { easeOutBack } from '../core/math';
 import { BUTTON_COLOR, TEXT } from '../core/theme';
 import { button, ui } from '../core/ui';
-import { setMusicOn, setSoundOn } from '../game/flow';
+import { t } from '../data/strings';
+import { setMusicOn, setSoundOn, switchLanguage } from '../game/flow';
 import { progress, runtime } from '../game/state';
 import { CAKE_CENTER_X } from '../kitchen/layout';
 
@@ -57,12 +59,39 @@ export function drawSoundButtons(x: number, y: number): void {
     () => { initAudio(); setSoundOn(!progress.soundOn); if (progress.soundOn) sfx.tab(); });
 }
 
-/** "День N · Гість i/n" pill. */
+export const LANGUAGE_SWITCH_W = 168;
+const LANGUAGE_SWITCH_H = 44;
+
+/** Two-part glass capsule "УКР | 日本語"; the current language is lit up. */
+export function drawLanguageSwitch(x: number, y: number): void {
+  const segmentW = LANGUAGE_SWITCH_W / LANGUAGES.length;
+  drawGlassPill(x, y, LANGUAGE_SWITCH_W, LANGUAGE_SWITCH_H);
+  LANGUAGES.forEach(({ id, label }, i) => {
+    const isCurrent = language() === id;
+    button('language_' + id, x + i * segmentW, y, segmentW, LANGUAGE_SWITCH_H, '', {
+      silent: true, hoverScale: isCurrent ? 1 : 1.06,
+      onClick: () => { if (!isCurrent) { switchLanguage(id); sfx.tab(); } },
+      draw: (bx, by, bw, bh, hovered) => {
+        if (isCurrent) {
+          ctx.save();
+          ctx.shadowColor = 'rgba(155,107,255,0.8)'; ctx.shadowBlur = 14;
+          const fill = ctx.createLinearGradient(0, by, 0, by + bh);
+          fill.addColorStop(0, '#b48cff'); fill.addColorStop(1, '#6a3fd8');
+          ctx.fillStyle = fill; roundRectPath(bx + 4, by + 4, bw - 8, bh - 8, (bh - 8) / 2); ctx.fill();
+          ctx.restore();
+        }
+        drawText(label, bx + bw / 2, by + bh / 2 + 1, 17, isCurrent ? '#fff' : hovered ? TEXT.label : TEXT.muted, 'center', 900);
+      },
+    });
+  });
+}
+
+/** "Day N · Guest i/n" pill. */
 export function drawDayCounter(): void {
   const queueLength = progress.guestQueue?.length ?? 0;
   const guestNumber = Math.min(progress.guestIndex + (runtime.customer?.hasPaid ? 0 : 1), queueLength);
   drawGlassPill(16, 12, 236, 44);
-  drawText(`День ${progress.day} · Гість ${guestNumber}/${queueLength}`, 134, 35, 19, TEXT.main, 'center', 800);
+  drawText(t().dayAndGuest(progress.day, guestNumber, queueLength), 134, 35, 19, TEXT.main, 'center', 800);
 }
 
 export function drawToast(): void {

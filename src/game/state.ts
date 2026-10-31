@@ -3,7 +3,7 @@
 //  • `runtime`  — what only lives while the page is open (current scene, cake being built, animations…)
 import type { Vec2 } from '../core/math';
 import { ELEMENTS } from '../data/elements';
-import { ESSENCES, GLAZE_COLORS, TOPPINGS } from '../data/ingredients';
+import { ESSENCES, GLAZE_COLORS } from '../data/ingredients';
 import { SHOP_ITEMS } from '../data/shop';
 import type {
   Cake, CatDef, CreamId, ElementId, EssenceId, GlazeColorDef, Mood, Order, SaveData, ShopItemId, ToppingId,
@@ -40,7 +40,6 @@ export const availableGlazeColors = (): GlazeColorDef[] => {
 };
 /** Sum of tip bonuses from purchased decor. */
 export const decorTipBonus = (): number => SHOP_ITEMS.reduce((sum, item) => sum + (item.tipBonus && isOwned(item.id) ? item.tipBonus : 0), 0);
-export const toppingName = (id: ToppingId) => TOPPINGS[id].name;
 
 // ---------------- runtime-only state ----------------
 

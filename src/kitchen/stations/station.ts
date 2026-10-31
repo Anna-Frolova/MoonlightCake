@@ -10,7 +10,7 @@ export interface Station {
   name: string;
   /** One-line instruction shown above the cake. */
   hint: string;
-  /** Shop helper that adds an "Авто" button to this station. */
+  /** Shop helper that adds an "Auto" button to this station. */
   helper: HelperId;
   /** Shown as a tick on the tab. */
   isDone(cake: Cake): boolean;
@@ -20,9 +20,9 @@ export interface Station {
   currentHint?(cake: Cake): string;
   /** Draws the station's tools inside the left panel. */
   drawTools(panel: Panel, cake: Cake): void;
-  /** Extra buttons in the panel header (e.g. undo), left of the "Авто" button. `rightEdge` is where they must end. */
+  /** Extra buttons in the panel header (e.g. undo), left of the "Auto" button. `rightEdge` is where they must end. */
   drawHeaderButtons?(panel: Panel, cake: Cake, rightEdge: number): void;
-  /** What the helper does when "Авто" is pressed. */
+  /** What the helper does when "Auto" is pressed. */
   autoComplete(): void;
   /** Pointer pressed on the scene (not on a button). Return true if handled. */
   onPointerDown?(point: Point, cake: Cake): boolean;

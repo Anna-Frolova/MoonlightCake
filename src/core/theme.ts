@@ -21,5 +21,7 @@ export const BUTTON_COLOR = {
 /** Dark violet outline used for small drawn objects (toppings, coins, icons). */
 export const INK = '#2e1f55';
 
-export const FONT_FAMILY = 'Nunito, "Segoe UI", system-ui, sans-serif';
+/** Rounded Japanese font: kana and kanji come from it, Latin and Cyrillic stay in Nunito / Comfortaa. */
+export const JAPANESE_FONT_FAMILY = '"M PLUS Rounded 1c"';
+export const FONT_FAMILY = `Nunito, ${JAPANESE_FONT_FAMILY}, "Segoe UI", "Yu Gothic UI", system-ui, sans-serif`;
 export const TITLE_FONT_FAMILY = `Comfortaa, ${FONT_FAMILY}`;

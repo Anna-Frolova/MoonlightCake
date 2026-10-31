@@ -28,7 +28,4 @@ export const MENU_SIZE: Record<MenuCategory, number[]> = {
   toppings: [3, 4, 5, 5, 6],
 };
 
-export const MENU_LABELS: Record<MenuCategory, string> = {
-  shapes: 'Форми', flavors: 'Коржі', fillings: 'Начинки', creams: 'Креми', toppings: 'Прикраси',
-};
 export const MENU_CATEGORIES: MenuCategory[] = ['shapes', 'flavors', 'fillings', 'creams', 'toppings'];

@@ -2,6 +2,7 @@
 import { ctx, SCREEN_W, SCREEN_H } from '../core/canvas';
 import { shade } from '../core/color';
 import { drawGlow, drawText, drawTitle, ellipsePath, roundRectPath, starPath } from '../core/draw';
+import { t } from '../data/strings';
 import type { Cake, HelperId } from '../data/types';
 import { createCake, createCreamDots, updateCreamCoverage } from '../game/cake';
 import { isOwned, progress, runtime } from '../game/state';
@@ -229,8 +230,8 @@ function drawMenuBoard(): void {
   ctx.fillStyle = '#0f1838'; roundRectPath(374, 74, 212, 122, 12); ctx.fill();
   drawGlow(480, 120, 110, '#7ff0ff', 0.08);
   ctx.save(); ctx.shadowColor = '#7ff0ff'; ctx.shadowBlur = 10;
-  drawTitle('Місячний Корж', 480, 102, 21, '#bff6ff');
-  drawText('торти з чарами', 480, 130, 15, '#f2b6ff', 'center', 700);
+  drawTitle(t().gameTitle, 480, 102, 21, '#bff6ff');
+  drawText(t().signSubtitle, 480, 130, 15, '#f2b6ff', 'center', 700);
   ctx.strokeStyle = '#bff6ff'; ctx.lineWidth = 2;
   ctx.beginPath(); ctx.moveTo(462, 160); ctx.lineTo(498, 160); ctx.lineTo(492, 178); ctx.lineTo(468, 178); ctx.closePath(); ctx.stroke();
   starPath(480, 150, 6, 2.5); ctx.stroke();
