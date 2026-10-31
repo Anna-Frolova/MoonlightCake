@@ -2,7 +2,7 @@
 import { setBusEnabled } from './audio/engine';
 import { updateMusic } from './audio/music';
 import { sfx } from './audio/sfx';
-import { canvas, ctx, SCREEN_H, SCREEN_W, viewport } from './core/canvas';
+import { canvas, ctx, fillLetterbox, fitCanvasToWindow, SCREEN_H, SCREEN_W, viewport } from './core/canvas';
 import { clock } from './core/clock';
 import { font } from './core/draw';
 import { applyLanguage } from './core/language';
@@ -29,6 +29,8 @@ import { renderTitle } from './scenes/title';
 const MAX_FRAME_SECONDS = 0.05;
 /** Fade speed between scenes (alpha per second). */
 const FADE_SPEED = 5;
+/** The "rotate your phone" line sits this far above the game in portrait. */
+const ROTATE_HINT_GAP = 32;
 /** Minimum gap between hover sounds. */
 const HOVER_SOUND_INTERVAL = 0.06;
 /** Speeds of falling layers / popping toppings / spreading glaze (progress per second). */
@@ -79,6 +81,7 @@ function updateCakeAnimations(dt: number): void {
 }
 
 function render(): void {
+  fitCanvasToWindow();
   const { scale, offsetX, offsetY, pixelRatio } = viewport;
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.fillStyle = '#0c0824'; ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -113,11 +116,13 @@ function render(): void {
   }
   ctx.restore();
 
+  fillLetterbox();
+
   // portrait phone: ask to rotate (drawn in the letterbox area above the game)
   if (offsetY > 70) {
     ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
     ctx.font = font(18, 800); ctx.fillStyle = '#c9b6ff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(t().rotatePhone, window.innerWidth / 2, offsetY / 2);
+    ctx.fillText(t().rotatePhone, viewport.width / 2, offsetY - ROTATE_HINT_GAP); // just above the game, clear of the notch
   }
 }
 
