@@ -1,6 +1,6 @@
-// The game draws everything into one <canvas> at a fixed logical resolution
-// and scales it to fit the window. The spare space around it (on screens wider or taller
-// than 16:9) is filled with a soft, darkened blur of the scene.
+// The game is laid out on a fixed logical 1280×720 screen, scaled to fit the window.
+// Screens of another shape (phones are wider than 16:9) see more of the logical plane around it:
+// backgrounds fill that `view`, while buttons and characters stay inside 0..1280 × 0..720.
 
 export const SCREEN_W = 1280;
 export const SCREEN_H = 720;
@@ -10,6 +10,9 @@ export const ctx = canvas.getContext('2d')!;
 
 /** How the logical 1280×720 screen maps onto the real window (`width`/`height` = window size in CSS pixels). */
 export const viewport = { scale: 1, offsetX: 0, offsetY: 0, pixelRatio: 1, width: 1, height: 1 };
+
+/** The part of the logical plane that is on screen (includes the area under a notch). */
+export const view = { left: 0, top: 0, right: SCREEN_W, bottom: SCREEN_H };
 
 /** Reads the phone's safe-area insets (notch, rounded corners, home indicator) from CSS env(). */
 const safeAreaProbe = document.createElement('div');
@@ -52,6 +55,10 @@ export function fitCanvasToWindow(): void {
     offsetX: insets.left + (safeWidth - SCREEN_W * scale) / 2,
     offsetY: insets.top + (safeHeight - SCREEN_H * scale) / 2,
   });
+  Object.assign(view, {
+    left: -viewport.offsetX / scale, right: (width - viewport.offsetX) / scale,
+    top: -viewport.offsetY / scale, bottom: (height - viewport.offsetY) / scale,
+  });
 }
 window.addEventListener('resize', fitCanvasToWindow);
 window.visualViewport?.addEventListener('resize', fitCanvasToWindow);
@@ -62,25 +69,10 @@ export function toScreenPoint(clientX: number, clientY: number): { x: number; y:
   return { x: (clientX - viewport.offsetX) / viewport.scale, y: (clientY - viewport.offsetY) / viewport.scale };
 }
 
-// A tiny copy of the frame stretched over the whole window looks like a soft blur of the scene.
-const BACKDROP_W = 48, BACKDROP_H = 27;
-const BACKDROP_DIM = 'rgba(8,4,26,0.55)';
-const backdrop = document.createElement('canvas');
-backdrop.width = BACKDROP_W; backdrop.height = BACKDROP_H;
-const backdropCtx = backdrop.getContext('2d')!;
-
-/** Fills the bars around the game with the blurred scene. Call after the frame is drawn. */
-export function fillLetterbox(): void {
-  const { scale, offsetX, offsetY, pixelRatio, width, height } = viewport;
-  const gameW = SCREEN_W * scale, gameH = SCREEN_H * scale;
-  if (width - gameW < 2 && height - gameH < 2) return;
-  backdropCtx.drawImage(canvas, offsetX * pixelRatio, offsetY * pixelRatio, gameW * pixelRatio, gameH * pixelRatio, 0, 0, BACKDROP_W, BACKDROP_H);
-  ctx.save();
-  ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
-  ctx.beginPath(); ctx.rect(0, 0, width, height); ctx.rect(offsetX, offsetY, gameW, gameH); ctx.clip('evenodd');
-  const cover = Math.max(width / SCREEN_W, height / SCREEN_H) * 1.08, coverW = SCREEN_W * cover, coverH = SCREEN_H * cover;
-  ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
-  ctx.drawImage(backdrop, offsetX + gameW / 2 - coverW / 2, offsetY + gameH / 2 - coverH / 2, coverW, coverH);
-  ctx.fillStyle = BACKDROP_DIM; ctx.fillRect(0, 0, width, height);
-  ctx.restore();
+/** Fills the whole visible area (backgrounds, dimming veils). */
+export function fillView(): void {
+  ctx.fillRect(view.left, view.top, view.right - view.left, view.bottom - view.top);
 }
+
+/** First position of a repeating pattern (`phase + k * spacing`) at or before `from`. */
+export const firstOnGrid = (from: number, spacing: number, phase = 0): number => phase + Math.floor((from - phase) / spacing) * spacing;

@@ -1,5 +1,5 @@
 // After day 5: the Moon Queen's recognition and the total stats; then endless mode.
-import { SCREEN_W } from '../core/canvas';
+import { view } from '../core/canvas';
 import { clock } from '../core/clock';
 import { drawPanel, drawText, drawTitle, withPopIn, wrapText } from '../core/draw';
 import { pickRandom, randomRange } from '../core/math';
@@ -25,7 +25,7 @@ export function renderFinale(): void {
   drawMotes();
   if (Math.random() < FALLING_STAR_CHANCE_PER_FRAME) {
     emitParticle({
-      x: randomRange(0, SCREEN_W), y: -10, vx: randomRange(-20, 20), vy: randomRange(40, 90), life: 6, maxLife: 6,
+      x: randomRange(view.left, view.right), y: view.top - 10, vx: randomRange(-20, 20), vy: randomRange(40, 90), life: 6, maxLife: 6,
       size: randomRange(3, 6), color: pickRandom(['#fff6c8', '#ffd84a', '#c9a0ff', '#8fdcff']), kind: 'star', spin: randomRange(-2, 2),
     });
   }

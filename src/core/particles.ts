@@ -1,5 +1,5 @@
 // Short-lived effect particles (sparkles, hearts, coins, floating text) and ambient magic motes.
-import { ctx, SCREEN_H, SCREEN_W } from './canvas';
+import { ctx, view } from './canvas';
 import { clock } from './clock';
 import { withAlpha } from './color';
 import { drawCoin, drawHeart, ellipsePath, font, starPath } from './draw';
@@ -107,7 +107,7 @@ export function updateMotes(dt: number): void {
   if (motes.length < 50 && Math.random() < dt * 12) {
     const life = randomRange(4, 8);
     motes.push({
-      x: randomRange(0, SCREEN_W), y: randomRange(120, SCREEN_H), vx: randomRange(-8, 8), vy: randomRange(-24, -8),
+      x: randomRange(view.left, view.right), y: randomRange(120, view.bottom), vx: randomRange(-8, 8), vy: randomRange(-24, -8),
       life, maxLife: life, phase: randomRange(0, 6), size: randomRange(1.5, 3.2), color: pickRandom(MOTE_COLORS),
     });
   }

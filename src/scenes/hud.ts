@@ -1,7 +1,7 @@
 // Interface pieces shared by several scenes: coin counter, sound toggles, toast and dialog.
 import { initAudio } from '../audio/engine';
 import { sfx } from '../audio/sfx';
-import { ctx, SCREEN_H, SCREEN_W } from '../core/canvas';
+import { ctx, fillView, SCREEN_H, SCREEN_W } from '../core/canvas';
 import { clock } from '../core/clock';
 import { drawCoin, drawGlassPill, drawGlow, drawPanel, drawText, font, roundRectPath, starPath, withPopIn, wrapText } from '../core/draw';
 import { language, LANGUAGES } from '../core/language';
@@ -119,7 +119,7 @@ export function drawModal(): void {
   const modal = runtime.modal;
   if (!modal) return;
   ui.layer = 1;
-  ctx.fillStyle = 'rgba(8,4,26,0.62)'; ctx.fillRect(0, 0, SCREEN_W, SCREEN_H);
+  ctx.fillStyle = 'rgba(8,4,26,0.62)'; fillView();
   const lines = wrapText(modal.text, 440, 22, 800);
   const w = 520, h = 150 + lines.length * 30, x = SCREEN_W / 2 - w / 2, y = SCREEN_H / 2 - h / 2;
   withPopIn(modal.startTime, SCREEN_W / 2, SCREEN_H / 2, () => {
@@ -137,5 +137,5 @@ export function drawModal(): void {
 /** Darkens the scene behind a popup panel. */
 export function dimBackground(alpha = 0.5): void {
   ctx.fillStyle = `rgba(8,4,26,${alpha})`;
-  ctx.fillRect(0, 0, SCREEN_W, SCREEN_H);
+  fillView();
 }

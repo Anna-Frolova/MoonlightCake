@@ -2,7 +2,7 @@
 import { setBusEnabled } from './audio/engine';
 import { updateMusic } from './audio/music';
 import { sfx } from './audio/sfx';
-import { canvas, ctx, fillLetterbox, fitCanvasToWindow, SCREEN_H, SCREEN_W, viewport } from './core/canvas';
+import { canvas, ctx, fillView, fitCanvasToWindow, SCREEN_H, SCREEN_W, view, viewport } from './core/canvas';
 import { clock } from './core/clock';
 import { font } from './core/draw';
 import { applyLanguage } from './core/language';
@@ -89,7 +89,7 @@ function render(): void {
   const shakeY = runtime.shake ? randomRange(-4, 4) * runtime.shake * 4 : 0;
   ctx.setTransform(scale * pixelRatio, 0, 0, scale * pixelRatio, (offsetX + shakeX) * pixelRatio, (offsetY + shakeY) * pixelRatio);
   ctx.save();
-  ctx.beginPath(); ctx.rect(0, 0, SCREEN_W, SCREEN_H); ctx.clip();
+  ctx.beginPath(); ctx.rect(view.left, view.top, view.right - view.left, view.bottom - view.top); ctx.clip();
 
   // hover uses last frame's buttons, then the scene registers this frame's
   const hovered = runtime.fade ? null : findButtonAt(pointer);
@@ -111,12 +111,10 @@ function render(): void {
 
   if (runtime.fade) { // dark veil with a spinning rune circle
     const alpha = runtime.fade.alpha;
-    ctx.fillStyle = `rgba(10,6,30,${alpha})`; ctx.fillRect(0, 0, SCREEN_W, SCREEN_H);
+    ctx.fillStyle = `rgba(10,6,30,${alpha})`; fillView();
     if (alpha > 0.2) { ctx.globalAlpha = alpha; drawMagicCircle(SCREEN_W / 2, SCREEN_H / 2, 120 + 40 * alpha, clock.time * 8, 0.5); ctx.globalAlpha = 1; }
   }
   ctx.restore();
-
-  fillLetterbox();
 
   // portrait phone: ask to rotate (drawn in the letterbox area above the game)
   if (offsetY > 70) {

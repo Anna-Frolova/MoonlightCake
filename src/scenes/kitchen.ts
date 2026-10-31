@@ -1,6 +1,6 @@
 // The kitchen: the cake in the middle, the order ticket and the station's tools on the left,
 // station tabs at the bottom.
-import { ctx, SCREEN_W } from '../core/canvas';
+import { ctx, SCREEN_W, view } from '../core/canvas';
 import { clock } from '../core/clock';
 import { drawGlassPill, drawPanel, drawText, ellipsePath, font, roundRectPath, starPath } from '../core/draw';
 import { easeOutCubic, lerp } from '../core/math';
@@ -83,8 +83,8 @@ function drawHelperKitten(): void {
 function drawTopBar(): void {
   const bar = ctx.createLinearGradient(0, 0, 0, TOP_BAR_HEIGHT);
   bar.addColorStop(0, 'rgba(30,18,80,0.92)'); bar.addColorStop(1, 'rgba(14,8,44,0.92)');
-  ctx.fillStyle = bar; ctx.fillRect(0, 0, SCREEN_W, TOP_BAR_HEIGHT);
-  ctx.fillStyle = 'rgba(159,234,255,0.35)'; ctx.fillRect(0, TOP_BAR_HEIGHT - 1, SCREEN_W, 1.5);
+  ctx.fillStyle = bar; ctx.fillRect(view.left, view.top, view.right - view.left, TOP_BAR_HEIGHT - view.top);
+  ctx.fillStyle = 'rgba(159,234,255,0.35)'; ctx.fillRect(view.left, TOP_BAR_HEIGHT - 1, view.right - view.left, 1.5);
   drawText(t().dayAndGuest(progress.day, progress.guestIndex + 1, progress.guestQueue!.length), 24, 31, 19, TEXT.main, 'left', 800);
   drawCoinCounter(250, 8);
   drawSoundButtons(420, 8);

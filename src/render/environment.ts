@@ -1,5 +1,5 @@
 // The magical café: hall background, counter and kitchen. Purely decorative.
-import { ctx, SCREEN_W, SCREEN_H } from '../core/canvas';
+import { ctx, firstOnGrid, view } from '../core/canvas';
 import { shade } from '../core/color';
 import { drawGlow, drawText, drawTitle, ellipsePath, roundRectPath, starPath } from '../core/draw';
 import { t } from '../data/strings';
@@ -15,6 +15,8 @@ import { drawHelperIcon } from './icons';
 export const HALL_FLOOR_Y = 548;
 /** Top edge of the counter, where paws and served cakes rest. */
 export const COUNTER_TOP_Y = 508;
+/** Decorative panels on the front of the counter repeat every this many pixels. */
+const COUNTER_PANEL_SPACING = 210;
 
 const SHELF_WOOD = '#4a2c80';
 const SHELF_HIGHLIGHT = '#6a46a8';
@@ -119,10 +121,10 @@ function drawShelfBoard(x: number, y: number, w: number, h: number): void {
 export function drawHallBackground(time: number): void {
   const wall = ctx.createLinearGradient(0, 0, 0, 540);
   wall.addColorStop(0, '#0d0828'); wall.addColorStop(0.55, '#221456'); wall.addColorStop(1, '#3a1f78');
-  ctx.fillStyle = wall; ctx.fillRect(0, 0, SCREEN_W, 540);
+  ctx.fillStyle = wall; ctx.fillRect(view.left, view.top, view.right - view.left, 540 - view.top);
   // wallpaper of faint twinkling stars
   for (let y = 40, row = 0; y < 500; y += 58, row++) {
-    for (let x = (row % 2) * 45 + 25; x < SCREEN_W; x += 90) {
+    for (let x = firstOnGrid(view.left, 90, (row % 2) * 45 + 25); x < view.right; x += 90) {
       ctx.fillStyle = `rgba(160,170,255,${0.05 + 0.04 * Math.sin(time + x * 0.05 + y)})`;
       starPath(x, y, 6, 2.4, 4, 0); ctx.fill();
     }
@@ -283,12 +285,13 @@ function drawChandelier(time: number): void {
 
 function drawGarland(time: number): void {
   const SWAG_WIDTH = 320, SAG = 32, TOP = 18;
-  const wireY = (x: number) => TOP + Math.sin(((x % SWAG_WIDTH) / SWAG_WIDTH) * Math.PI) * SAG;
+  const wireY = (x: number) => TOP + Math.sin((((x % SWAG_WIDTH) + SWAG_WIDTH) % SWAG_WIDTH / SWAG_WIDTH) * Math.PI) * SAG;
+  const firstX = firstOnGrid(view.left, SWAG_WIDTH);
   ctx.strokeStyle = '#3a2a6a'; ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.moveTo(0, TOP);
-  for (let x = 0; x <= SCREEN_W; x += 20) ctx.lineTo(x, wireY(x));
+  ctx.beginPath(); ctx.moveTo(firstX, TOP);
+  for (let x = firstX; x <= view.right + 20; x += 20) ctx.lineTo(x, wireY(x));
   ctx.stroke();
-  for (let x = 20, i = 0; x < SCREEN_W; x += 40, i++) {
+  for (let x = firstX + 20, i = 0; x < view.right; x += 40, i++) {
     const y = wireY(x) + 8, twinkle = 0.6 + 0.4 * Math.sin(time * 2.4 + i * 1.7), color = GARLAND_BULBS[i % 4];
     drawGlow(x, y, 20, color, 0.6 * twinkle);
     ellipsePath(x, y, 5, 7); ctx.fillStyle = color; ctx.fill();
@@ -314,9 +317,8 @@ function getClocheCake(): Cake {
 }
 
 export function drawCounter(time: number): void {
-  ctx.fillStyle = '#24154a'; ctx.fillRect(0, 532, SCREEN_W, SCREEN_H - 532);
-  for (let i = 0; i < 6; i++) { // front panels
-    const x = 24 + i * 210;
+  ctx.fillStyle = '#24154a'; ctx.fillRect(view.left, 532, view.right - view.left, view.bottom - 532);
+  for (let x = firstOnGrid(view.left, COUNTER_PANEL_SPACING, 24), i = 0; x < view.right; x += COUNTER_PANEL_SPACING, i++) { // front panels
     ctx.fillStyle = '#2f1d5e'; roundRectPath(x, 566, 190, 140, 22); ctx.fill();
     ctx.strokeStyle = '#4a3290'; ctx.lineWidth = 3; roundRectPath(x + 10, 576, 170, 120, 16); ctx.stroke();
     ctx.fillStyle = `rgba(127,240,255,${0.25 + 0.15 * Math.sin(time * 2 + i)})`;
@@ -324,11 +326,11 @@ export function drawCounter(time: number): void {
   }
   const edgeLight = ctx.createLinearGradient(0, 534, 0, 552);
   edgeLight.addColorStop(0, 'rgba(127,240,255,0.55)'); edgeLight.addColorStop(1, 'rgba(127,240,255,0)');
-  ctx.fillStyle = edgeLight; ctx.fillRect(0, 534, SCREEN_W, 18);
+  ctx.fillStyle = edgeLight; ctx.fillRect(view.left, 534, view.right - view.left, 18);
   const top = ctx.createLinearGradient(0, 500, 0, 538);
   top.addColorStop(0, '#9a72dc'); top.addColorStop(1, '#5e3aa0');
-  ctx.fillStyle = top; roundRectPath(-10, 504, SCREEN_W + 20, 34, 17); ctx.fill();
-  ctx.fillStyle = 'rgba(255,255,255,0.22)'; roundRectPath(10, 508, SCREEN_W - 20, 6, 3); ctx.fill();
+  ctx.fillStyle = top; roundRectPath(view.left - 10, 504, view.right - view.left + 20, 34, 17); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.22)'; roundRectPath(view.left + 10, 508, view.right - view.left - 20, 6, 3); ctx.fill();
 
   // cloche with a mini cake
   ctx.save(); ctx.translate(310, COUNTER_TOP_Y);
@@ -354,7 +356,7 @@ export function drawCounter(time: number): void {
   if (isOwned('decor:catnip')) for (const potX of [110, 1170]) drawCatnipPot(potX, time);
 
   for (let i = 0; i < 3; i++) { // drifting floor mist
-    const mistX = ((time * 18 + i * 430) % (SCREEN_W + 400)) - 200;
+    const span = view.right - view.left + 400, mistX = view.left - 200 + ((time * 18 + i * span / 3) % span);
     drawGlow(mistX, 548, 200, '#a88cff', 0.1);
   }
 }
@@ -382,9 +384,9 @@ const SHELF_HELPERS: [HelperId, number][] = [['layers', 1045], ['cream', 1105], 
 export function drawKitchenBackground(time: number): void {
   const wall = ctx.createLinearGradient(0, 0, 0, 540);
   wall.addColorStop(0, '#0e0a2c'); wall.addColorStop(1, '#2c1a62');
-  ctx.fillStyle = wall; ctx.fillRect(0, 0, SCREEN_W, 540);
+  ctx.fillStyle = wall; ctx.fillRect(view.left, view.top, view.right - view.left, 540 - view.top);
   for (let y = 60, row = 0; y < 520; y += 44, row++) { // tiles
-    for (let x = (row % 2) * 22 - 22; x < SCREEN_W; x += 44) {
+    for (let x = firstOnGrid(view.left, 44, (row % 2) * 22 - 22); x < view.right; x += 44) {
       ctx.fillStyle = `rgba(140,150,255,${0.04 + 0.02 * Math.sin(time * 0.8 + x * 0.02 + y * 0.03)})`;
       roundRectPath(x + 3, y + 3, 38, 38, 10); ctx.fill();
     }
@@ -408,12 +410,12 @@ export function drawKitchenBackground(time: number): void {
   // table
   const table = ctx.createLinearGradient(0, 520, 0, 650);
   table.addColorStop(0, '#6a46b0'); table.addColorStop(1, '#3e2678');
-  ctx.fillStyle = table; ctx.fillRect(0, 520, SCREEN_W, 130);
-  ctx.fillStyle = 'rgba(255,255,255,0.18)'; ctx.fillRect(0, 520, SCREEN_W, 5);
+  ctx.fillStyle = table; ctx.fillRect(view.left, 520, view.right - view.left, 130);
+  ctx.fillStyle = 'rgba(255,255,255,0.18)'; ctx.fillRect(view.left, 520, view.right - view.left, 5);
   const edgeLight = ctx.createLinearGradient(0, 520, 0, 540);
   edgeLight.addColorStop(0, 'rgba(127,240,255,0.25)'); edgeLight.addColorStop(1, 'rgba(127,240,255,0)');
-  ctx.fillStyle = edgeLight; ctx.fillRect(0, 524, SCREEN_W, 16);
-  ctx.fillStyle = '#140c33'; ctx.fillRect(0, 640, SCREEN_W, 80);
+  ctx.fillStyle = edgeLight; ctx.fillRect(view.left, 524, view.right - view.left, 16);
+  ctx.fillStyle = '#140c33'; ctx.fillRect(view.left, 640, view.right - view.left, view.bottom - 640);
 
   drawCakeStand();
 }
