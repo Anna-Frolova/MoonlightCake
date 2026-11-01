@@ -15,18 +15,30 @@ const TUTORIAL_ORDERS: Record<1 | 2, Order> = {
   },
   2: {
     palette: 'chocolate', shape: 'square', layerCount: 2, flavor: 'chocolate', filling: 'caramel', cream: 'butter',
-    glaze: 'orange', toppings: { pearl: 5 }, element: 'ice', isRoyal: false, isSpecial: false,
+    glaze: 'orange', toppings: { pearl: 3 }, element: 'ice', isRoyal: false, isSpecial: false,
   },
 };
 
 /** Chance that a guest picks one of their favourite palettes / shapes when available. */
 const FAVORITE_PALETTE_CHANCE = 0.9;
 const FAVORITE_SHAPE_CHANCE = 0.85;
-/** Chance of a single topping kind (otherwise two) after day 1. */
-const SINGLE_TOPPING_KIND_CHANCE = 0.55;
-/** A special guest's signature topping: how many of it, and the chance of a second, ordinary topping next to it. */
-const SPECIAL_TOPPING_COUNT = { min: 3, max: 5 };
-const SPECIAL_SECOND_TOPPING_CHANCE = 0.5;
+/**
+ * How many toppings an order asks for, by story day (endless days use the last entry): up to `max` of one kind;
+ * with `secondKindChance` there are two kinds, each up to ~60% of `max`. Starts at 1–3 of one kind.
+ */
+const TOPPING_COUNTS = [
+  { max: 3, secondKindChance: 0 },
+  { max: 3, secondKindChance: 0.25 },
+  { max: 4, secondKindChance: 0.35 },
+  { max: 5, secondKindChance: 0.45 },
+  { max: 6, secondKindChance: 0.45 },
+];
+const SECOND_KIND_SHARE = 0.6;
+const toppingCounts = (day: number) => TOPPING_COUNTS[Math.min(day, TOPPING_COUNTS.length) - 1];
+const maxPerKind = (day: number, kindCount: number): number =>
+  kindCount === 2 ? Math.ceil(toppingCounts(day).max * SECOND_KIND_SHARE) : toppingCounts(day).max;
+/** A special guest always asks for at least this many of their signature topping (but no more than the day allows). */
+const SPECIAL_TOPPING_MIN = 2;
 /** Weights by position in a palette list: the first items are the palette's signature ones. */
 const SIGNATURE_WEIGHTS = [3, 2, 1, 1];
 
@@ -74,7 +86,7 @@ export function canTakeOrder(cat: CatDef): boolean {
 
 export function generateOrder(cat: CatDef, day: number, tutorial?: 1 | 2): Order {
   if (tutorial) return structuredClone(TUTORIAL_ORDERS[tutorial]);
-  if (cat.special) return generateSpecialOrder(cat, cat.special);
+  if (cat.special) return generateSpecialOrder(cat, cat.special, day);
   const storyDay = Math.min(day, STORY_DAYS);
   const menu = todaysMenu();
   const isRoyal = cat.id === 'queen';
@@ -96,14 +108,13 @@ export function generateOrder(cat: CatDef, day: number, tutorial?: 1 | 2): Order
   // toppings: one kind on day 1, then one or two kinds
   const paletteToppings = palette.toppings.filter(t => menu.toppings.includes(t));
   const toppingSource = paletteToppings.length ? paletteToppings : menu.toppings;
-  const kindCount = Math.min(storyDay === 1 ? 1 : Math.random() < SINGLE_TOPPING_KIND_CHANCE ? 1 : 2, toppingSource.length);
+  const kindCount = Math.min(Math.random() < toppingCounts(day).secondKindChance ? 2 : 1, toppingSource.length);
   const kinds: ToppingId[] = [];
   while (kinds.length < kindCount) {
     kinds.push(pickFromPalette(palette.toppings.filter(t => !kinds.includes(t)), menu.toppings.filter(t => !kinds.includes(t))));
   }
-  const maxPerKind = storyDay === 1 ? 4 : kindCount === 2 ? 4 : 6;
   const toppings: Order['toppings'] = {};
-  for (const kind of kinds) toppings[kind] = randomInt(2, maxPerKind);
+  for (const kind of kinds) toppings[kind] = randomInt(1, maxPerKind(day, kindCount));
 
   return {
     palette: paletteId,
@@ -121,11 +132,12 @@ export function generateOrder(cat: CatDef, day: number, tutorial?: 1 | 2): Order
 }
 
 /** A special guest's cake: their own palette and magic, always their signature topping, two or three layers. */
-function generateSpecialOrder(cat: CatDef, special: SpecialGuest): Order {
+function generateSpecialOrder(cat: CatDef, special: SpecialGuest, day: number): Order {
   const menu = todaysMenu(), palette = PALETTES[special.palette];
-  const toppings: Order['toppings'] = { [special.topping]: randomInt(SPECIAL_TOPPING_COUNT.min, SPECIAL_TOPPING_COUNT.max) };
   const extras = palette.toppings.filter(t => t !== special.topping && menu.toppings.includes(t));
-  if (extras.length && Math.random() < SPECIAL_SECOND_TOPPING_CHANCE) toppings[pickRandom(extras)] = randomInt(2, 4);
+  const kindCount = extras.length && Math.random() < toppingCounts(day).secondKindChance ? 2 : 1, most = maxPerKind(day, kindCount);
+  const toppings: Order['toppings'] = { [special.topping]: randomInt(Math.min(SPECIAL_TOPPING_MIN, most), most) };
+  if (kindCount === 2) toppings[pickRandom(extras)] = randomInt(1, most);
   return {
     palette: special.palette,
     shape: pickPreferring(menu.shapes, cat.favoriteShapes, FAVORITE_SHAPE_CHANCE),

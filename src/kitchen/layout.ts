@@ -18,12 +18,16 @@ export const GLAZE_STATION_CAKE_SCALE = 0.72;
  * sits right of the cake, low on the screen, where the right thumb rests on a phone.
  */
 export const CAKE_SIDE_BUTTON = { x: 1136, y: 430, w: 128, h: 92 };
+/** The helper's "Auto" button: under the side button, away from "Serve" in the top bar. */
+export const AUTO_BUTTON = { x: CAKE_SIDE_BUTTON.x, y: CAKE_SIDE_BUTTON.y + CAKE_SIDE_BUTTON.h + 14, w: CAKE_SIDE_BUTTON.w, h: 56 };
 
 export const CAULDRON = { x: CAKE_CENTER_X - 40, y: 592 };
 /** Centre of the cauldron's opening: where elixir pours in and the glaze arc starts. */
 export const CAULDRON_MOUTH = { x: CAULDRON.x, y: CAULDRON.y - 120 };
 /** Max drops the cauldron holds. */
 export const CAULDRON_CAPACITY = 10;
+/** "Empty the cauldron" sits low on the left of the cauldron, far from "Pour" on the right of the cake. */
+export const EMPTY_CAULDRON_BUTTON = { x: CAULDRON.x - 250, y: CAULDRON.y - 42, w: 130, h: 50 };
 
 /** Elixir shelf: bottles stand at `firstX + i * spacing`, all scaled by `bottleScale`. */
 export const ELIXIR_SHELF = { y: 352, firstX: CAULDRON.x - 144, spacing: 72, bottleScale: 1.35, boardWidth: 380 };

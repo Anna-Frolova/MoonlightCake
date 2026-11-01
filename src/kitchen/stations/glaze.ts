@@ -19,7 +19,7 @@ import { BOTTLE_NECK_TOP, drawPotionBottle } from '../../render/potionBottle';
 import { showToast } from '../../scenes/sceneManager';
 import { currentCake, currentOrder, requireLayer } from '../kitchen';
 import {
-  CAKE_BASE_Y, CAKE_SIDE_BUTTON, CAULDRON, CAULDRON_CAPACITY, CAULDRON_MOUTH, ELIXIR_SHELF, POUR_POSITION, POUR_REACH, STATION_CONTROLS,
+  CAKE_BASE_Y, CAKE_SIDE_BUTTON, CAULDRON, CAULDRON_CAPACITY, CAULDRON_MOUTH, ELIXIR_SHELF, EMPTY_CAULDRON_BUTTON, POUR_POSITION, POUR_REACH,
 } from '../layout';
 import type { Station } from './station';
 
@@ -30,7 +30,6 @@ const POUR_TILT = 1.95;
 const RETURN_TO_SHELF_SECONDS = 0.28;
 const GLAZE_ARC_SECONDS = 1;
 const CAULDRON_LABEL_SIZE = 19;
-const EMPTY_BUTTON_WIDTH = 130;
 /** Bottle grab area around its resting point. */
 const BOTTLE_HIT = { halfWidth: 30, above: 62, below: 38 };
 /** The bottle's body rests this far above the shelf board. */
@@ -322,13 +321,13 @@ export const glazeStation: Station = {
   helper: 'glaze',
   isDone: cake => !!cake.glaze,
 
-  /** "Pour on the cake" — big, right of the cake; "empty the cauldron" — in the top right corner. The colour's name is under the cauldron. */
-  drawControls(rightEdge, y, cake) {
-    const total = totalDrops(cake.cauldron), { h } = STATION_CONTROLS, side = CAKE_SIDE_BUTTON;
+  /** "Pour on the cake" — big, right of the cake; "empty the cauldron" — low, left of the cauldron. The colour's name is under the cauldron. */
+  drawControls(_rightEdge, _y, cake) {
+    const total = totalDrops(cake.cauldron), side = CAKE_SIDE_BUTTON, empty = EMPTY_CAULDRON_BUTTON;
     button('pourGlaze', side.x, side.y, side.w, side.h, t().pourOnCake, {
       color: BUTTON_COLOR.pink, fontSize: 26, disabled: total === 0 || !countLayers(cake), glow: total > 0 && !cake.glaze, onClick: pourGlaze,
     });
-    button('emptyCauldron', rightEdge - EMPTY_BUTTON_WIDTH, y, EMPTY_BUTTON_WIDTH, h, t().pourOut, {
+    button('emptyCauldron', empty.x, empty.y, empty.w, empty.h, t().pourOut, {
       color: BUTTON_COLOR.secondary, fontSize: 19, disabled: total === 0, onClick: emptyCauldron,
     });
   },

@@ -18,7 +18,7 @@ import { patienceLeft, patienceMood, PATIENCE_LEVELS } from '../game/patience';
 import { activeGuestTheme, isOwned, progress, runtime, type Customer, type StationIndex } from '../game/state';
 import { currentCake, resetCake } from '../kitchen/kitchen';
 import {
-  CAKE_BASE_Y, CAKE_CENTER_X, GLAZE_STATION_CAKE_SCALE, GLAZE_STATION_CAKE_X, HELPER_KITTEN_SPOT, KITCHEN_MESSAGE_X, STATION_CONTROLS, TABS,
+  AUTO_BUTTON, CAKE_BASE_Y, CAKE_CENTER_X, GLAZE_STATION_CAKE_SCALE, GLAZE_STATION_CAKE_X, HELPER_KITTEN_SPOT, KITCHEN_MESSAGE_X, STATION_CONTROLS, TABS,
   TICKET, TOP_BAR_HEIGHT,
 } from '../kitchen/layout';
 import { drawGlazeArc, drawGlazeStationScenery, drawMovingBottles } from '../kitchen/stations/glaze';
@@ -45,7 +45,6 @@ const HINT_CENTER_X = KITCHEN_MESSAGE_X;
 const HINT_MAX_WIDTH = 480;
 /** The guest's window: cat scale, where the head sits (share of the height), where sweat / anger marks go (from the head). */
 const PORTRAIT = { catScale: 1, headAt: 0.6, markOffset: { x: 82, y: -62 } };
-const AUTO_BUTTON_WIDTH = 110;
 const PATIENCE_BAR_HEIGHT = 16;
 
 /** Moves the cake aside while the glaze station is open (called every frame). */
@@ -169,15 +168,13 @@ function drawPatienceBar(x: number, y: number, w: number, left: number): void {
   ctx.restore();
 }
 
-/** "Auto" (once the helper is bought) and the station's own buttons, right-aligned in the top right corner. */
+/** "Auto" (once the helper is bought) right of the cake under the side button; the station's own buttons. */
 function drawStationControls(cake: Cake): void {
-  const { right, y, h, gap } = STATION_CONTROLS, station = STATIONS[runtime.station];
-  let edge = right;
+  const station = STATIONS[runtime.station], auto = AUTO_BUTTON;
   if (isOwned(helperItemId(station.helper))) {
-    button('auto', right - AUTO_BUTTON_WIDTH, y, AUTO_BUTTON_WIDTH, h, t().auto, { color: BUTTON_COLOR.gold, fontSize: 20, glow: true, onClick: station.autoComplete });
-    edge = right - AUTO_BUTTON_WIDTH - gap;
+    button('auto', auto.x, auto.y, auto.w, auto.h, t().auto, { color: BUTTON_COLOR.gold, fontSize: 22, glow: true, onClick: station.autoComplete });
   }
-  station.drawControls?.(edge, y, cake);
+  station.drawControls?.(STATION_CONTROLS.right, STATION_CONTROLS.y, cake);
 }
 
 function drawStationTabs(cake: Cake): void {
