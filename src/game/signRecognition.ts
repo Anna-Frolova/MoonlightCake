@@ -46,20 +46,23 @@ function normalise(points: Vec2[]): Vec2[] {
 }
 
 /**
- * Every sign in both drawing directions; closed signs also from every starting point,
- * because the player can begin a circle or triangle anywhere.
+ * Every sign (and its accepted alternatives) in both drawing directions; closed signs also from every
+ * starting point, because the player can begin a circle or triangle anywhere.
  */
 const TEMPLATES = (Object.keys(SIGN_SHAPES) as ElementId[]).map(element => {
   const sign = SIGN_SHAPES[element];
-  const outline = sign.closed ? [...sign.points, sign.points[0]] : sign.points;
-  const base = normalise(resampleStroke(outline, SAMPLE_POINTS));
-  const variants = [base, base.slice().reverse()];
-  if (sign.closed) {
-    const loop = base.slice(0, SAMPLE_POINTS - 1);
-    for (let start = 2; start < SAMPLE_POINTS - 1; start += 2) {
-      const rotated = [...loop.slice(start), ...loop.slice(0, start)];
-      rotated.push(rotated[0]);
-      variants.push(rotated, rotated.slice().reverse());
+  const variants: Vec2[][] = [];
+  for (const points of [sign.points, ...(sign.alternatives ?? [])]) {
+    const outline = sign.closed ? [...points, points[0]] : points;
+    const base = normalise(resampleStroke(outline, SAMPLE_POINTS));
+    variants.push(base, base.slice().reverse());
+    if (sign.closed) {
+      const loop = base.slice(0, SAMPLE_POINTS - 1);
+      for (let start = 2; start < SAMPLE_POINTS - 1; start += 2) {
+        const rotated = [...loop.slice(start), ...loop.slice(0, start)];
+        rotated.push(rotated[0]);
+        variants.push(rotated, rotated.slice().reverse());
+      }
     }
   }
   return { element, variants };

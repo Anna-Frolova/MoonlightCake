@@ -78,6 +78,17 @@ function buildGuestQueue(day: number): QueuedGuest[] {
   return queue;
 }
 
+/**
+ * A day saved by an older version of the game may have no special guest: one of the guests still to come
+ * (not a tutorial guest, not the last one) is swapped for a special guest, so every day keeps its special visit.
+ */
+function ensureSpecialGuest(queue: QueuedGuest[], day: number): void {
+  if (queue.some(guest => SPECIAL_GUESTS.some(cat => cat.id === guest.cat))) return;
+  const stillToCome = queue.map((_, i) => i).filter(i => i >= progress.guestIndex && i < queue.length - 1 && !queue[i].tutorial && queue[i].cat !== 'queen');
+  const [special] = pickSpecialGuests(day);
+  if (stillToCome.length && special) queue[stillToCome[randomInt(0, stillToCome.length - 1)]] = { cat: special };
+}
+
 /** Today's special guests: one who visits for the first time today comes for sure, the rest are random and all different. */
 function pickSpecialGuests(day: number): CatId[] {
   const unlocked = SPECIAL_GUESTS.filter(cat => cat.firstDay <= day);
@@ -107,6 +118,7 @@ export function continueGame(): void {
     case 'inDay':
       goToScene('hall', () => {
         if (!progress.guestQueue) progress.guestQueue = buildGuestQueue(progress.day);
+        ensureSpecialGuest(progress.guestQueue, progress.day);
         spawnNextGuest();
       });
       break;

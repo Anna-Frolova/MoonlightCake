@@ -24,11 +24,28 @@ const circlePoints = (count: number): Vec2[] =>
     return [0.5 + Math.cos(angle) * 0.5, 0.5 + Math.sin(angle) * 0.5];
   });
 
+/** A spiral in a 0..1 box: `turns` turns from the outside in, starting at `startAngle`, turning clockwise (1) or not (-1). */
+const spiralPoints = (turns: number, startAngle: number, direction: 1 | -1): Vec2[] =>
+  Array.from({ length: 61 }, (_, i): Vec2 => {
+    const k = i / 60, angle = startAngle + direction * k * Math.PI * 2 * turns, radius = 0.5 * (1 - k * 0.85);
+    return [0.5 + Math.cos(angle) * radius, 0.5 + Math.sin(angle) * radius];
+  });
+
+/**
+ * Every spiral the dark sign accepts: 1.5 to 3 turns, starting anywhere (8 directions), turning either way.
+ * (Drawing it from the inside out is covered too: every sign is also matched backwards.)
+ */
+const SPIRAL_TURNS = [1.5, 2, 2.5, 3];
+const SPIRAL_STARTS = 8;
+const darkSpirals: Vec2[][] = SPIRAL_TURNS.flatMap(turns => Array.from({ length: SPIRAL_STARTS }, (_, s) => -Math.PI / 2 + (s * Math.PI * 2) / SPIRAL_STARTS)
+  .flatMap(start => [spiralPoints(turns, start, 1), spiralPoints(turns, start, -1)]));
+
 /**
  * Reference shapes of the signs in a 0..1 box. `closed` shapes end where they start
- * (the player may begin drawing them anywhere along the outline).
+ * (the player may begin drawing them anywhere along the outline). `points` is the shape shown on the magic
+ * station; `alternatives` are other ways of drawing the same sign that are accepted too.
  */
-export const SIGN_SHAPES: Record<ElementId, { closed: boolean; points: Vec2[] }> = {
+export const SIGN_SHAPES: Record<ElementId, { closed: boolean; points: Vec2[]; alternatives?: Vec2[][] }> = {
   fire: { closed: true, points: [[0.5, 0], [1, 0.88], [0, 0.88]] },
   ice: { closed: true, points: circlePoints(24) },
   bolt: { closed: false, points: [[0.72, 0], [0.22, 0.52], [0.78, 0.46], [0.28, 1]] },
@@ -41,14 +58,8 @@ export const SIGN_SHAPES: Record<ElementId, { closed: boolean; points: Vec2[] }>
       return [0.5 + Math.cos(angle) * 0.5, 0.5 + Math.sin(angle) * 0.5];
     }),
   },
-  // a spiral of two turns, from the outside in
-  dark: {
-    closed: false,
-    points: Array.from({ length: 41 }, (_, i): Vec2 => {
-      const k = i / 40, angle = -Math.PI / 2 + k * Math.PI * 4, radius = 0.5 * (1 - k * 0.85);
-      return [0.5 + Math.cos(angle) * radius, 0.5 + Math.sin(angle) * radius];
-    }),
-  },
+  // a spiral: shown as two turns from the outside in, accepted in any number of turns, start and direction
+  dark: { closed: false, points: spiralPoints(2, -Math.PI / 2, 1), alternatives: darkSpirals },
   // wings: a figure eight lying on its side (∞)
   light: {
     closed: true,
