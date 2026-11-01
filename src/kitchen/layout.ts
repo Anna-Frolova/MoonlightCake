@@ -10,8 +10,14 @@ export const CAKE_CENTER_X = 828;
 export const CAKE_BASE_Y = 556;
 
 /** At the glaze station the cake slides right and shrinks so the shelf and cauldron fit in the middle. */
-export const GLAZE_STATION_CAKE_X = 1120;
-export const GLAZE_STATION_CAKE_SCALE = 0.76;
+export const GLAZE_STATION_CAKE_X = 1000;
+export const GLAZE_STATION_CAKE_SCALE = 0.72;
+
+/**
+ * The main button of a station that you press while working on the cake ("pour the glaze", undo the last layer)
+ * sits right of the cake, low on the screen, where the right thumb rests on a phone.
+ */
+export const CAKE_SIDE_BUTTON = { x: 1136, y: 430, w: 128, h: 92 };
 
 export const CAULDRON = { x: CAKE_CENTER_X - 40, y: 592 };
 /** Centre of the cauldron's opening: where elixir pours in and the glaze arc starts. */
@@ -59,4 +65,4 @@ export const INGREDIENT_SHELF = {
 /** Layers station: shape switches in a row above the shelf. */
 export const SHAPE_SWITCHES = { y: 120, size: 64, gap: 12 };
 /** Magic station: a row of the elements (sign + name) above the cake. */
-export const ELEMENT_ROW = { y: 196, w: 118, h: 84, gap: 10 };
+export const ELEMENT_ROW = { y: 132, w: 104, signSize: 46, gap: 6 };

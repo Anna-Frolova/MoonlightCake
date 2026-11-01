@@ -3,7 +3,7 @@ import { sfx } from '../../audio/sfx';
 import { ctx } from '../../core/canvas';
 import { clock } from '../../core/clock';
 import { shade, withAlpha } from '../../core/color';
-import { drawFittedText, drawGlow, roundRectPath } from '../../core/draw';
+import { drawFittedText, drawGlow, ellipsePath } from '../../core/draw';
 import { loc } from '../../core/language';
 import { pickRandom, randomRange, type Point, type Vec2 } from '../../core/math';
 import { burst, emitParticle, floatingText } from '../../core/particles';
@@ -15,7 +15,7 @@ import { cakeHeight, countLayers } from '../../game/cake';
 import { recognizeSign } from '../../game/signRecognition';
 import { progress, runtime } from '../../game/state';
 import { drawMagicCircle } from '../../render/environment';
-import { drawSign } from '../../render/signs';
+import { drawSign, signPointAt } from '../../render/signs';
 import { showToast } from '../../scenes/sceneManager';
 import { cakeTopY, currentCake, currentOrder, requireLayer } from '../kitchen';
 import { CAKE_BASE_Y, CAKE_CENTER_X, ELEMENT_ROW, MAGIC_DRAW_AREA } from '../layout';
@@ -28,6 +28,10 @@ const STROKE_FADE_SECONDS = 0.7;
 /** New stroke points are added only after the pointer moved this far. */
 const MIN_POINT_SPACING = 4;
 const SCRIBBLE_SOUND_INTERVAL = 0.07;
+/** Signs on the wall: the wanted one bigger and bright, the others smaller and dimmer. */
+const SIGN_SCALE = { wanted: 1.15, other: 0.85, otherAlpha: 0.62 };
+/** The spark tracing the wanted sign: share of the sign per second, a cycle a bit longer than 1 (a pause at the end), tail dots. */
+const SIGN_TRACE = { speed: 0.55, cycle: 1.3, tail: 5 };
 
 /** The elements on the station: the everyday ones, plus the special guest's own magic while they wait. */
 function shownElements(): ElementId[] {
@@ -111,24 +115,32 @@ export const magicStation: Station = {
   helper: 'magic',
   isDone: cake => cake.magicQuality !== null,
 
-  /** The elements in a row above the cake: each sign with its name; the one the guest wants glows. */
+  /**
+   * The elements drawn on the wall above the cake like glowing chalk signs — not buttons: a sign is cast by
+   * drawing it with a finger. A spark keeps tracing the sign the guest wants, showing how to draw it.
+   */
   drawScenery() {
-    const order = currentOrder(), time = clock.time, { y, w, h, gap } = ELEMENT_ROW, elements = shownElements();
-    const left = CAKE_CENTER_X - (elements.length * w + (elements.length - 1) * gap) / 2;
+    const order = currentOrder(), time = clock.time, { y, w, signSize, gap } = ELEMENT_ROW, elements = shownElements();
+    const left = CAKE_CENTER_X - (elements.length * w + (elements.length - 1) * gap) / 2, signY = y + signSize / 2;
     elements.forEach((element, i) => {
       const def = ELEMENTS[element], isOpen = def.unlockDay <= progress.day, isWanted = order.element === element;
-      const x = left + i * (w + gap), centerX = x + w / 2;
+      const centerX = left + i * (w + gap) + w / 2, size = signSize * (isWanted ? SIGN_SCALE.wanted : SIGN_SCALE.other);
       ctx.save();
-      if (isWanted) { ctx.shadowColor = def.color; ctx.shadowBlur = 16 + 8 * Math.sin(time * 4); }
-      const fill = ctx.createLinearGradient(0, y, 0, y + h);
-      fill.addColorStop(0, isWanted ? '#5a44a8' : '#3d2e86'); fill.addColorStop(1, isWanted ? '#3a2a80' : '#281d62');
-      ctx.fillStyle = fill; roundRectPath(x, y, w, h, 16); ctx.fill();
-      ctx.shadowBlur = 0;
-      ctx.strokeStyle = isWanted ? withAlpha(def.color, 0.9) : 'rgba(200,180,255,0.2)'; ctx.lineWidth = isWanted ? 2.5 : 1.2; ctx.stroke();
-      ctx.globalAlpha = isOpen ? 1 : 0.35;
-      drawGlow(centerX, y + 32, 34, def.color, isWanted ? 0.45 : 0.25);
-      drawSign(element, centerX, y + 32, 38, def.color, 3);
-      drawFittedText(isOpen ? loc(def.name) : t().lockedDay(def.unlockDay), centerX, y + h - 14, 17, w - 10, isOpen ? TEXT.main : TEXT.muted, 'center', 900);
+      ctx.globalAlpha = !isOpen ? 0.25 : isWanted ? 1 : SIGN_SCALE.otherAlpha;
+      if (isWanted) drawGlow(centerX, signY, signSize * 1.3, def.color, 0.3 + 0.1 * Math.sin(time * 3));
+      drawSign(element, centerX, signY, size, def.color, isWanted ? 4 : 2.5);
+      if (isWanted) { // the tracing spark with a short fading tail; it rests a moment at the end of the sign
+        const k = Math.min(1, (time * SIGN_TRACE.speed) % SIGN_TRACE.cycle);
+        for (let tail = SIGN_TRACE.tail; tail >= 0; tail--) {
+          const [sx, sy] = signPointAt(element, centerX, signY, size, Math.max(0, k - tail * 0.025));
+          ctx.fillStyle = withAlpha('#ffffff', 1 - tail / (SIGN_TRACE.tail + 1));
+          ellipsePath(sx, sy, 4.5 - tail * 0.5, 4.5 - tail * 0.5); ctx.fill();
+        }
+        const [sx, sy] = signPointAt(element, centerX, signY, size, k);
+        drawGlow(sx, sy, 18, def.color, 0.9);
+      }
+      ctx.shadowColor = 'rgba(20,10,50,0.9)'; ctx.shadowBlur = 5; // readable on the bright heaven kitchen too
+      drawFittedText(isOpen ? loc(def.name) : t().lockedDay(def.unlockDay), centerX, y + signSize + 16, 16, w - 6, isWanted ? TEXT.main : TEXT.muted, 'center', 900);
       ctx.restore();
     });
   },

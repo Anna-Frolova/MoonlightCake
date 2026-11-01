@@ -3,26 +3,31 @@ import { ctx, SCREEN_H, SCREEN_W } from '../core/canvas';
 import { clock } from '../core/clock';
 import { drawFittedText, drawPanel, drawText, drawTitle, font, roundRectPath, withPopIn, wrapText } from '../core/draw';
 import { loc } from '../core/language';
+import { clamp } from '../core/math';
 import { drawMotes } from '../core/particles';
 import { BUTTON_COLOR, TEXT } from '../core/theme';
 import { button } from '../core/ui';
-import { GUESTS } from '../data/cats';
+import { GUESTS, SPECIAL_GUESTS } from '../data/cats';
 import { ELEMENT_ORDER, ELEMENTS } from '../data/elements';
 import { CREAMS, ESSENCE_ORDER, ESSENCES, FILLINGS, FLAVORS, SHAPES, TOPPINGS } from '../data/ingredients';
-import { guestsPerDay, STORY_DAYS } from '../data/schedule';
+import { guestsPerDay, MENU_CATEGORIES, STORY_DAYS } from '../data/schedule';
 import { t } from '../data/strings';
-import type { CreamId, FillingId, FlavorId, MenuCategory, ShapeId, ToppingId } from '../data/types';
+import type { CreamId, FillingId, FlavorId, MenuCategory, MenuLists, ShapeId, ToppingId } from '../data/types';
 import { openCafe } from '../game/flow';
 import { progress, runtime, todaysMenu } from '../game/state';
 import { drawCounter, drawHallBackground } from '../render/environment';
 import { drawMenuItemIcon } from '../render/icons';
 import { dimBackground, drawCoinCounter, drawSoundButtons } from './hud';
 
-const PANEL = { x: 130, y: 52, w: 1020, h: 616 };
-const MENU_TILE = { w: 74, h: 70, spacing: 82, labelOffset: 96 };
-const MENU_ROW_SPACING = 92;
-const BADGE_SIZE = 12;
+const PANEL = { x: 40, y: 64, w: 1200, h: 640 };
 const NOTE_SIZE = 20;
+/** The menu changes are laid out in this area (between the news and the button), in tiles as big as will fit. */
+const MENU_AREA = { x: PANEL.x + 40, w: PANEL.w - 80, bottom: PANEL.y + PANEL.h - 92, minTop: PANEL.y + 128 };
+/** Tile width is tried from `max` down to `min`; height = width × heightRatio. Icons fill a bit more of the tile than the old 74 px tile at scale 0.72 did. */
+const MENU_TILE = { max: 160, min: 84, step: 4, gap: 12, heightRatio: 0.92, iconScalePerPixel: 0.88 / 74, maxLabelSize: 20 };
+/** Two sections (new / resting) stand side by side, the columns as wide as their share of the tiles (within min..max). */
+const SECTION = { titleHeight: 40, titleSize: 24, columnGap: 44, minShare: 0.3, maxShare: 0.7 };
+const BADGE_SIZE = 13;
 
 function menuItemName(category: MenuCategory, id: string): string {
   switch (category) {
@@ -34,37 +39,98 @@ function menuItemName(category: MenuCategory, id: string): string {
   }
 }
 
-/** One row of the menu: category label + item tiles, with "new" / "again" badges. */
-function drawMenuRow(category: MenuCategory, x: number, y: number): void {
+interface MenuTile { category: MenuCategory; id: string; badge: 'new' | 'again' | null }
+interface MenuSection { title: string; tiles: MenuTile[]; isResting: boolean }
+
+/**
+ * Only what changed: day 1 shows the whole (new) menu; later days show what is new or back today
+ * and what is resting today. Everything else is on the menu as yesterday.
+ */
+function menuSections(): MenuSection[] {
   const menu = todaysMenu();
-  drawFittedText(t().menuLabels[category], x, y + 26, 19, MENU_TILE.labelOffset - 8, TEXT.label, 'left', 900);
-  (menu[category] as string[]).forEach((id, i) => {
-    const tileX = x + MENU_TILE.labelOffset + i * MENU_TILE.spacing;
-    const isFresh = (menu.fresh[category] as string[]).includes(id), isReturning = (menu.returning[category] as string[]).includes(id);
-    const lift = Math.sin(clock.time * 2 + i + x) * 2;
-    ctx.fillStyle = 'rgba(255,255,255,0.07)'; roundRectPath(tileX, y - 2 + lift, MENU_TILE.w, MENU_TILE.h, 16); ctx.fill();
-    if (isFresh || isReturning) {
-      ctx.strokeStyle = isFresh ? 'rgba(255,156,230,0.8)' : 'rgba(159,234,255,0.7)'; ctx.lineWidth = 2; ctx.stroke();
+  const collect = (lists: MenuLists, badge: (category: MenuCategory, id: string) => MenuTile['badge']): MenuTile[] =>
+    MENU_CATEGORIES.flatMap(category => (lists[category] as string[]).map(id => ({ category, id, badge: badge(category, id) })));
+  if (progress.day === 1) return [{ title: t().menuTitle, tiles: collect(menu, () => null), isResting: false }];
+  const added: MenuLists = { shapes: [], flavors: [], fillings: [], creams: [], toppings: [] };
+  for (const category of MENU_CATEGORIES) (added[category] as string[]) = [...menu.fresh[category], ...menu.returning[category]];
+  const sections: MenuSection[] = [];
+  const fresh = collect(added, (category, id) => ((menu.fresh[category] as string[]).includes(id) ? 'new' : 'again'));
+  if (fresh.length) sections.push({ title: t().menuNewToday, tiles: fresh, isResting: false });
+  const resting = collect(menu.resting, () => null);
+  if (resting.length) sections.push({ title: t().menuRestingToday, tiles: resting, isResting: true });
+  return sections;
+}
+
+interface MenuColumn { section: MenuSection; left: number; width: number }
+
+/** One column per section across the menu area; with two sections the one with more tiles gets more room. */
+function menuColumns(sections: MenuSection[]): MenuColumn[] {
+  if (sections.length === 1) return [{ section: sections[0], left: MENU_AREA.x, width: MENU_AREA.w }];
+  const [first, second] = sections, usable = MENU_AREA.w - SECTION.columnGap;
+  const share = clamp(first.tiles.length / (first.tiles.length + second.tiles.length), SECTION.minShare, SECTION.maxShare);
+  return [
+    { section: first, left: MENU_AREA.x, width: usable * share },
+    { section: second, left: MENU_AREA.x + usable * share + SECTION.columnGap, width: usable * (1 - share) },
+  ];
+}
+
+const tilesPerRow = (columnWidth: number, w: number): number => Math.max(1, Math.floor((columnWidth + MENU_TILE.gap) / (w + MENU_TILE.gap)));
+
+/** The biggest tile width at which every column fits into the area (`height` px tall). */
+function fitTileWidth(columns: MenuColumn[], height: number): number {
+  for (let w = MENU_TILE.max; w > MENU_TILE.min; w -= MENU_TILE.step) {
+    const fits = columns.every(({ section, width }) =>
+      SECTION.titleHeight + Math.ceil(section.tiles.length / tilesPerRow(width, w)) * (w * MENU_TILE.heightRatio + MENU_TILE.gap) <= height);
+    if (fits) return w;
+  }
+  return MENU_TILE.min;
+}
+
+/** The sections in columns, each under its title, rows of tiles centred in the column. */
+function drawMenuSections(top: number): void {
+  const sections = menuSections();
+  if (!sections.length) { drawText(t().menuSameAsYesterday, SCREEN_W / 2, top + 40, 22, TEXT.muted, 'center', 800); return; }
+  const columns = menuColumns(sections);
+  const w = fitTileWidth(columns, MENU_AREA.bottom - top), h = w * MENU_TILE.heightRatio;
+  columns.forEach(({ section, left, width }, columnIndex) => {
+    const centerX = left + width / 2, perRow = tilesPerRow(width, w), rowsTop = top + SECTION.titleHeight;
+    drawTitle(section.title, centerX, top + SECTION.titleHeight / 2 - 4, SECTION.titleSize, section.isResting ? TEXT.muted : TEXT.main);
+    if (columnIndex > 0) { // a faint divider between the columns
+      ctx.fillStyle = 'rgba(159,234,255,0.18)'; ctx.fillRect(left - SECTION.columnGap / 2 - 1, top + 6, 2, MENU_AREA.bottom - top - 12);
     }
-    drawMenuItemIcon(category, id, tileX + MENU_TILE.w / 2, y + 26 + lift, 0.72);
-    drawFittedText(menuItemName(category, id), tileX + MENU_TILE.w / 2, y + 57 + lift, 14, MENU_TILE.spacing - 4, TEXT.main, 'center', 800);
-    if (isFresh || isReturning) {
-      const label = isFresh ? t().badgeNew : t().badgeAgain;
-      ctx.font = font(BADGE_SIZE, 900);
-      const badgeW = ctx.measureText(label).width + 12, badgeX = tileX + MENU_TILE.w - badgeW + 4;
-      ctx.save();
-      ctx.shadowColor = isFresh ? '#ff6fb5' : '#5fd8ff'; ctx.shadowBlur = 10;
-      ctx.fillStyle = isFresh ? '#ff6fb5' : '#36b8e0'; roundRectPath(badgeX, y - 12 + lift, badgeW, 20, 10); ctx.fill();
-      ctx.restore();
-      drawText(label, badgeX + badgeW / 2, y - 1 + lift, BADGE_SIZE, '#fff', 'center', 900);
-    }
+    section.tiles.forEach((tile, i) => {
+      const row = Math.floor(i / perRow), inRow = Math.min(perRow, section.tiles.length - row * perRow);
+      const rowLeft = centerX - (inRow * w + (inRow - 1) * MENU_TILE.gap) / 2;
+      drawMenuTile(tile, rowLeft + (i % perRow) * (w + MENU_TILE.gap), rowsTop + row * (h + MENU_TILE.gap), w, h, section.isResting, i);
+    });
   });
+}
+
+/** A tile: the item's picture and name, a "new" / "again" badge; resting items are dimmed. */
+function drawMenuTile(tile: MenuTile, x: number, y: number, w: number, h: number, isResting: boolean, index: number): void {
+  const lift = Math.sin(clock.time * 2 + index) * 2;
+  ctx.save();
+  if (isResting) ctx.globalAlpha = 0.5;
+  ctx.fillStyle = 'rgba(255,255,255,0.08)'; roundRectPath(x, y + lift, w, h, 18); ctx.fill();
+  if (tile.badge) { ctx.strokeStyle = tile.badge === 'new' ? 'rgba(255,156,230,0.85)' : 'rgba(159,234,255,0.75)'; ctx.lineWidth = 2.5; ctx.stroke(); }
+  drawMenuItemIcon(tile.category, tile.id, x + w / 2, y + h * 0.4 + lift, w * MENU_TILE.iconScalePerPixel);
+  drawFittedText(menuItemName(tile.category, tile.id), x + w / 2, y + h * 0.86 + lift, Math.min(MENU_TILE.maxLabelSize, w * 0.17), w - 8, TEXT.main, 'center', 800);
+  ctx.restore();
+  if (!tile.badge) return;
+  const label = tile.badge === 'new' ? t().badgeNew : t().badgeAgain, color = tile.badge === 'new' ? '#ff6fb5' : '#36b8e0';
+  ctx.font = font(BADGE_SIZE, 900);
+  const badgeW = ctx.measureText(label).width + 14, badgeX = x + w - badgeW + 6;
+  ctx.save();
+  ctx.shadowColor = color; ctx.shadowBlur = 10;
+  ctx.fillStyle = color; roundRectPath(badgeX, y - 11 + lift, badgeW, 22, 11); ctx.fill();
+  ctx.restore();
+  drawText(label, badgeX + badgeW / 2, y + lift, BADGE_SIZE, '#fff', 'center', 900);
 }
 
 /** Short notes about what's new today (the basics are taught by the tutorial). */
 function todaysNews(day: number): string[] {
   const notes: string[] = [];
-  const newGuests = GUESTS.filter(cat => cat.firstDay === day && day > 1).map(cat => loc(cat.name));
+  const newGuests = [...GUESTS, ...SPECIAL_GUESTS].filter(cat => cat.firstDay === day && day > 1).map(cat => loc(cat.name));
   if (newGuests.length) notes.push(t().newGuestsNote(newGuests));
   const newEssences = ESSENCE_ORDER.filter(e => ESSENCES[e].unlockDay === day && day > 1);
   if (newEssences.length) notes.push(t().newEssenceNote(newEssences.map(e => loc(ESSENCES[e].name))));
@@ -92,14 +158,7 @@ export function renderDayStart(): void {
       for (const line of wrapText(note, w - 120, NOTE_SIZE, 700)) { drawText(line, SCREEN_W / 2, textY, NOTE_SIZE, TEXT.main, 'center', 700); textY += 28; }
     }
 
-    const menuTitleY = Math.max(y + 176, textY + 14);
-    drawTitle(t().menuTitle, x + 46, menuTitleY, 25, TEXT.main, 'left');
-    const rowsY = menuTitleY + 30, leftX = x + 46, rightX = x + 560;
-    drawMenuRow('flavors', leftX, rowsY);
-    drawMenuRow('fillings', leftX, rowsY + MENU_ROW_SPACING);
-    drawMenuRow('creams', leftX, rowsY + MENU_ROW_SPACING * 2);
-    drawMenuRow('shapes', rightX, rowsY);
-    drawMenuRow('toppings', rightX, rowsY + MENU_ROW_SPACING);
+    drawMenuSections(Math.max(MENU_AREA.minTop, textY + 4));
     button('openCafe', SCREEN_W / 2 - 160, y + h - 76, 320, 64, t().openCafe, { color: BUTTON_COLOR.confirm, fontSize: 23, glow: true, onClick: openCafe });
   });
   drawCoinCounter(16, 12);

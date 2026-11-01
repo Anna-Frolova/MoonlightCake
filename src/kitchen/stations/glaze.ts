@@ -19,7 +19,7 @@ import { BOTTLE_NECK_TOP, drawPotionBottle } from '../../render/potionBottle';
 import { showToast } from '../../scenes/sceneManager';
 import { currentCake, currentOrder, requireLayer } from '../kitchen';
 import {
-  CAKE_BASE_Y, CAULDRON, CAULDRON_CAPACITY, CAULDRON_MOUTH, ELIXIR_SHELF, POUR_POSITION, POUR_REACH, STATION_CONTROLS,
+  CAKE_BASE_Y, CAKE_SIDE_BUTTON, CAULDRON, CAULDRON_CAPACITY, CAULDRON_MOUTH, ELIXIR_SHELF, POUR_POSITION, POUR_REACH, STATION_CONTROLS,
 } from '../layout';
 import type { Station } from './station';
 
@@ -30,7 +30,7 @@ const POUR_TILT = 1.95;
 const RETURN_TO_SHELF_SECONDS = 0.28;
 const GLAZE_ARC_SECONDS = 1;
 const CAULDRON_LABEL_SIZE = 19;
-const POUR_BUTTON_WIDTH = 200, EMPTY_BUTTON_WIDTH = 130;
+const EMPTY_BUTTON_WIDTH = 130;
 /** Bottle grab area around its resting point. */
 const BOTTLE_HIT = { halfWidth: 30, above: 62, below: 38 };
 /** The bottle's body rests this far above the shelf board. */
@@ -322,13 +322,13 @@ export const glazeStation: Station = {
   helper: 'glaze',
   isDone: cake => !!cake.glaze,
 
-  /** Empty the cauldron / pour the glaze — in the top right corner; the colour's name is under the cauldron. */
+  /** "Pour on the cake" — big, right of the cake; "empty the cauldron" — in the top right corner. The colour's name is under the cauldron. */
   drawControls(rightEdge, y, cake) {
-    const total = totalDrops(cake.cauldron), { h, gap } = STATION_CONTROLS;
-    button('pourGlaze', rightEdge - POUR_BUTTON_WIDTH, y, POUR_BUTTON_WIDTH, h, t().pourOnCake, {
-      color: BUTTON_COLOR.pink, fontSize: 20, disabled: total === 0 || !countLayers(cake), onClick: pourGlaze,
+    const total = totalDrops(cake.cauldron), { h } = STATION_CONTROLS, side = CAKE_SIDE_BUTTON;
+    button('pourGlaze', side.x, side.y, side.w, side.h, t().pourOnCake, {
+      color: BUTTON_COLOR.pink, fontSize: 26, disabled: total === 0 || !countLayers(cake), glow: total > 0 && !cake.glaze, onClick: pourGlaze,
     });
-    button('emptyCauldron', rightEdge - POUR_BUTTON_WIDTH - gap - EMPTY_BUTTON_WIDTH, y, EMPTY_BUTTON_WIDTH, h, t().pourOut, {
+    button('emptyCauldron', rightEdge - EMPTY_BUTTON_WIDTH, y, EMPTY_BUTTON_WIDTH, h, t().pourOut, {
       color: BUTTON_COLOR.secondary, fontSize: 19, disabled: total === 0, onClick: emptyCauldron,
     });
   },

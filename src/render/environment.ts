@@ -447,8 +447,9 @@ function drawOrdinaryKitchen(time: number): void {
   ctx.fillStyle = '#140c33'; ctx.fillRect(view.left, 640, view.right - view.left, view.bottom - 640);
 }
 
-/** Shelf with the bought helpers (empty dashed slots otherwise). */
+/** Shelf with the bought helpers (empty dashed slots otherwise). Hidden on the magic station (index 4), where the signs hang. */
 function drawHelperShelf(time: number): void {
+  if (runtime.station === 4) return;
   const shelf = HELPER_SHELF;
   drawShelfBoard(shelf.x, shelf.y, shelf.w, 16);
   SHELF_HELPERS.forEach((helper, i) => {

@@ -15,7 +15,7 @@ import { drawShapeIcon } from '../../render/icons';
 import { drawFillingJar, drawLayerPiece } from '../../render/shelfItems';
 import { showToast } from '../../scenes/sceneManager';
 import { cakeTopY, currentCake, currentOrder, SPARKLE_COLORS } from '../kitchen';
-import { CAKE_BASE_Y, CAKE_CENTER_X, HELPER_SHELF, SHAPE_SWITCHES, STATION_CONTROLS } from '../layout';
+import { CAKE_BASE_Y, CAKE_CENTER_X, CAKE_SIDE_BUTTON, HELPER_SHELF, SHAPE_SWITCHES } from '../layout';
 import { drawIngredientShelf, isOverShelfItem, shelfItemXs } from '../widgets';
 import type { Station } from './station';
 
@@ -25,7 +25,6 @@ const LAND_SOUND_DELAY_MS = 160;
 const AUTO_STACK_INTERVAL_MS = 150;
 /** Where the helper's sparkle appears (its spot on the shelf). */
 const HELPER_SHELF_SPOT = { x: HELPER_SHELF.slotXs[0], y: HELPER_SHELF.y - 24 };
-const UNDO_BUTTON_WIDTH = 60;
 
 function complainIfLocked(message: string): boolean {
   if (!isStackLocked(currentCake())) return false;
@@ -122,9 +121,11 @@ export const layersStation: Station = {
   isDone: cake => countLayers(cake) > 0,
   currentHint: cake => isStackLocked(cake) ? t().lockedHint : null,
 
-  drawControls(rightEdge, y, cake) {
-    button('undo', rightEdge - UNDO_BUTTON_WIDTH, y, UNDO_BUTTON_WIDTH, STATION_CONTROLS.h, '↶', {
-      color: BUTTON_COLOR.secondary, fontSize: 26, disabled: isStackLocked(cake) || !cake.stack.length, onClick: removeTopItem,
+  drawControls(_rightEdge, _y, cake) {
+    // undo sits right of the cake, under the right thumb (the layers are added by tapping the shelf above the cake)
+    const side = CAKE_SIDE_BUTTON, size = side.h;
+    button('undo', side.x + (side.w - size) / 2, side.y, size, size, '↶', {
+      color: BUTTON_COLOR.secondary, fontSize: 40, radius: size / 2, disabled: isStackLocked(cake) || !cake.stack.length, onClick: removeTopItem,
     });
   },
 
