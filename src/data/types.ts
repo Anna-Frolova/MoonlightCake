@@ -72,7 +72,8 @@ export type CatOutfit = 'none' | 'dress' | 'vest' | 'cloak' | 'sailor' | 'rainco
 export type CatAccessory = 'none' | 'monocle' | 'glasses' | 'bow' | 'fangs';
 /** Drawn behind the cat: wings or a cape with a tall collar. */
 export type CatBack = 'none' | 'batWings' | 'featherWings' | 'cape';
-export type Mood = 'neutral' | 'happy' | 'sad' | 'thinking' | 'angry' | 'surprised';
+/** `smile`: a light smile with open eyes (`happy` is the big beaming face with closed eyes). */
+export type Mood = 'neutral' | 'happy' | 'sad' | 'thinking' | 'angry' | 'surprised' | 'smile';
 
 /** How a cat looks (also used for the chef mascot and the helper kitten). */
 export interface CatLook {

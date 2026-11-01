@@ -19,7 +19,9 @@ const GAZE_REST = { x: 0.15, y: 0.2 };
 /** How long each reaction face stays. */
 const REACTION_SECONDS: Record<GuestReaction, number> = { surprised: 1.9, worried: 1.6, pleased: 1.3 };
 /** The face shown for each reaction. */
-const REACTION_MOOD: Record<GuestReaction, Mood> = { surprised: 'surprised', worried: 'thinking', pleased: 'happy' };
+const REACTION_MOOD: Record<GuestReaction, Mood> = { surprised: 'surprised', worried: 'thinking', pleased: 'smile' };
+/** A right choice makes the guest smile only now and then, so it stays a nice surprise. */
+const PLEASED_CHANCE = 0.4;
 
 const gaze = { targetX: 0, targetY: 0, since: -Infinity, x: GAZE_REST.x, y: GAZE_REST.y };
 let reaction: { kind: GuestReaction; startTime: number } | null = null;
@@ -41,10 +43,13 @@ export function react(kind: GuestReaction): void {
   if (kind === 'surprised') sfx.meow(customer.cat.voicePitch * 1.1, 'neutral');
 }
 
-/** Wrong → the given worried / surprised face; right → pleased only when `praise` is set (not for every small step). */
+/**
+ * Wrong → the given worried / surprised face. Right → sometimes (PLEASED_CHANCE) a light smile, and only
+ * when `praise` is set (not for every small step).
+ */
 export function judgeChoice(isRight: boolean, whenWrong: Exclude<GuestReaction, 'pleased'>, praise = false): void {
   if (!isRight) react(whenWrong);
-  else if (praise) react('pleased');
+  else if (praise && Math.random() < PLEASED_CHANCE) react('pleased');
 }
 
 /** The current reaction, or null once it has passed. */

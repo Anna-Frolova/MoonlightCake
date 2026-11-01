@@ -2,7 +2,7 @@
 // and the wanted cake) on the left, station buttons in the top right corner, station tabs at the bottom.
 import { ctx, SCREEN_W, view } from '../core/canvas';
 import { clock } from '../core/clock';
-import { drawFittedText, drawGlassPill, drawGlow, drawPanel, drawText, ellipsePath, font, heartPath, roundRectPath, starPath } from '../core/draw';
+import { drawFittedText, drawGlassPill, drawGlow, drawPanel, drawText, ellipsePath, font, roundRectPath, starPath } from '../core/draw';
 import { easeOutCubic, lerp } from '../core/math';
 import { burst, drawMotes } from '../core/particles';
 import { sfx } from '../audio/sfx';
@@ -15,7 +15,7 @@ import { helperItemId } from '../data/shop';
 import type { Cake } from '../data/types';
 import { isCakeReady, serveCake } from '../game/flow';
 import { patienceBarValue, patienceLeft, patienceMood, PATIENCE_CALM_MARK, PATIENCE_LEVELS } from '../game/patience';
-import { currentReaction, reactionMood, updateGaze, type GuestReaction } from '../game/guestReactions';
+import { currentReaction, reactionMood, updateGaze } from '../game/guestReactions';
 import { activeGuestTheme, isOwned, progress, runtime, type Customer, type StationIndex } from '../game/state';
 import { currentCake, resetCake } from '../kitchen/kitchen';
 import {
@@ -156,7 +156,7 @@ function drawGuestPortrait(customer: Customer, x: number, y: number, w: number, 
   ctx.restore();
   ctx.strokeStyle = frameColor; ctx.lineWidth = 3; roundRectPath(x + 1.5, y + 1.5, w - 3, h - 3, 15); ctx.stroke();
   const sideX = headX + PORTRAIT.markOffset.x, sideY = headY + PORTRAIT.markOffset.y;
-  if (reaction) drawReactionMark(reaction, sideX, sideY, time);
+  if (reaction === 'surprised' || reaction === 'worried') drawReactionMark(reaction, sideX, sideY, time);
   else if (mood === 'thinking') { // a drop of sweat
     ctx.fillStyle = '#8fd8ff'; ctx.beginPath();
     ctx.moveTo(sideX, sideY - 16); ctx.quadraticCurveTo(sideX + 11, sideY + 4, sideX, sideY + 8);
@@ -165,13 +165,12 @@ function drawGuestPortrait(customer: Customer, x: number, y: number, w: number, 
   ctx.restore();
 }
 
-/** "!" for surprise, "?" for worry, a heart when pleased — popping in beside the head. */
-function drawReactionMark(reaction: GuestReaction, x: number, y: number, time: number): void {
+/** "!" for surprise, "?" for worry — popping in beside the head (a pleased guest just smiles). */
+function drawReactionMark(reaction: 'surprised' | 'worried', x: number, y: number, time: number): void {
   const pop = 1 + 0.12 * Math.sin(time * 9);
   ctx.save(); ctx.translate(x, y); ctx.scale(pop, pop);
   ctx.shadowColor = 'rgba(20,10,50,0.9)'; ctx.shadowBlur = 6;
-  if (reaction === 'pleased') { ctx.fillStyle = '#ff7ac0'; heartPath(0, 0, 32); ctx.fill(); }
-  else drawText(reaction === 'surprised' ? '!' : '?', 0, 0, 48, reaction === 'surprised' ? TEXT.gold : '#8fd8ff', 'center', 900);
+  drawText(reaction === 'surprised' ? '!' : '?', 0, 0, 48, reaction === 'surprised' ? TEXT.gold : '#8fd8ff', 'center', 900);
   ctx.restore();
 }
 
