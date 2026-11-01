@@ -19,6 +19,7 @@ export function drawProgressBar(x: number, y: number, w: number, h: number, valu
 
 const SHELF_WOOD = '#4a2c80';
 const SHELF_HIGHLIGHT = '#6a46a8';
+const LABEL_SHADOW = 'rgba(20,10,50,0.9)';
 
 /** Distance between items when `count` of them share the shelf (narrower when many must fit). */
 const shelfSpacing = (count: number): number => Math.min(INGREDIENT_SHELF.spacing, INGREDIENT_SHELF.maxWidth / Math.max(1, count));
@@ -61,6 +62,9 @@ export function drawIngredientShelf<T extends string>(
     const bob = Math.sin(clock.time * 2 + i) * 1.5 - (isLifted ? 12 : 0);
     if (isLifted || hovered) drawGlow(x, y - 44, 64, options.glowColor?.(item) ?? '#ffffff', isLifted ? 0.5 : 0.3);
     drawItem(item, x, y + bob, scale * itemScale * fit);
-    drawFittedText(label(item), x, y + boardHeight + 13, labelSize, spacing - 6, isLifted ? TEXT.label : TEXT.main, 'center', 900);
+    ctx.save(); // a dark halo (drawn twice to make it denser) keeps the names readable on the bright heaven kitchen too
+    ctx.shadowColor = LABEL_SHADOW; ctx.shadowBlur = 5;
+    for (let pass = 0; pass < 2; pass++) drawFittedText(label(item), x, y + boardHeight + 13, labelSize, spacing - 6, isLifted ? TEXT.label : TEXT.main, 'center', 900);
+    ctx.restore();
   });
 }

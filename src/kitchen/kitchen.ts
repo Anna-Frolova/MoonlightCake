@@ -26,6 +26,7 @@ export function setUpKitchen(): void {
   runtime.draggedTopping = null;
   runtime.isPipingCream = false;
   runtime.autoCreamTime = null;
+  runtime.kitchenThemeBlend = 0; // a special guest's kitchen transforms again for each order
 }
 
 /** Shows a hint and returns false when the cake has no layers yet. */

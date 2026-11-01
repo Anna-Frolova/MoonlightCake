@@ -8,12 +8,12 @@ import { loc } from '../../core/language';
 import { pickRandom, randomRange, type Point, type Vec2 } from '../../core/math';
 import { burst, emitParticle, floatingText } from '../../core/particles';
 import { TEXT } from '../../core/theme';
-import { ELEMENT_ORDER, ELEMENTS } from '../../data/elements';
+import { ELEMENT_ORDER, ELEMENTS, GUEST_ELEMENTS } from '../../data/elements';
 import { t } from '../../data/strings';
 import type { ElementId } from '../../data/types';
 import { cakeHeight, countLayers } from '../../game/cake';
 import { recognizeSign } from '../../game/signRecognition';
-import { availableElements, progress, runtime } from '../../game/state';
+import { progress, runtime } from '../../game/state';
 import { drawMagicCircle } from '../../render/environment';
 import { drawSign } from '../../render/signs';
 import { showToast } from '../../scenes/sceneManager';
@@ -28,6 +28,12 @@ const STROKE_FADE_SECONDS = 0.7;
 /** New stroke points are added only after the pointer moved this far. */
 const MIN_POINT_SPACING = 4;
 const SCRIBBLE_SOUND_INTERVAL = 0.07;
+
+/** The elements on the station: the everyday ones, plus the special guest's own magic while they wait. */
+function shownElements(): ElementId[] {
+  const wanted = currentOrder().element;
+  return GUEST_ELEMENTS.includes(wanted) ? [...ELEMENT_ORDER, wanted] : ELEMENT_ORDER;
+}
 
 const qualityWord = (quality: number): string => quality >= 1 ? t().qualityPerfect : quality >= 0.8 ? t().qualityGreat : t().qualityOk;
 
@@ -47,7 +53,7 @@ function castMagic(element: ElementId, quality: number): void {
 function finishStroke(): void {
   const points = runtime.magicStroke!.points;
   runtime.magicStroke = null;
-  const match = recognizeSign(points);
+  const match = recognizeSign(points, shownElements());
   const recognized = match && match.quality > 0 ? match : null;
   runtime.fadingStroke = { points, startTime: clock.time, color: recognized ? ELEMENTS[recognized.element].color : FAILED_STROKE_COLOR };
   if (points.length < 4) return; // just a tap
@@ -58,8 +64,8 @@ function finishStroke(): void {
     burst(lastX, lastY, 10, '#8a7aa8', { gravity: -30 });
     return;
   }
-  if (!availableElements().includes(recognized.element)) {
-    const def = ELEMENTS[recognized.element];
+  const def = ELEMENTS[recognized.element];
+  if (def.unlockDay > progress.day) {
     showToast(t().elementLocked(loc(def.name), def.unlockDay));
     sfx.fail();
     return;
@@ -107,9 +113,9 @@ export const magicStation: Station = {
 
   /** The elements in a row above the cake: each sign with its name; the one the guest wants glows. */
   drawScenery() {
-    const order = currentOrder(), time = clock.time, { y, w, h, gap } = ELEMENT_ROW;
-    const left = CAKE_CENTER_X - (ELEMENT_ORDER.length * w + (ELEMENT_ORDER.length - 1) * gap) / 2;
-    ELEMENT_ORDER.forEach((element, i) => {
+    const order = currentOrder(), time = clock.time, { y, w, h, gap } = ELEMENT_ROW, elements = shownElements();
+    const left = CAKE_CENTER_X - (elements.length * w + (elements.length - 1) * gap) / 2;
+    elements.forEach((element, i) => {
       const def = ELEMENTS[element], isOpen = def.unlockDay <= progress.day, isWanted = order.element === element;
       const x = left + i * (w + gap), centerX = x + w / 2;
       ctx.save();

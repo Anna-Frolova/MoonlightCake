@@ -17,6 +17,7 @@ import { progress, runtime, type Customer } from '../game/state';
 import { drawCake } from '../render/cake';
 import { drawCat, drawPaws } from '../render/cat';
 import { COUNTER_TOP_Y, drawCounter, drawHallBackground, HALL_FLOOR_Y } from '../render/environment';
+import { kitchenTheme } from '../render/kitchenThemes';
 import { drawOrderCard } from '../render/orderCard';
 import { drawCoinCounter, drawDayCounter, drawSoundButtons } from './hud';
 
@@ -25,6 +26,8 @@ const TYPING_SPEED = 60;
 const WALK_IN_EASING = 3.2;
 const WALK_IN_MIN_SPEED = 120;
 const WALK_OUT_SPEED = 760;
+/** Height of the sparks burst when a special guest reaches the counter (around their head). */
+const SPECIAL_ARRIVAL_SPARKS_Y = 330;
 /** Guest is gone once past this x. */
 const OFF_SCREEN_X = 1500;
 const JUDGING_SECONDS = 1.5;
@@ -61,6 +64,9 @@ export function updateHall(dt: number): void {
         customer.orderShownFor = 0;
         say(t().orderSpeech(customer.greeting, catLine(customer.cat, 'ask')));
         sfx.meow(customer.cat.voicePitch);
+        if (customer.cat.special) { // a special guest arrives in a shower of their sparks
+          burst(GUEST_COUNTER_X, SPECIAL_ARRIVAL_SPARKS_Y, 36, kitchenTheme(customer.cat.special.theme).sparkColors, { kind: 'star', gravity: 80, maxSpeed: 360 });
+        }
       }
       break;
     case 'ordering':

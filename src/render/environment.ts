@@ -3,13 +3,14 @@ import { ctx, firstOnGrid, view } from '../core/canvas';
 import { shade } from '../core/color';
 import { drawGlow, drawText, drawTitle, ellipsePath, roundRectPath, starPath } from '../core/draw';
 import { t } from '../data/strings';
-import type { Cake, HelperId } from '../data/types';
+import type { Cake, HelperId, KitchenThemeId } from '../data/types';
 import { createCake, createCreamDots, updateCreamCoverage } from '../game/cake';
-import { isOwned, progress, runtime } from '../game/state';
+import { activeGuestTheme, isOwned, progress, runtime } from '../game/state';
 import { CAKE_BASE_Y, CAKE_CENTER_X, HELPER_SHELF } from '../kitchen/layout';
 import { drawCake } from './cake';
 import { softGradient } from './cat';
 import { drawHelperIcon } from './icons';
+import { kitchenTheme } from './kitchenThemes';
 
 /** Floor line of the hall: cats stand here and the counter starts just above it. */
 export const HALL_FLOOR_Y = 548;
@@ -17,6 +18,11 @@ export const HALL_FLOOR_Y = 548;
 export const COUNTER_TOP_Y = 508;
 /** Decorative panels on the front of the counter repeat every this many pixels. */
 const COUNTER_PANEL_SPACING = 210;
+/** The special guest's kitchen spreads out from here (behind the cake) until this radius covers the screen. */
+const KITCHEN_REVEAL_CENTER_Y = 400;
+const KITCHEN_REVEAL_RADIUS = 1300;
+/** The cake stand changes once the circle has spread this far (past the stand's edge). */
+const KITCHEN_REVEAL_STAND_DISTANCE = 240;
 
 const SHELF_WOOD = '#4a2c80';
 const SHELF_HIGHLIGHT = '#6a46a8';
@@ -25,10 +31,10 @@ const GOLD_METAL = '#e8b84a';
 const VITRAGE_GLASS = ['#5b7fff', '#a06aff', '#3fd5e8', '#ff6ac8', '#ffd04e', '#6be0a0'];
 const GARLAND_BULBS = ['#7ff0ff', '#ff8fd8', '#c9a0ff', '#fff096'];
 
-/** Glowing rune circle slowly rotating on the floor/wall. */
-export function drawMagicCircle(x: number, y: number, radius: number, time: number, alpha = 0.14): void {
+/** Glowing rune circle slowly rotating on the floor/wall. `rgb` is its colour as "r,g,b". */
+export function drawMagicCircle(x: number, y: number, radius: number, time: number, alpha = 0.14, rgb = '150,190,255'): void {
   ctx.save(); ctx.translate(x, y); ctx.scale(1, 0.92);
-  ctx.strokeStyle = `rgba(150,190,255,${alpha})`; ctx.lineWidth = 2;
+  ctx.strokeStyle = `rgba(${rgb},${alpha})`; ctx.lineWidth = 2;
   // outer rings with ticks and six small circles
   ctx.save(); ctx.rotate(time * 0.06);
   ellipsePath(0, 0, radius, radius); ctx.stroke();
@@ -381,7 +387,41 @@ function drawCatnipPot(x: number, time: number): void {
 /** Helpers shown on the kitchen shelf once bought (the glaze cauldron and kitten appear elsewhere). */
 const SHELF_HELPERS: HelperId[] = ['layers', 'cream', 'magic'];
 
+/**
+ * The kitchen behind the cake. While a special guest waits, their theme spreads out from the cake in a growing
+ * circle (`runtime.kitchenThemeBlend` 0 → 1) and then replaces the ordinary kitchen.
+ */
 export function drawKitchenBackground(time: number): void {
+  const theme = activeGuestTheme(), blend = theme ? runtime.kitchenThemeBlend : 0;
+  const radius = blend * blend * KITCHEN_REVEAL_RADIUS;
+  if (blend < 1) drawOrdinaryKitchen(time);
+  if (theme && blend > 0) {
+    ctx.save();
+    if (blend < 1) { ctx.beginPath(); ctx.arc(CAKE_CENTER_X, KITCHEN_REVEAL_CENTER_Y, radius, 0, Math.PI * 2); ctx.clip(); }
+    kitchenTheme(theme).drawRoom(time);
+    ctx.restore();
+    if (blend < 1) { // the glowing edge of the transformation
+      ctx.save();
+      ctx.shadowColor = kitchenTheme(theme).revealColor; ctx.shadowBlur = 30;
+      ctx.strokeStyle = kitchenTheme(theme).revealColor; ctx.globalAlpha = 1 - blend * 0.5; ctx.lineWidth = 10;
+      ctx.beginPath(); ctx.arc(CAKE_CENTER_X, KITCHEN_REVEAL_CENTER_Y, radius, 0, Math.PI * 2); ctx.stroke();
+      ctx.restore();
+    }
+  }
+  drawHelperShelf(time);
+  drawCakeStand(theme && radius >= KITCHEN_REVEAL_STAND_DISTANCE ? theme : null);
+}
+
+/** Floating embers / feathers / petals of the special guest's kitchen, drawn in front of the cake. */
+export function drawKitchenAmbience(time: number): void {
+  const theme = activeGuestTheme();
+  if (!theme || runtime.kitchenThemeBlend <= 0) return;
+  ctx.save(); ctx.globalAlpha = runtime.kitchenThemeBlend;
+  kitchenTheme(theme).drawAmbience(time);
+  ctx.restore();
+}
+
+function drawOrdinaryKitchen(time: number): void {
   const wall = ctx.createLinearGradient(0, 0, 0, 540);
   wall.addColorStop(0, '#0e0a2c'); wall.addColorStop(1, '#2c1a62');
   ctx.fillStyle = wall; ctx.fillRect(view.left, view.top, view.right - view.left, 540 - view.top);
@@ -396,7 +436,19 @@ export function drawKitchenBackground(time: number): void {
   drawOrb(CAKE_CENTER_X - 150, 70, '#7ff0ff', time, 11);
   drawOrb(CAKE_CENTER_X + 170, 90, '#ff9ce6', time, 10);
 
-  // shelf with the bought helpers (empty dashed slots otherwise)
+  // table
+  const table = ctx.createLinearGradient(0, 520, 0, 650);
+  table.addColorStop(0, '#6a46b0'); table.addColorStop(1, '#3e2678');
+  ctx.fillStyle = table; ctx.fillRect(view.left, 520, view.right - view.left, 130);
+  ctx.fillStyle = 'rgba(255,255,255,0.18)'; ctx.fillRect(view.left, 520, view.right - view.left, 5);
+  const edgeLight = ctx.createLinearGradient(0, 520, 0, 540);
+  edgeLight.addColorStop(0, 'rgba(127,240,255,0.25)'); edgeLight.addColorStop(1, 'rgba(127,240,255,0)');
+  ctx.fillStyle = edgeLight; ctx.fillRect(view.left, 524, view.right - view.left, 16);
+  ctx.fillStyle = '#140c33'; ctx.fillRect(view.left, 640, view.right - view.left, view.bottom - 640);
+}
+
+/** Shelf with the bought helpers (empty dashed slots otherwise). */
+function drawHelperShelf(time: number): void {
   const shelf = HELPER_SHELF;
   drawShelfBoard(shelf.x, shelf.y, shelf.w, 16);
   SHELF_HELPERS.forEach((helper, i) => {
@@ -408,25 +460,14 @@ export function drawKitchenBackground(time: number): void {
     }
   });
   drawShelfPotion(shelf.potionX, shelf.y, '#7ff0ff', time, 34);
-
-  // table
-  const table = ctx.createLinearGradient(0, 520, 0, 650);
-  table.addColorStop(0, '#6a46b0'); table.addColorStop(1, '#3e2678');
-  ctx.fillStyle = table; ctx.fillRect(view.left, 520, view.right - view.left, 130);
-  ctx.fillStyle = 'rgba(255,255,255,0.18)'; ctx.fillRect(view.left, 520, view.right - view.left, 5);
-  const edgeLight = ctx.createLinearGradient(0, 520, 0, 540);
-  edgeLight.addColorStop(0, 'rgba(127,240,255,0.25)'); edgeLight.addColorStop(1, 'rgba(127,240,255,0)');
-  ctx.fillStyle = edgeLight; ctx.fillRect(view.left, 524, view.right - view.left, 16);
-  ctx.fillStyle = '#140c33'; ctx.fillRect(view.left, 640, view.right - view.left, view.bottom - 640);
-
-  drawCakeStand();
 }
 
-/** Crystal stand under the cake; moves and scales together with the cake. */
-function drawCakeStand(): void {
+/** Stand under the cake (crystal, or the special guest's theme); moves and scales together with the cake. */
+function drawCakeStand(theme: KitchenThemeId | null): void {
   const cx = CAKE_CENTER_X;
   ctx.save();
   ctx.translate(runtime.cakeX, CAKE_BASE_Y); ctx.scale(runtime.cakeScale, runtime.cakeScale); ctx.translate(-cx, -CAKE_BASE_Y);
+  if (theme) { kitchenTheme(theme).drawStand(cx); ctx.restore(); return; }
   drawGlow(cx, 580, 200, '#7ff0ff', 0.14);
   ellipsePath(cx, 632, 74, 13); ctx.fillStyle = '#b8a8f0'; ctx.fill();
   ctx.fillStyle = '#d8d0ff';

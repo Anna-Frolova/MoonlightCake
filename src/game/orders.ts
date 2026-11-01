@@ -2,7 +2,7 @@
 import { pickRandom, pickWeighted, randomInt } from '../core/math';
 import { PALETTES } from '../data/palettes';
 import { STORY_DAYS } from '../data/schedule';
-import type { Cake, CatDef, GlazeColorId, Order, PaletteId, ShapeId, ToppingId } from '../data/types';
+import type { Cake, CatDef, GlazeColorId, Order, PaletteId, ShapeId, SpecialGuest, ToppingId } from '../data/types';
 import { arrangeToppings, cakeHeight, createCake, createCreamDots, updateCreamCoverage } from './cake';
 import { glazeRgb } from './colorMixing';
 import { availableElements, availableGlazeColors, todaysMenu } from './state';
@@ -11,11 +11,11 @@ import { availableElements, availableGlazeColors, todaysMenu } from './state';
 const TUTORIAL_ORDERS: Record<1 | 2, Order> = {
   1: {
     palette: 'berry', shape: 'round', layerCount: 1, flavor: 'vanilla', filling: null, cream: 'butter',
-    glaze: 'red', toppings: { strawberry: 3 }, element: 'fire', isRoyal: false,
+    glaze: 'red', toppings: { strawberry: 3 }, element: 'fire', isRoyal: false, isSpecial: false,
   },
   2: {
     palette: 'chocolate', shape: 'square', layerCount: 2, flavor: 'chocolate', filling: 'caramel', cream: 'butter',
-    glaze: 'orange', toppings: { pearl: 5 }, element: 'ice', isRoyal: false,
+    glaze: 'orange', toppings: { pearl: 5 }, element: 'ice', isRoyal: false, isSpecial: false,
   },
 };
 
@@ -24,6 +24,9 @@ const FAVORITE_PALETTE_CHANCE = 0.9;
 const FAVORITE_SHAPE_CHANCE = 0.85;
 /** Chance of a single topping kind (otherwise two) after day 1. */
 const SINGLE_TOPPING_KIND_CHANCE = 0.55;
+/** A special guest's signature topping: how many of it, and the chance of a second, ordinary topping next to it. */
+const SPECIAL_TOPPING_COUNT = { min: 3, max: 5 };
+const SPECIAL_SECOND_TOPPING_CHANCE = 0.5;
 /** Weights by position in a palette list: the first items are the palette's signature ones. */
 const SIGNATURE_WEIGHTS = [3, 2, 1, 1];
 
@@ -48,7 +51,7 @@ function viablePalettes(): PaletteId[] {
   const glazes = availableGlazeColors().map(color => color.id);
   return (Object.keys(PALETTES) as PaletteId[]).filter(id => {
     const palette = PALETTES[id];
-    return palette.flavors.some(f => menu.flavors.includes(f))
+    return !palette.isSpecial && palette.flavors.some(f => menu.flavors.includes(f))
       && palette.glazes.some(g => glazes.includes(g))
       && palette.toppings.some(t => menu.toppings.includes(t));
   });
@@ -71,6 +74,7 @@ export function canTakeOrder(cat: CatDef): boolean {
 
 export function generateOrder(cat: CatDef, day: number, tutorial?: 1 | 2): Order {
   if (tutorial) return structuredClone(TUTORIAL_ORDERS[tutorial]);
+  if (cat.special) return generateSpecialOrder(cat, cat.special);
   const storyDay = Math.min(day, STORY_DAYS);
   const menu = todaysMenu();
   const isRoyal = cat.id === 'queen';
@@ -112,6 +116,28 @@ export function generateOrder(cat: CatDef, day: number, tutorial?: 1 | 2): Order
     toppings,
     element: pickFromPalette(palette.elements, availableElements()),
     isRoyal,
+    isSpecial: false,
+  };
+}
+
+/** A special guest's cake: their own palette and magic, always their signature topping, two or three layers. */
+function generateSpecialOrder(cat: CatDef, special: SpecialGuest): Order {
+  const menu = todaysMenu(), palette = PALETTES[special.palette];
+  const toppings: Order['toppings'] = { [special.topping]: randomInt(SPECIAL_TOPPING_COUNT.min, SPECIAL_TOPPING_COUNT.max) };
+  const extras = palette.toppings.filter(t => t !== special.topping && menu.toppings.includes(t));
+  if (extras.length && Math.random() < SPECIAL_SECOND_TOPPING_CHANCE) toppings[pickRandom(extras)] = randomInt(2, 4);
+  return {
+    palette: special.palette,
+    shape: pickPreferring(menu.shapes, cat.favoriteShapes, FAVORITE_SHAPE_CHANCE),
+    layerCount: randomInt(2, 3),
+    flavor: pickFromPalette(palette.flavors, menu.flavors),
+    filling: pickFromPalette(palette.fillings, menu.fillings),
+    cream: pickFromPalette(palette.creams, menu.creams),
+    glaze: pickFromPalette(palette.glazes, availableGlazeColors().map(color => color.id)),
+    toppings,
+    element: special.element,
+    isRoyal: false,
+    isSpecial: true,
   };
 }
 

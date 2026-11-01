@@ -4,7 +4,8 @@ import { ctx, SCREEN_W, view } from '../core/canvas';
 import { clock } from '../core/clock';
 import { drawFittedText, drawGlassPill, drawGlow, drawPanel, drawText, ellipsePath, font, roundRectPath, starPath } from '../core/draw';
 import { easeOutCubic, lerp } from '../core/math';
-import { drawMotes } from '../core/particles';
+import { burst, drawMotes } from '../core/particles';
+import { sfx } from '../audio/sfx';
 import { BUTTON_COLOR, TEXT } from '../core/theme';
 import { button } from '../core/ui';
 import { loc } from '../core/language';
@@ -14,7 +15,7 @@ import { helperItemId } from '../data/shop';
 import type { Cake } from '../data/types';
 import { isCakeReady, serveCake } from '../game/flow';
 import { patienceLeft, patienceMood, PATIENCE_LEVELS } from '../game/patience';
-import { isOwned, progress, runtime, type Customer, type StationIndex } from '../game/state';
+import { activeGuestTheme, isOwned, progress, runtime, type Customer, type StationIndex } from '../game/state';
 import { currentCake, resetCake } from '../kitchen/kitchen';
 import {
   CAKE_BASE_Y, CAKE_CENTER_X, GLAZE_STATION_CAKE_SCALE, GLAZE_STATION_CAKE_X, HELPER_KITTEN_SPOT, KITCHEN_MESSAGE_X, STATION_CONTROLS, TABS,
@@ -26,13 +27,16 @@ import { drawMagicStationCircle, drawMagicStrokes } from '../kitchen/stations/ma
 import { drawDraggedTopping } from '../kitchen/stations/toppings';
 import { drawCake } from '../render/cake';
 import { drawCat, drawPaws } from '../render/cat';
-import { drawKitchenBackground } from '../render/environment';
+import { drawKitchenAmbience, drawKitchenBackground } from '../render/environment';
+import { kitchenTheme } from '../render/kitchenThemes';
 import { drawOrderCard } from '../render/orderCard';
 import { drawProgressBar } from '../kitchen/widgets';
 import { drawCoinCounter, drawSoundButtons } from './hud';
 
 /** How fast the layout eases into / out of the glaze station arrangement. */
 const GLAZE_LAYOUT_SPEED = 7;
+/** How long the kitchen takes to transform for a special guest. */
+const KITCHEN_TRANSFORM_SECONDS = 1.3;
 const HINT_Y = 72;
 const HINT_TEXT_SIZE = 18;
 /** The situational hint is centred over the cake. */
@@ -51,6 +55,19 @@ export function updateKitchenLayout(dt: number): void {
   const eased = easeOutCubic(runtime.glazeLayoutBlend);
   runtime.cakeX = lerp(CAKE_CENTER_X, GLAZE_STATION_CAKE_X, eased);
   runtime.cakeScale = lerp(1, GLAZE_STATION_CAKE_SCALE, eased);
+  updateKitchenTheme(dt);
+}
+
+/** A special guest's kitchen spreads out from the cake once the scene has faded in. */
+function updateKitchenTheme(dt: number): void {
+  const theme = activeGuestTheme();
+  if (!theme) { runtime.kitchenThemeBlend = 0; return; }
+  if (runtime.scene !== 'kitchen' || runtime.fade || runtime.kitchenThemeBlend >= 1) return;
+  if (runtime.kitchenThemeBlend === 0) {
+    sfx.transform();
+    burst(CAKE_CENTER_X, CAKE_BASE_Y - 120, 40, kitchenTheme(theme).sparkColors, { kind: 'star', gravity: 60, maxSpeed: 420 });
+  }
+  runtime.kitchenThemeBlend = Math.min(1, runtime.kitchenThemeBlend + dt / KITCHEN_TRANSFORM_SECONDS);
 }
 
 export function selectStation(index: StationIndex): void {
@@ -67,6 +84,7 @@ export function renderKitchen(): void {
   drawCake(cake, runtime.cakeX, CAKE_BASE_Y, runtime.cakeScale);
   station.drawOverlay?.(cake);
   drawMotes();
+  drawKitchenAmbience(time);
 
   // situational message (e.g. "already decorated — reset to change")
   const hint = station.currentHint?.(cake);

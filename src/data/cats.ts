@@ -77,6 +77,34 @@ export const GUESTS: CatDef[] = [
   },
 ];
 
+/**
+ * Special guests: one of them visits each day from day 2 (the day of their `firstDay` they come for sure).
+ * Each orders cakes in their own style with their own magic, and the kitchen and the music change for them.
+ */
+export const SPECIAL_GUESTS: CatDef[] = [
+  {
+    id: 'demon', name: { uk: 'Демон Жарик', ja: '悪魔のホムラ' }, firstDay: 2, voicePitch: 0.7, isGenerous: true,
+    fur: '#c8423a', furAccent: '#8a2228', pattern: 'stripes', eyeColor: '#ffd23f',
+    hat: 'horns', outfit: 'demon', outfitColor: '#2a1418', back: 'batWings', hasSpadeTail: true,
+    favoritePalettes: ['inferno'], favoriteShapes: ['star', 'square'],
+    special: { theme: 'dungeon', palette: 'inferno', element: 'dark', topping: 'chili' },
+  },
+  {
+    id: 'angel', name: { uk: 'Янгол Промінчик', ja: '天使のヒカリ' }, firstDay: 3, voicePitch: 1.35, isGenerous: true,
+    fur: '#fffaf0', furAccent: '#f1dfb4', pattern: 'none', eyeColor: '#5fb8ff',
+    hat: 'halo', outfit: 'angel', outfitColor: '#ffffff', back: 'featherWings',
+    favoritePalettes: ['heaven'], favoriteShapes: ['heart', 'round'],
+    special: { theme: 'heaven', palette: 'heaven', element: 'light', topping: 'feather' },
+  },
+  {
+    id: 'vampire', name: { uk: 'Князь Вампурр', ja: 'ヴァンプール公' }, firstDay: 4, voicePitch: 0.85, isGenerous: true,
+    fur: '#ece4ef', furAccent: '#3a2a40', pattern: 'points', eyeColor: '#ff2a4a',
+    hat: 'vampire', outfit: 'vampire', outfitColor: '#1c1222', back: 'cape', accessory: 'fangs',
+    favoritePalettes: ['dracula'], favoriteShapes: ['heart', 'square'],
+    special: { theme: 'palace', palette: 'dracula', element: 'blood', topping: 'bat' },
+  },
+];
+
 /** The special last guest of day 5. */
 export const MOON_QUEEN: CatDef = {
   id: 'queen', name: { uk: 'Місячна Королева', ja: '月の女王' }, firstDay: 99, voicePitch: 1.05, isGenerous: true, ordersBigCakes: true,
@@ -97,4 +125,5 @@ export const HELPER_KITTEN: CatLook = {
   hat: 'none', outfit: 'none', outfitColor: '#7fb0ff', accessory: 'bow',
 };
 
-export const catById = (id: CatId): CatDef => (id === 'queen' ? MOON_QUEEN : GUESTS.find(c => c.id === id)!);
+export const catById = (id: CatId): CatDef =>
+  id === 'queen' ? MOON_QUEEN : [...GUESTS, ...SPECIAL_GUESTS].find(c => c.id === id)!;

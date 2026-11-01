@@ -2,11 +2,11 @@
 //  • `progress` — what gets saved (day, coins, purchases, menu…)
 //  • `runtime`  — what only lives while the page is open (current scene, cake being built, animations…)
 import type { Vec2 } from '../core/math';
-import { ELEMENTS } from '../data/elements';
+import { ELEMENT_ORDER, ELEMENTS } from '../data/elements';
 import { CREAMS, ESSENCES, GLAZE_COLORS } from '../data/ingredients';
 import { SHOP_ITEMS } from '../data/shop';
 import type {
-  Cake, CatDef, CreamId, ElementId, EssenceId, GlazeColorDef, Mood, Order, SaveData, ShopItemId, ToppingId,
+  Cake, CatDef, CreamId, ElementId, EssenceId, GlazeColorDef, KitchenThemeId, Mood, Order, SaveData, ShopItemId, ToppingId,
 } from '../data/types';
 import { buildDailyMenu } from './dailyMenu';
 import { createNewSave, loadSave, writeSave } from './save';
@@ -35,7 +35,8 @@ export const isOwned = (item: ShopItemId): boolean => !!progress.owned[item];
 // What can be used today
 export const todaysMenu = () => progress.menu!;
 export const availableEssences = (): EssenceId[] => (Object.keys(ESSENCES) as EssenceId[]).filter(e => ESSENCES[e].unlockDay <= progress.day);
-export const availableElements = (): ElementId[] => (Object.keys(ELEMENTS) as ElementId[]).filter(e => ELEMENTS[e].unlockDay <= progress.day);
+/** Everyday elements open today (the special guests' magic is only for them). */
+export const availableElements = (): ElementId[] => ELEMENT_ORDER.filter(e => ELEMENTS[e].unlockDay <= progress.day);
 /** Glaze colours that can be mixed from today's essences. */
 export const availableGlazeColors = (): GlazeColorDef[] => {
   const essences = availableEssences();
@@ -119,6 +120,8 @@ export interface RuntimeState {
   cakeScale: number;
   magicStroke: { points: Vec2[]; lastSoundTime: number } | null;
   fadingStroke: { points: Vec2[]; startTime: number; color: string } | null;
+  /** 0 → ordinary kitchen, 1 → fully transformed for the special guest. Animated. */
+  kitchenThemeBlend: number;
 }
 
 export const runtime: RuntimeState = {
@@ -129,5 +132,12 @@ export const runtime: RuntimeState = {
   draggedTopping: null, toppingTray: [], helperKittenJump: 0,
   heldPotion: null, pouringPotion: null, returningPotion: null, glazeArc: null,
   glazeLayoutBlend: 0, cakeX: 760, cakeScale: 1,
-  magicStroke: null, fadingStroke: null,
+  magicStroke: null, fadingStroke: null, kitchenThemeBlend: 0,
 };
+
+/** The special guest's theme while they are in the café (from walking in until they turn to leave), or null. */
+export function activeGuestTheme(): KitchenThemeId | null {
+  const customer = runtime.customer;
+  if (!customer?.cat.special || customer.state === 'leaving') return null;
+  return runtime.scene === 'hall' || runtime.scene === 'kitchen' ? customer.cat.special.theme : null;
+}

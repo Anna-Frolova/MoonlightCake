@@ -67,8 +67,8 @@ const TEMPLATES = (Object.keys(SIGN_SHAPES) as ElementId[]).map(element => {
 
 export interface SignMatch { element: ElementId; distance: number; quality: number }
 
-/** Returns the closest sign, or null for strokes that are too short. `quality` is 0 when nothing matched well. */
-export function recognizeSign(stroke: Vec2[]): SignMatch | null {
+/** Returns the closest of the `allowed` signs, or null for strokes that are too short. `quality` is 0 when nothing matched well. */
+export function recognizeSign(stroke: Vec2[], allowed: readonly ElementId[]): SignMatch | null {
   if (stroke.length < 6) return null;
   const xs = stroke.map(p => p[0]), ys = stroke.map(p => p[1]);
   if (Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)) < MIN_STROKE_SIZE) return null;
@@ -76,6 +76,7 @@ export function recognizeSign(stroke: Vec2[]): SignMatch | null {
   const drawn = normalise(resampleStroke(stroke, SAMPLE_POINTS));
   let best: SignMatch | null = null;
   for (const template of TEMPLATES) {
+    if (!allowed.includes(template.element)) continue;
     for (const variant of template.variants) {
       let distance = 0;
       for (let i = 0; i < SAMPLE_POINTS; i++) distance += Math.hypot(drawn[i][0] - variant[i][0], drawn[i][1] - variant[i][1]);

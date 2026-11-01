@@ -104,6 +104,43 @@ export function drawTopping(topping: ToppingId, x: number, y: number, scale = 1)
       }
       ellipsePath(0, -29, 2, 2.8); ctx.fillStyle = '#b896ff'; ctx.fill();
       break;
+    case 'chili': { // a curved glossy pepper with a little flame at the tip
+      ctx.beginPath(); ctx.moveTo(-4, -18);
+      ctx.bezierCurveTo(6, -20, 10, -10, 6, -2); ctx.quadraticCurveTo(2, 4, -8, 4);
+      ctx.quadraticCurveTo(-2, 0, 0, -6); ctx.quadraticCurveTo(0, -12, -6, -14); ctx.closePath();
+      const g = ctx.createLinearGradient(-6, -18, 8, 2); g.addColorStop(0, '#ff6a4a'); g.addColorStop(0.6, '#e8202a'); g.addColorStop(1, '#a00e1e');
+      ctx.fillStyle = g; ctx.fill(); ctx.strokeStyle = '#7a0a16'; ctx.lineWidth = 1; ctx.stroke();
+      ellipsePath(3, -12, 1.4, 3.5); ctx.fillStyle = 'rgba(255,230,220,0.7)'; ctx.fill();
+      ctx.strokeStyle = '#3f9a3a'; ctx.lineWidth = 2.2; ctx.beginPath(); ctx.moveTo(-5, -17); ctx.quadraticCurveTo(-8, -22, -4, -25); ctx.stroke(); // stem
+      ctx.fillStyle = '#5cc04a'; ellipsePath(-4, -18, 4, 2); ctx.fill();
+      ctx.fillStyle = 'rgba(255,190,60,0.85)'; // tiny flame
+      ctx.beginPath(); ctx.moveTo(-11, 4); ctx.quadraticCurveTo(-14, 0, -12, -4); ctx.quadraticCurveTo(-10, -1, -8, 1); ctx.closePath(); ctx.fill();
+      break;
+    }
+    case 'feather': // a white feather with a golden quill, stuck into the cake at an angle
+      ctx.rotate(0.35);
+      ctx.beginPath(); ctx.moveTo(0, 0);
+      ctx.bezierCurveTo(-9, -8, -8, -22, 0, -30); ctx.bezierCurveTo(8, -22, 9, -8, 0, 0); ctx.closePath();
+      ctx.fillStyle = '#ffffff'; ctx.fill(); ctx.strokeStyle = '#c9c0e0'; ctx.lineWidth = 1; ctx.stroke();
+      ctx.strokeStyle = '#e0e4f8'; ctx.lineWidth = 0.8; // barbs
+      for (let k = 1; k < 6; k++) { const y = -k * 5; ctx.beginPath(); ctx.moveTo(-6 + k * 0.6, y + 2); ctx.lineTo(0, y - 1); ctx.lineTo(6 - k * 0.6, y + 2); ctx.stroke(); }
+      ctx.strokeStyle = '#e8b84a'; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(0, 3); ctx.lineTo(0, -28); ctx.stroke();
+      break;
+    case 'bat': { // a chocolate bat with spread wings and little pink eyes
+      const g = ctx.createLinearGradient(0, -22, 0, 0); g.addColorStop(0, '#7a4a30'); g.addColorStop(1, '#3e2214');
+      ctx.fillStyle = g; ctx.strokeStyle = '#24120a'; ctx.lineWidth = 1;
+      for (const side of [-1, 1]) {
+        ctx.beginPath(); ctx.moveTo(side * 3, -12);
+        ctx.quadraticCurveTo(side * 10, -22, side * 16, -18);
+        ctx.quadraticCurveTo(side * 14, -12, side * 15, -8); ctx.quadraticCurveTo(side * 11, -10, side * 10, -6);
+        ctx.quadraticCurveTo(side * 7, -9, side * 3, -6); ctx.closePath(); ctx.fill(); ctx.stroke();
+      }
+      ellipsePath(0, -10, 5, 6.5); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-4, -14); ctx.lineTo(-3.5, -19); ctx.lineTo(-1, -15); ctx.moveTo(4, -14); ctx.lineTo(3.5, -19); ctx.lineTo(1, -15); ctx.fill(); // ears
+      ctx.fillStyle = '#ff8fb0'; ellipsePath(-2, -11, 1.1, 1.1); ctx.fill(); ellipsePath(2, -11, 1.1, 1.1); ctx.fill();
+      ellipsePath(-2, -14, 1.2, 0.8); ctx.fillStyle = 'rgba(255,230,200,0.45)'; ctx.fill(); // shine
+      break;
+    }
   }
   ctx.restore();
 }

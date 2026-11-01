@@ -38,7 +38,7 @@ const GLAZE_PERFECT_DISTANCE = 10;
 const GLAZE_ZERO_DISTANCE_RANGE = 90;
 
 /** Price building blocks. */
-const PRICE = { base: 14, perLayer: 4, filling: 3, magic: 4, royal: 20 };
+const PRICE = { base: 14, perLayer: 4, filling: 3, magic: 4, royal: 20, special: 12 };
 /** Tips start from this score. */
 const TIPS_MIN_SCORE = 0.7;
 const GENEROUS_TIP_MULTIPLIER = 1.3;
@@ -101,7 +101,7 @@ export function scoreCake(cake: Cake, order: Order, cat: CatDef, decorTipBonus: 
   const hearts = heartsIndex === -1 ? 1 : 5 - heartsIndex;
 
   const price = PRICE.base + order.layerCount * PRICE.perLayer + (order.filling ? PRICE.filling : 0)
-    + totalToppingCount(order) + PRICE.magic + (order.isRoyal ? PRICE.royal : 0);
+    + totalToppingCount(order) + PRICE.magic + (order.isRoyal ? PRICE.royal : 0) + (order.isSpecial ? PRICE.special : 0);
   const payment = Math.round(price * (0.35 + 0.65 * score));
   const tips = score >= TIPS_MIN_SCORE
     ? Math.round(price * (0.12 + (score - TIPS_MIN_SCORE)) * (1 + decorTipBonus) * (cat.isGenerous ? GENEROUS_TIP_MULTIPLIER : 1))

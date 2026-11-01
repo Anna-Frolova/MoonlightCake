@@ -1,6 +1,6 @@
 // Sound effects, built from tones and noise.
 import { pickRandom, randomInt, randomRange } from '../core/math';
-import type { ElementId } from '../data/types';
+import type { ElementId, KitchenThemeId } from '../data/types';
 import { playMeow, playNoise, playTone } from './engine';
 
 /** Pentatonic steps — any combination sounds pleasant. */
@@ -61,9 +61,43 @@ export const sfx = {
         [0, 4, 7, 11, 14, 19].forEach((step, i) => bell(step - 12, i * 0.08, 0.07, 1.3));
         playNoise(0.7, 0.04, 1500, { q: 0.6, sweepTo: 700, reverb: 0.4 });
         break;
+      case 'dark': // a low swell sinking into a whoosh
+        playTone(110, 1.2, { wave: 'sawtooth', volume: 0.05, slideTo: 55, reverb: 0.6, attack: 0.15 });
+        playTone(116.5, 1.2, { wave: 'sawtooth', volume: 0.035, slideTo: 58, reverb: 0.6, attack: 0.15 });
+        playNoise(1.0, 0.09, 1800, { q: 0.8, sweepTo: 150, reverb: 0.6, filter: 'lowpass' });
+        [0, 1, 6].forEach((step, i) => bell(step - 12, 0.15 + i * 0.12, 0.05, 1.4));
+        break;
+      case 'light': // a bright chord rising like a choir
+        [0, 4, 7, 12, 16, 19, 24].forEach((step, i) => bell(step, i * 0.05, 0.06, 1.6));
+        [523, 659, 784].forEach(hz => playTone(hz, 1.4, { wave: 'triangle', volume: 0.03, reverb: 0.8, attack: 0.25 }));
+        sfx.sparkle();
+        break;
+      case 'blood': // two heartbeats and a dark music-box chord
+        for (const delay of [0, 0.22, 0.75, 0.97]) playTone(70, 0.25, { volume: 0.3, slideTo: 45, delay, reverb: 0.2 });
+        [0, 3, 6, 9].forEach((step, i) => bell(step - 5, 0.1 + i * 0.09, 0.05, 1.3));
+        break;
       default:
         sfx.chime(); sfx.sparkle();
     }
   },
+  /** A special guest walks in: the café hints at the change. */
+  specialArrival(theme: KitchenThemeId) {
+    switch (theme) {
+      case 'dungeon': // a rumble from below and a gong
+        playTone(55, 1.6, { volume: 0.25, slideTo: 38, reverb: 0.6, attack: 0.05 });
+        playNoise(1.2, 0.08, 220, { q: 0.6, reverb: 0.5, filter: 'lowpass' });
+        playTone(98, 2, { wave: 'triangle', volume: 0.08, reverb: 0.8, delay: 0.1 });
+        break;
+      case 'heaven': // a harp glissando
+        [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24].forEach((step, i) => bell(step - 5, i * 0.045, 0.05, 1.4));
+        break;
+      case 'palace': // an organ chord and a flutter of bats
+        [57, 60, 64, 69].forEach(note => playTone(440 * Math.pow(2, (note - 69) / 12), 1.8, { wave: 'square', volume: 0.018, reverb: 0.8, attack: 0.1 }));
+        for (let i = 0; i < 6; i++) playTone(randomRange(3200, 4200), 0.05, { volume: 0.03, slideTo: 2600, delay: 0.5 + i * 0.09, reverb: 0.3 });
+        break;
+    }
+  },
+  /** The kitchen turns into the special guest's place. */
+  transform() { playNoise(0.9, 0.08, 400, { q: 0.7, sweepTo: 3600, reverb: 0.6 }); sfx.sparkle(); },
   meow(pitch = 1, mood: 'neutral' | 'happy' | 'sad' = 'neutral') { playMeow(pitch, mood); },
 };

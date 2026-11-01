@@ -3,13 +3,13 @@ import { setBusEnabled } from '../audio/engine';
 import { restartMusic } from '../audio/music';
 import { sfx } from '../audio/sfx';
 import { language, loc, setLanguage, type Language } from '../core/language';
-import { pickRandom } from '../core/math';
+import { pickRandom, randomInt } from '../core/math';
 import { burst } from '../core/particles';
 import { pointer } from '../core/ui';
-import { catById, GUESTS } from '../data/cats';
+import { catById, GUESTS, SPECIAL_GUESTS } from '../data/cats';
 import { guestsPerDay, STORY_DAYS } from '../data/schedule';
 import { t } from '../data/strings';
-import type { QueuedGuest, ShopItemDef } from '../data/types';
+import type { CatId, QueuedGuest, ShopItemDef } from '../data/types';
 import { goToScene, showModal, showToast } from '../scenes/sceneManager';
 import { countLayers, CREAM_DONE_COVERAGE } from './cake';
 import { buildDailyMenu } from './dailyMenu';
@@ -27,6 +27,9 @@ export const GUEST_ENTRY_X = 1480;
 export const GUEST_COUNTER_X = 640;
 /** Last day the queue gets a royal visit. */
 const ROYAL_VISIT_DAY = STORY_DAYS;
+/** Special guests come from this day on: one a day in the story, two a day in endless mode. */
+const SPECIAL_GUESTS_FROM_DAY = 2;
+const SPECIAL_GUESTS_PER_DAY = { story: 1, endless: 2 };
 /** Cream coverage below which serving asks "serve without cream?". */
 const CREAM_MISSING_COVERAGE = 0.3;
 
@@ -48,7 +51,23 @@ function buildGuestQueue(day: number): QueuedGuest[] {
     if (queue[2].cat === 'barsyk') queue[2] = { cat: 'lihtaryk' };
   }
   if (day === ROYAL_VISIT_DAY) queue[count - 1] = { cat: 'queen' };
+  // special guests take random places in the middle of the day (never the first or the last guest)
+  const free = Array.from({ length: count - 2 }, (_, i) => i + 1);
+  for (const id of pickSpecialGuests(day)) {
+    const [index] = free.splice(randomInt(0, free.length - 1), 1);
+    queue[index] = { cat: id };
+  }
   return queue;
+}
+
+/** Today's special guests: one who visits for the first time today comes for sure, the rest are random. */
+function pickSpecialGuests(day: number): CatId[] {
+  if (day < SPECIAL_GUESTS_FROM_DAY) return [];
+  const unlocked = SPECIAL_GUESTS.filter(cat => cat.firstDay <= Math.min(day, STORY_DAYS));
+  const count = Math.min(unlocked.length, day > STORY_DAYS ? SPECIAL_GUESTS_PER_DAY.endless : SPECIAL_GUESTS_PER_DAY.story);
+  const chosen = unlocked.filter(cat => cat.firstDay === day).map(cat => cat.id);
+  while (chosen.length < count) chosen.push(pickRandom(unlocked.filter(cat => !chosen.includes(cat.id))).id);
+  return chosen.slice(0, count);
 }
 
 export function hasProgressWorthContinuing(): boolean {
@@ -100,6 +119,7 @@ export function spawnNextGuest(): void {
   };
   runtime.cake = null;
   runtime.isServing = false;
+  if (cat.special) sfx.specialArrival(cat.special.theme);
 }
 
 /** Starts the guest's speech bubble typing out `text`. */

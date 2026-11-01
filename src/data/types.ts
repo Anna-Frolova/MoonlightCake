@@ -11,15 +11,22 @@ export type EssenceId = 'red' | 'yellow' | 'blue' | 'white' | 'dark';
 export type ToppingId =
   | 'strawberry' | 'currant' | 'blueberry' | 'raspberry'
   | 'rosePink' | 'roseWhite' | 'leaves' | 'lavender'
-  | 'pearl' | 'goldPearl';
+  | 'pearl' | 'goldPearl'
+  // only the special guests order these (see `special` on CatDef)
+  | 'chili' | 'feather' | 'bat';
 export type GlazeColorId =
   | 'red' | 'yellow' | 'blue' | 'orange' | 'green' | 'purple' | 'sunset' | 'teal' | 'lime'
   | 'pink' | 'sky' | 'lilac' | 'lemon' | 'white' | 'night' | 'plum' | 'forest' | 'cherry' | 'black';
-export type PaletteId = 'berry' | 'sunny' | 'sea' | 'lavender' | 'forest' | 'night' | 'chocolate';
-export type ElementId = 'fire' | 'ice' | 'bolt' | 'nature' | 'star';
+export type PaletteId = 'berry' | 'sunny' | 'sea' | 'lavender' | 'forest' | 'night' | 'chocolate'
+  | 'inferno' | 'heaven' | 'dracula';
+/** The last three are the special guests' magic: dark (demon), light (angel), blood (vampire). */
+export type ElementId = 'fire' | 'ice' | 'bolt' | 'nature' | 'star' | 'dark' | 'light' | 'blood';
+/** How the kitchen (and the music) changes while a special guest visits. */
+export type KitchenThemeId = 'dungeon' | 'heaven' | 'palace';
 export type CatId =
   | 'pushinka' | 'barsyk' | 'lihtaryk' | 'vusan' | 'mzhychka' | 'bulochka' | 'murlin'
-  | 'mokhovyk' | 'serdenko' | 'morok' | 'drimko' | 'queen';
+  | 'mokhovyk' | 'serdenko' | 'morok' | 'drimko' | 'queen'
+  | 'demon' | 'angel' | 'vampire';
 export type DecorId = 'garland' | 'catnip' | 'gramophone' | 'cushion' | 'vitrage' | 'chandelier';
 /** Kitchen station a helper automates. */
 export type HelperId = 'layers' | 'cream' | 'glaze' | 'toppings' | 'magic';
@@ -53,13 +60,18 @@ export interface PaletteDef {
   glazes: GlazeColorId[];
   toppings: ToppingId[];
   elements: ElementId[];
+  /** A special guest's own palette: never used for anyone else. */
+  isSpecial?: boolean;
 }
 
 export type CatPattern = 'none' | 'stripes' | 'points' | 'calico' | 'bicolor';
 export type CatHat = 'none' | 'flowers' | 'tophat' | 'witch' | 'captain' | 'souwester' | 'wizard' | 'kerchief' | 'crown' | 'chef'
-  | 'gothic' | 'mushroom' | 'beret' | 'nightcap';
-export type CatOutfit = 'none' | 'dress' | 'vest' | 'cloak' | 'sailor' | 'raincoat' | 'robe' | 'apron' | 'gown' | 'chef' | 'gothic' | 'leafy' | 'pajamas';
-export type CatAccessory = 'none' | 'monocle' | 'glasses' | 'bow';
+  | 'gothic' | 'mushroom' | 'beret' | 'nightcap' | 'horns' | 'halo' | 'vampire';
+export type CatOutfit = 'none' | 'dress' | 'vest' | 'cloak' | 'sailor' | 'raincoat' | 'robe' | 'apron' | 'gown' | 'chef' | 'gothic' | 'leafy' | 'pajamas'
+  | 'demon' | 'angel' | 'vampire';
+export type CatAccessory = 'none' | 'monocle' | 'glasses' | 'bow' | 'fangs';
+/** Drawn behind the cat: wings or a cape with a tall collar. */
+export type CatBack = 'none' | 'batWings' | 'featherWings' | 'cape';
 export type Mood = 'neutral' | 'happy' | 'sad' | 'thinking';
 
 /** How a cat looks (also used for the chef mascot and the helper kitten). */
@@ -79,6 +91,9 @@ export interface CatLook {
   isKitten?: boolean;
   /** Dark fur: use light whiskers. */
   isDarkFur?: boolean;
+  back?: CatBack;
+  /** Little devil's tail with a spade tip. */
+  hasSpadeTail?: boolean;
 }
 
 export interface CatDef extends CatLook {
@@ -95,6 +110,17 @@ export interface CatDef extends CatLook {
   favoriteShapes: ShapeId[];
   /** A picky guest orders only cakes that follow this rule. */
   orderRule?: OrderRule;
+  /** A special guest: orders cakes in their own style and transforms the kitchen and the music. */
+  special?: SpecialGuest;
+}
+
+/** What makes a special guest's visit special. */
+export interface SpecialGuest {
+  theme: KitchenThemeId;
+  /** Their own palette (marked `isSpecial`), their magic and their signature topping, which is on every cake they order. */
+  palette: PaletteId;
+  element: ElementId;
+  topping: ToppingId;
 }
 
 /** "Only these glaze colours" and/or "only these shapes" — the order picture shows it, no text needed. The guest skips days when today's menu can't make it. */
@@ -124,6 +150,8 @@ export interface Order {
   element: ElementId;
   /** The Moon Queen's special order (pays more). */
   isRoyal: boolean;
+  /** A special guest's order (pays more too). */
+  isSpecial: boolean;
 }
 
 export type StackItem =

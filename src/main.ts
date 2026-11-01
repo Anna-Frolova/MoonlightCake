@@ -10,7 +10,7 @@ import { randomRange } from './core/math';
 import { drawParticles, updateMotes, updateParticles } from './core/particles';
 import { beginUiFrame, findButtonAt, pointer, ui } from './core/ui';
 import { t } from './data/strings';
-import { progress, runtime } from './game/state';
+import { activeGuestTheme, progress, runtime } from './game/state';
 import { updatePatience } from './game/patience';
 import { setUpInput } from './input';
 import { updateAutoCream } from './kitchen/stations/cream';
@@ -66,7 +66,7 @@ function update(dt: number): void {
   updateMotes(dt);
   updatePotions(dt);
   updateKitchenLayout(dt);
-  updateMusic(progress.musicOn);
+  updateMusic(progress.musicOn, activeGuestTheme() ?? 'cafe');
   updateHall(dt);
   updatePatience(dt);
   updateTutorial();

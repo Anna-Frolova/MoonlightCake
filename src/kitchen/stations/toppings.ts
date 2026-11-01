@@ -9,7 +9,7 @@ import { BUTTON_COLOR } from '../../core/theme';
 import { button } from '../../core/ui';
 import { TOPPINGS } from '../../data/ingredients';
 import { t } from '../../data/strings';
-import type { Cake } from '../../data/types';
+import type { Cake, ToppingId } from '../../data/types';
 import { arrangeToppings, cakeHeight, countLayers, MAX_TOPPINGS } from '../../game/cake';
 import { getShapeGeometry, isInsideTopFace } from '../../game/cakeGeometry';
 import { runtime, todaysMenu } from '../../game/state';
@@ -29,6 +29,13 @@ const SNAP_STEPS = 7;
 const SNAP_STEP_FRACTION = 0.16;
 /** Helper places one topping every this many ms. */
 const AUTO_PLACE_INTERVAL_MS = 90;
+
+/** Today's toppings, plus a special guest's signature topping (it is never on the menu) at the front. */
+function shelfToppings(): ToppingId[] {
+  const menu = todaysMenu().toppings;
+  const extra = (Object.keys(currentOrder().toppings) as ToppingId[]).filter(topping => !menu.includes(topping));
+  return [...extra, ...menu];
+}
 
 /** Index of the topping under the pointer, or -1. */
 function toppingIndexAt(point: Point, cake: Cake): number {
@@ -77,7 +84,7 @@ export const toppingsStation: Station = {
 
   /** Dishes of today's toppings on the shelf above the cake; they are dragged from there. */
   drawScenery() {
-    const toppings = todaysMenu().toppings, { y, itemHeight } = INGREDIENT_SHELF, halfWidth = shelfItemHalfWidth(toppings.length);
+    const toppings = shelfToppings(), { y, itemHeight } = INGREDIENT_SHELF, halfWidth = shelfItemHalfWidth(toppings.length);
     shelfItemXs(toppings.length).forEach((x, i) => {
       runtime.toppingTray.push({ x: x - halfWidth, y: y - itemHeight, w: halfWidth * 2, h: itemHeight + 36, topping: toppings[i] });
     });

@@ -54,4 +54,26 @@ export const PALETTES: Record<PaletteId, PaletteDef> = {
     toppings: ['strawberry', 'raspberry', 'goldPearl', 'currant', 'roseWhite'],
     elements: ['fire', 'nature'],
   },
+  // the special guests' own palettes (their signature topping goes on every cake they order anyway)
+  inferno: {
+    name: { uk: 'Пекельна', ja: '地獄' }, swatches: ['#2a1a24', '#ff4a2a', '#ffb02e'], isSpecial: true,
+    flavors: ['chocolate', 'starry'], fillings: ['caramel', 'jam', 'honey'], creams: ['butter', 'berry'],
+    glazes: ['black', 'cherry', 'sunset', 'red'],
+    toppings: ['chili', 'raspberry', 'currant', 'goldPearl', 'strawberry'],
+    elements: ['dark'],
+  },
+  heaven: {
+    name: { uk: 'Небесна', ja: '天国' }, swatches: ['#fffaf0', '#ffe9a0', '#cfe8ff'], isSpecial: true,
+    flavors: ['vanilla', 'sky', 'strawberry'], fillings: ['honey', 'jelly', 'caramel'], creams: ['cloud', 'moon', 'butter'],
+    glazes: ['white', 'lemon', 'sky', 'pink'],
+    toppings: ['feather', 'pearl', 'goldPearl', 'roseWhite'],
+    elements: ['light'],
+  },
+  dracula: {
+    name: { uk: 'Вампірська', ja: '吸血鬼' }, swatches: ['#7a0f24', '#1a1020', '#e8d8e0'], isSpecial: true,
+    flavors: ['chocolate', 'strawberry', 'starry'], fillings: ['jam', 'blueberry'], creams: ['berry', 'moon'],
+    glazes: ['cherry', 'black', 'red', 'plum'],
+    toppings: ['bat', 'currant', 'raspberry', 'rosePink'],
+    elements: ['blood'],
+  },
 };

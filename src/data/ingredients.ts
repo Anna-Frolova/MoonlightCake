@@ -58,6 +58,9 @@ export const TOPPINGS: Record<ToppingId, ToppingDef> = {
   pearl:      { name: { uk: 'Перлинки',     ja: 'パール' } },
   goldPearl:  { name: { uk: 'Золоті перли', ja: '金のパール' } },
   lavender:   { name: { uk: 'Лаванда',      ja: 'ラベンダー' } },
+  chili:      { name: { uk: 'Вогняний перчик',  ja: 'ほのおペッパー' } },
+  feather:    { name: { uk: "Пір'їнка",         ja: '天使の羽' } },
+  bat:        { name: { uk: 'Шоколадний кажан', ja: 'チョココウモリ' } },
 };
 
 /** Glaze colours that orders can ask for, with the drops needed to mix them. */

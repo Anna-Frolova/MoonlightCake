@@ -45,6 +45,9 @@ export function drawMagicEffects(cake: Cake, geometry: ShapeGeometry, top: numbe
     case 'ice': drawIce(geometry, top, height, t, intensity, grow); break;
     case 'bolt': drawLightning(geometry, top, t, quality, grow); break;
     case 'nature': drawNature(geometry, top, height, t, intensity, grow); break;
+    case 'dark': drawDarkMagic(top, height, t, quality, intensity, grow); break;
+    case 'light': drawLightMagic(top, height, t, quality, intensity, grow); break;
+    case 'blood': drawBloodMagic(geometry, top, height, t, quality, intensity, grow); break;
     default: drawStarMagic(top, height, t, quality, grow); break;
   }
   ctx.restore();
@@ -182,4 +185,100 @@ function drawStarMagic(top: number, height: number, t: number, quality: number, 
   drawGlow(moonX, moonY, 30, '#e8dcff', 0.6 * grow);
   ctx.fillStyle = '#fff6d8';
   ctx.beginPath(); ctx.arc(moonX, moonY, 10 * grow, 0, Math.PI * 2); ctx.arc(moonX + 4, moonY - 3, 8.5 * grow, 0, Math.PI * 2, true); ctx.fill('evenodd');
+}
+
+/** Dark smoke curling up around the cake, a violet vortex turning on the top and black orbs circling it. */
+function drawDarkMagic(top: number, height: number, t: number, quality: number, intensity: number, grow: number): void {
+  for (let k = 0; k < 12; k++) { // smoke puffs: grow and fade as they rise
+    const phase = (t * 0.32 + k / 12) % 1;
+    const x = Math.sin(k * 3.7 + t * 0.6) * 125 * (0.6 + phase * 0.5), y = top + 30 - phase * 170;
+    const radius = (14 + phase * 28) * grow;
+    ctx.fillStyle = `rgba(36,8,64,${(1 - phase) * 0.42 * intensity})`;
+    ellipsePath(x, y, radius, radius * 0.8); ctx.fill();
+  }
+  ctx.save();
+  ctx.translate(0, top); ctx.scale(1, SQUASH);
+  ctx.shadowColor = '#b36bff'; ctx.shadowBlur = 12; ctx.lineWidth = 3.5;
+  for (let arm = 0; arm < 3; arm++) {
+    ctx.beginPath();
+    for (let s = 0; s <= 28; s++) {
+      const radius = (6 + s * 3.4) * grow, angle = t * 2.2 + (arm * Math.PI * 2) / 3 + s * 0.2;
+      if (s) ctx.lineTo(Math.cos(angle) * radius, Math.sin(angle) * radius); else ctx.moveTo(Math.cos(angle) * radius, Math.sin(angle) * radius);
+    }
+    ctx.strokeStyle = `rgba(190,120,255,${0.7 * intensity})`; ctx.stroke();
+  }
+  ctx.restore();
+  const orbCount = 3 + Math.round(quality * 3);
+  for (let k = 0; k < orbCount; k++) {
+    const angle = -t * 1.1 + (k * Math.PI * 2) / orbCount;
+    const x = Math.cos(angle) * 150, y = top / 2 + Math.sin(angle) * (height / 2 + 40) * 0.55;
+    drawGlow(x, y, 28, '#b36bff', 0.55 * grow);
+    ellipsePath(x, y, 8 * grow, 8 * grow); ctx.fillStyle = '#1a0a2a'; ctx.fill();
+    ctx.strokeStyle = '#d6a8ff'; ctx.lineWidth = 1.5; ctx.stroke();
+  }
+}
+
+/** Beams of light falling on the cake, a golden halo floating over it, sparkles and drifting feathers. */
+function drawLightMagic(top: number, height: number, t: number, quality: number, intensity: number, grow: number): void {
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  for (let k = 0; k < 5; k++) { // god rays
+    const sway = Math.sin(t * 0.7 + k * 1.9) * 18, x = (k - 2) * 46 + sway, width = 16 + (k % 2) * 10;
+    const g = ctx.createLinearGradient(0, top - 280, 0, top + 20);
+    g.addColorStop(0, 'rgba(255,245,200,0)'); g.addColorStop(1, `rgba(255,240,170,${(0.16 + 0.1 * Math.sin(t * 2 + k)) * intensity * grow})`);
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.moveTo(x - width * 0.4, top - 280); ctx.lineTo(x + width * 0.4, top - 280); ctx.lineTo(x + width * 1.6, top + 20); ctx.lineTo(x - width * 1.6, top + 20); ctx.closePath(); ctx.fill();
+  }
+  ctx.restore();
+  const haloY = top - 54 + Math.sin(t * 1.8) * 6;
+  ctx.save();
+  ctx.shadowColor = '#ffe98a'; ctx.shadowBlur = 20;
+  ctx.strokeStyle = `rgba(255,226,120,${0.95 * grow})`; ctx.lineWidth = 7;
+  ellipsePath(0, haloY, 74 * grow, 16 * grow); ctx.stroke();
+  ctx.strokeStyle = `rgba(255,255,230,${0.9 * grow})`; ctx.lineWidth = 2.5; ctx.stroke();
+  ctx.restore();
+  const sparkleCount = Math.round(6 + quality * 8);
+  for (let k = 0; k < sparkleCount; k++) {
+    const twinkle = Math.max(0, Math.sin(t * 3 + k * 2.3));
+    const x = Math.sin(k * 7.7) * 160, y = top - 40 + ((k * 53) % (height + 120));
+    drawGlow(x, y, 16, '#fff6c8', 0.5 * twinkle);
+    ctx.fillStyle = `rgba(255,252,225,${twinkle})`; starPath(x, y, 7 * twinkle * grow + 1, 1.6, 4, 0); ctx.fill();
+  }
+  for (let k = 0; k < 5; k++) { // feathers swing down like leaves
+    const phase = (t * 0.18 + k / 5) % 1;
+    ctx.save();
+    ctx.globalAlpha = Math.sin(phase * Math.PI) * intensity;
+    ctx.translate(Math.sin(k * 4.3) * 150 + Math.sin(t * 1.5 + k) * 22, top - 120 + phase * (height + 180));
+    ctx.rotate(Math.sin(t * 1.5 + k) * 0.6);
+    ctx.fillStyle = '#ffffff'; ellipsePath(0, 0, 4, 11); ctx.fill();
+    ctx.strokeStyle = '#e8c860'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(0, 12); ctx.lineTo(0, -10); ctx.stroke();
+    ctx.restore();
+  }
+}
+
+/** Crimson drips running down the front, a heartbeat glow and drops of blood circling the cake. */
+function drawBloodMagic(geometry: ShapeGeometry, top: number, height: number, t: number, quality: number, intensity: number, grow: number): void {
+  const beat = (t * 1.2) % 1, pulse = Math.max(Math.exp(-beat * 12), 0.7 * Math.exp(-Math.abs(beat - 0.22) * 14)); // lub-dub
+  drawGlow(0, top - 10, 150 + pulse * 40, '#ff2a4a', (0.18 + pulse * 0.25) * intensity);
+  geometry.frontRim.forEach(([x, z], i) => {
+    if (i % 2) return;
+    const length = (16 + ((i * 29) % 30) + Math.sin(t * 1.3 + i) * 4) * grow * Math.min(1, height / 60);
+    const px = x * 0.98, py = top + z * SQUASH;
+    const g = ctx.createLinearGradient(0, py, 0, py + length);
+    g.addColorStop(0, '#c4102e'); g.addColorStop(1, '#8a0a20');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.moveTo(px - 4.5, py); ctx.lineTo(px + 4.5, py); ctx.lineTo(px + 3, py + length);
+    ctx.arc(px, py + length, 3.6, 0, Math.PI); ctx.closePath(); ctx.fill();
+    ellipsePath(px - 1.2, py + length - 1, 1.1, 1.6); ctx.fillStyle = 'rgba(255,200,210,0.7)'; ctx.fill();
+  });
+  const dropCount = 4 + Math.round(quality * 4);
+  for (let k = 0; k < dropCount; k++) {
+    const angle = t * 0.7 + (k * Math.PI * 2) / dropCount;
+    const x = Math.cos(angle) * 145, y = top / 2 + Math.sin(angle) * (height / 2 + 44) * 0.55 + Math.sin(t * 2 + k) * 6;
+    const size = (5 + pulse * 1.5) * grow;
+    drawGlow(x, y, 18, '#ff3a5c', 0.4);
+    ctx.fillStyle = '#d4183a';
+    ctx.beginPath(); ctx.moveTo(x, y - size * 1.9); ctx.quadraticCurveTo(x + size * 1.1, y - size * 0.2, x, y + size); ctx.quadraticCurveTo(x - size * 1.1, y - size * 0.2, x, y - size * 1.9); ctx.fill();
+    ellipsePath(x - size * 0.3, y - size * 0.1, size * 0.22, size * 0.35); ctx.fillStyle = 'rgba(255,220,225,0.8)'; ctx.fill();
+  }
 }
