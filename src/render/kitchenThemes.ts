@@ -1,11 +1,12 @@
 // The kitchen dressed up for a special guest: a stone dungeon (demon), a bright place in the clouds (angel),
-// Dracula's palace (vampire), a shrine at night (kitsune), a ritual hall (cultist) and a flower meadow (fairy). Each theme draws its own wall, table, cake stand and floating ambience.
+// Dracula's palace (vampire), a shrine at night (samurai), a ritual hall (cultist) and a flower meadow (fairy). Each theme draws its own wall, table, cake stand and floating ambience.
 import { ctx, firstOnGrid, view } from '../core/canvas';
 import { shade } from '../core/color';
 import { drawGlow, ellipsePath, roundRectPath, starPath } from '../core/draw';
 import type { KitchenThemeId } from '../data/types';
 import { CAKE_CENTER_X } from '../kitchen/layout';
 import { drawMagicCircle } from './environment';
+import { drawSakuraPetal } from './magicEffects';
 
 /** Where the wall ends and the table starts, and where the table's front ends (same as the ordinary kitchen). */
 const TABLE_TOP_Y = 520;
@@ -378,12 +379,12 @@ const palace: KitchenTheme = {
   },
 };
 
-// ---------------- kitsune: a shrine at night ----------------
+// ---------------- samurai: a shrine at night ----------------
 
 const TORII = { halfSpan: 236, pillarWidth: 30, topY: 78, beamY: 236, color: '#d83a2a', dark: '#2a1414' };
 const SHRINE_LANTERN_SPACING = 170;
 const STONE_LANTERNS = [452, 1222];
-const FOXFIRE_BLUE = '#8fd8ff';
+const SAKURA_PINK = '#ff9cc4';
 
 /** A red paper lantern (chōchin) hanging from the rope, glowing and swaying. */
 function drawPaperLantern(x: number, y: number, time: number): void {
@@ -447,17 +448,9 @@ function drawShrineRoom(time: number): void {
   for (let y = TABLE_TOP_Y + 30; y < TABLE_BOTTOM_Y; y += 30) { ctx.beginPath(); ctx.moveTo(view.left, y); ctx.lineTo(view.right, y); ctx.stroke(); }
 }
 
-/** A floating fox-fire wisp: a pale blue flame with a white heart. */
-function drawFoxfireWisp(x: number, y: number, size: number, alpha: number): void {
-  drawGlow(x, y, size * 4, FOXFIRE_BLUE, 0.5 * alpha);
-  ctx.fillStyle = `rgba(190,235,255,${0.8 * alpha})`;
-  ctx.beginPath(); ctx.moveTo(x, y - size * 2); ctx.quadraticCurveTo(x + size, y - size * 0.3, x, y + size); ctx.quadraticCurveTo(x - size, y - size * 0.3, x, y - size * 2); ctx.fill();
-  ctx.fillStyle = `rgba(255,255,255,${alpha})`; ellipsePath(x, y, size * 0.4, size * 0.5); ctx.fill();
-}
-
 const shrine: KitchenTheme = {
-  revealColor: '#ff7a3a',
-  sparkColors: ['#ff7a3a', '#ffffff', FOXFIRE_BLUE],
+  revealColor: SAKURA_PINK,
+  sparkColors: [SAKURA_PINK, '#ffffff', '#e8323a'],
   drawRoom: drawShrineRoom,
   drawStand(cx) { // a plain wooden offering stand on a red base
     drawGlow(cx, 580, 200, '#ff9a4a', 0.18);
@@ -469,19 +462,11 @@ const shrine: KitchenTheme = {
     ctx.strokeStyle = '#b8201a'; ctx.lineWidth = 3.5; ctx.stroke();
     ellipsePath(cx, 571, 150, 34); ctx.strokeStyle = 'rgba(120,70,30,0.4)'; ctx.lineWidth = 2; ctx.stroke();
   },
-  drawAmbience(time) { // red maple leaves drifting down and fox-fire wisps bobbing
-    for (let k = 0; k < 10; k++) {
+  drawAmbience(time) { // sakura petals drifting down across the whole kitchen
+    for (let k = 0; k < 18; k++) {
       const phase = (time * (0.05 + hash(k, 22) * 0.04) + hash(k, 23)) % 1;
-      const x = view.left + hash(k, 24) * (view.right - view.left) + Math.sin(time + k) * 30, y = 60 + phase * 600;
-      ctx.save(); ctx.globalAlpha = Math.sin(phase * Math.PI) * 0.9;
-      ctx.translate(x, y); ctx.rotate(time * (0.7 + hash(k, 25)) + k);
-      ctx.fillStyle = k % 2 ? '#e8402a' : '#ff8a3a'; starPath(0, 0, 8, 4, 5, 0); ctx.fill();
-      ctx.restore();
-    }
-    for (let k = 0; k < 6; k++) {
-      const x = view.left + hash(k, 26) * (view.right - view.left) + Math.sin(time * 0.6 + k * 2) * 40;
-      const y = 200 + hash(k, 27) * 260 + Math.sin(time * 1.4 + k) * 16;
-      drawFoxfireWisp(x, y, 6, 0.6 + 0.3 * Math.sin(time * 3 + k));
+      const x = view.left + hash(k, 24) * (view.right - view.left) + Math.sin(time * 0.9 + k) * 40, y = 60 + phase * 620;
+      drawSakuraPetal(x, y, 10 + hash(k, 25) * 6, time * (0.8 + hash(k, 26)) + k, Math.sin(phase * Math.PI) * 0.95);
     }
   },
 };

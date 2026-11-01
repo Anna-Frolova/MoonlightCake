@@ -11,12 +11,12 @@ export const ELEMENTS: Record<ElementId, ElementDef> = {
   dark:   { name: { uk: 'Темрява',   ja: '闇' },   color: '#b36bff', signName: { uk: 'вихор',     ja: 'うず' },     unlockDay: 1 },
   light:  { name: { uk: 'Світло',    ja: '光' },   color: '#ffe98a', signName: { uk: 'крила',     ja: 'つばさ' },   unlockDay: 1 },
   blood:  { name: { uk: 'Кров',      ja: '血' },   color: '#ff3a5c', signName: { uk: 'ікла',      ja: 'きば' },     unlockDay: 1 },
-  foxfire: { name: { uk: 'Лисячий вогонь', ja: '狐火' }, color: '#ff7a3a', signName: { uk: 'хвіст', ja: 'しっぽ' }, unlockDay: 1 },
+  sakura: { name: { uk: 'Сакура',    ja: '桜' },   color: '#ff8fb8', signName: { uk: 'гілочка',   ja: 'えだ' },     unlockDay: 1 },
 };
 /** The everyday elements, shown on the magic station for every order. */
 export const ELEMENT_ORDER: ElementId[] = ['fire', 'ice', 'bolt', 'nature', 'star'];
 /** The special guests' magic: it joins the row only while its guest waits for the cake. */
-export const GUEST_ELEMENTS: ElementId[] = ['dark', 'light', 'blood', 'foxfire'];
+export const GUEST_ELEMENTS: ElementId[] = ['dark', 'light', 'blood', 'sakura'];
 
 const circlePoints = (count: number): Vec2[] =>
   Array.from({ length: count }, (_, i) => {
@@ -59,8 +59,8 @@ export const SIGN_SHAPES: Record<ElementId, { closed: boolean; points: Vec2[] }>
   },
   // fangs: a W
   blood: { closed: false, points: [[0, 0], [0.25, 0.95], [0.5, 0.3], [0.75, 0.95], [1, 0]] },
-  // a fox tail: straight down, then curling to the left (a J)
-  foxfire: {
+  // a sakura twig: straight down, then curling to the left (a J)
+  sakura: {
     closed: false,
     points: [[0.65, 0], [0.65, 0.6], ...Array.from({ length: 9 }, (_, i): Vec2 => [0.4 + Math.cos((i / 8) * Math.PI) * 0.25, 0.6 + Math.sin((i / 8) * Math.PI) * 0.3])],
   },

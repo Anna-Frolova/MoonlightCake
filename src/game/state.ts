@@ -6,7 +6,7 @@ import { ELEMENT_ORDER, ELEMENTS } from '../data/elements';
 import { CREAMS, ESSENCES, GLAZE_COLORS } from '../data/ingredients';
 import { SHOP_ITEMS } from '../data/shop';
 import type {
-  Cake, CatDef, CreamId, ElementId, EssenceId, GlazeColorDef, KitchenThemeId, Mood, Order, SaveData, ShopItemId, ToppingId,
+  Cake, CatDef, CatId, CreamId, ElementId, EssenceId, GlazeColorDef, KitchenThemeId, Mood, Order, SaveData, ShopItemId, ToppingId,
 } from '../data/types';
 import { buildDailyMenu } from './dailyMenu';
 import { createNewSave, loadSave, writeSave } from './save';
@@ -16,6 +16,13 @@ import type { CakeScore } from './scoring';
 
 export const progress: SaveData = loadSave() ?? createNewSave();
 ensureMenuForToday();
+renameOldGuests();
+
+/** Guests that were renamed: a day saved before the change gets the new guest instead (the kitsune became the samurai). */
+function renameOldGuests(): void {
+  const renamed: Record<string, CatId> = { kitsune: 'samurai' };
+  progress.guestQueue = progress.guestQueue?.map(guest => (renamed[guest.cat] ? { ...guest, cat: renamed[guest.cat] } : guest)) ?? null;
+}
 
 export function ensureMenuForToday(): void {
   if (!progress.menu || progress.menu.day !== progress.day) progress.menu = buildDailyMenu(progress.day, null, progress.seed);

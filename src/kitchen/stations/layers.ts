@@ -83,12 +83,17 @@ function removeTopItem(): void {
   sfx.pickup();
 }
 
-/** What lies on the layers shelf: a piece of each flavour (in the chosen shape), then a jar of each filling. */
+/**
+ * What lies on the layers shelf: a piece of each flavour (in the chosen shape), then a jar of each filling —
+ * today's menu, plus a special guest's sponge and filling when the menu doesn't have them (put first).
+ */
 type LayerShelfItem = `flavor:${FlavorId}` | `filling:${FillingId}`;
 
 function shelfItems(): LayerShelfItem[] {
-  const menu = todaysMenu();
-  return [...menu.flavors.map(id => `flavor:${id}` as const), ...menu.fillings.map(id => `filling:${id}` as const)];
+  const menu = todaysMenu(), order = currentOrder();
+  const flavors = menu.flavors.includes(order.flavor) ? menu.flavors : [order.flavor, ...menu.flavors];
+  const fillings = !order.filling || menu.fillings.includes(order.filling) ? menu.fillings : [order.filling, ...menu.fillings];
+  return [...flavors.map(id => `flavor:${id}` as const), ...fillings.map(id => `filling:${id}` as const)];
 }
 
 const shelfLabel = (item: LayerShelfItem): string => {

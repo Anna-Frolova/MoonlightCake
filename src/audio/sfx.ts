@@ -76,10 +76,9 @@ export const sfx = {
         for (const delay of [0, 0.22, 0.75, 0.97]) playTone(70, 0.25, { volume: 0.3, slideTo: 45, delay, reverb: 0.2 });
         [0, 3, 6, 9].forEach((step, i) => bell(step - 5, 0.1 + i * 0.09, 0.05, 1.3));
         break;
-      case 'foxfire': // a roaring whoosh of fire and a bright koto-like run
-        playNoise(0.8, 0.13, 300, { q: 0.6, sweepTo: 2600, reverb: 0.4, filter: 'lowpass' });
-        playTone(220, 0.7, { wave: 'sawtooth', volume: 0.04, slideTo: 440, reverb: 0.4 });
-        [0, 1, 5, 7, 8, 12].forEach((step, i) => bell(step - 3, 0.1 + i * 0.06, 0.06, 1.2));
+      case 'sakura': // a soft gust of wind and a falling run on the Japanese scale
+        playNoise(1.2, 0.06, 500, { q: 0.5, sweepTo: 1600, reverb: 0.6, filter: 'lowpass' });
+        [12, 8, 7, 5, 1, 0, -4].forEach((step, i) => bell(step, i * 0.11, 0.05, 1.6));
         break;
       default:
         sfx.chime(); sfx.sparkle();

@@ -117,11 +117,11 @@ export const SPECIAL_GUESTS: CatDef[] = [
     special: { theme: 'palace', palette: 'dracula', element: 'blood', topping: 'bat' },
   },
   {
-    id: 'kitsune', name: { uk: 'Кіцуне Акане', ja: '狐のあかね' }, firstDay: 5, voicePitch: 1.2, isGenerous: true,
-    fur: '#fff8f0', furAccent: '#e8323a', pattern: 'none', eyeColor: '#ffb02e',
-    hat: 'foxMask', outfit: 'miko', outfitColor: '#e8323a', tailCount: 9, tailTipColor: '#e8323a',
-    favoritePalettes: ['shrine'], favoriteShapes: ['round', 'heart'],
-    special: { theme: 'shrine', palette: 'shrine', element: 'foxfire', topping: 'mochi' },
+    id: 'samurai', name: { uk: 'Самурай Котаро', ja: '侍のコタロウ' }, firstDay: 5, voicePitch: 0.85, isGenerous: true,
+    fur: '#f2ece2', furAccent: '#9a8a78', pattern: 'stripes', eyeColor: '#e8a030',
+    hat: 'topknot', outfit: 'samurai', outfitColor: '#2a3a6a', back: 'katana',
+    favoritePalettes: ['shrine'], favoriteShapes: ['round', 'square'],
+    special: { theme: 'shrine', palette: 'shrine', element: 'sakura', topping: 'mochi' },
   },
   {
     id: 'cultist', name: { uk: 'Брат Шепіт', ja: 'ささやき兄弟' }, firstDay: 6, voicePitch: 0.8, isGenerous: true, isDarkFur: true,

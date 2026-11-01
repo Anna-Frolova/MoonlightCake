@@ -48,7 +48,7 @@ export function drawMagicEffects(cake: Cake, geometry: ShapeGeometry, top: numbe
     case 'dark': drawDarkMagic(top, height, t, quality, intensity, grow); break;
     case 'light': drawLightMagic(top, height, t, quality, intensity, grow); break;
     case 'blood': drawBloodMagic(geometry, top, height, t, quality, intensity, grow); break;
-    case 'foxfire': drawFoxfireMagic(top, height, t, quality, intensity, grow); break;
+    case 'sakura': drawSakuraMagic(geometry, top, height, t, quality, intensity, grow); break;
     default: drawStarMagic(top, height, t, quality, grow); break;
   }
   ctx.restore();
@@ -284,38 +284,34 @@ function drawBloodMagic(geometry: ShapeGeometry, top: number, height: number, t:
   }
 }
 
-/**
- * Fox fire: a fiery orange-red aura licking up around the cake, the ghostly shapes of nine tails fanning out
- * behind its top, and pale blue fox-fire wisps circling it.
- */
-function drawFoxfireMagic(top: number, height: number, t: number, quality: number, intensity: number, grow: number): void {
-  ctx.save();
-  ctx.globalCompositeOperation = 'lighter';
-  for (let i = 0; i < 9; i++) { // the tails
-    const angle = -Math.PI / 2 + (i - 4) * 0.28 + Math.sin(t * 1.8 + i) * 0.06, length = (110 + 30 * quality) * grow;
-    ctx.save(); ctx.translate(0, top - 6); ctx.rotate(angle);
-    ctx.beginPath(); ctx.moveTo(0, 0); ctx.quadraticCurveTo(length * 0.5, -22, length, 0); ctx.quadraticCurveTo(length * 0.5, 22, 0, 0); ctx.closePath();
-    const tail = ctx.createLinearGradient(0, 0, length, 0);
-    tail.addColorStop(0, 'rgba(255,90,40,0)'); tail.addColorStop(0.5, `rgba(255,120,50,${0.28 * intensity})`); tail.addColorStop(1, `rgba(255,200,120,${0.4 * intensity})`);
-    ctx.fillStyle = tail; ctx.fill();
-    ctx.restore();
-  }
-  for (let k = 0; k < 16; k++) { // the aura: flame tongues all around the cake
-    const side = k % 2 ? 1 : -1, row = Math.floor(k / 2), y = -row * (height / 8) - 4;
-    const x = side * (120 + Math.sin(t * 3 + k) * 8), flick = 0.7 + 0.3 * Math.sin(t * 11 + k * 1.7);
-    const h = (40 + 20 * quality) * flick * grow;
-    const g = ctx.createLinearGradient(0, y, 0, y - h);
-    g.addColorStop(0, `rgba(255,70,30,${0.55 * intensity})`); g.addColorStop(1, 'rgba(255,190,90,0)');
-    ctx.fillStyle = g;
-    ctx.beginPath(); ctx.moveTo(x - 14, y); ctx.quadraticCurveTo(x - 12 + side * 6, y - h * 0.6, x + side * 10, y - h); ctx.quadraticCurveTo(x + 14, y - h * 0.4, x + 14, y); ctx.closePath(); ctx.fill();
-  }
+/** A sakura petal (about `size` px long) with the little notch at its tip, pointing up at rotation 0. */
+export function drawSakuraPetal(x: number, y: number, size: number, rotation: number, alpha = 1): void {
+  ctx.save(); ctx.translate(x, y); ctx.rotate(rotation); ctx.globalAlpha *= alpha;
+  ctx.beginPath(); ctx.moveTo(0, size * 0.5);
+  ctx.quadraticCurveTo(-size * 0.55, 0, -size * 0.2, -size * 0.5); ctx.lineTo(0, -size * 0.36);
+  ctx.lineTo(size * 0.2, -size * 0.5); ctx.quadraticCurveTo(size * 0.55, 0, 0, size * 0.5); ctx.closePath();
+  const g = ctx.createLinearGradient(0, size * 0.5, 0, -size * 0.5); g.addColorStop(0, '#ff8fb8'); g.addColorStop(1, '#ffe0ec');
+  ctx.fillStyle = g; ctx.fill();
   ctx.restore();
-  const wisps = 3 + Math.round(quality * 3);
-  for (let k = 0; k < wisps; k++) { // fox-fire wisps circling the cake
-    const angle = t * 1.2 + (k * Math.PI * 2) / wisps, x = Math.cos(angle) * 150, y = top / 2 + Math.sin(angle) * (height / 2 + 40) * 0.5;
-    const size = 6 * grow;
-    drawGlow(x, y, size * 4.5, '#8fd8ff', 0.55);
-    ctx.fillStyle = 'rgba(200,240,255,0.9)';
-    ctx.beginPath(); ctx.moveTo(x, y - size * 2.2); ctx.quadraticCurveTo(x + size, y - size * 0.3, x, y + size); ctx.quadraticCurveTo(x - size, y - size * 0.3, x, y - size * 2.2); ctx.fill();
+}
+
+/**
+ * Sakura: a soft pink glow and petals drifting down around the cake in a gentle swirl; a few have settled
+ * on the top face.
+ */
+function drawSakuraMagic(geometry: ShapeGeometry, top: number, height: number, t: number, quality: number, intensity: number, grow: number): void {
+  drawGlow(0, top - 20, 190, '#ffb8d4', 0.25 * intensity * grow);
+  const petals = Math.round(14 + quality * 14), fall = height + 260;
+  for (let k = 0; k < petals; k++) {
+    const random = seededRandom(k * 97 + 5), speed = 0.18 + random() * 0.12, phase = (t * speed + random()) % 1;
+    const swirl = t * (0.8 + random() * 0.6) + k;
+    const x = (random() - 0.5) * 300 + Math.sin(swirl) * 30, y = top - 200 + phase * fall;
+    drawSakuraPetal(x, y, 9 + random() * 6, Math.sin(swirl * 1.3) * 1.2 + k, Math.sin(phase * Math.PI) * intensity * grow);
+  }
+  const random = seededRandom(31); // petals resting on the top face
+  const settled = Math.round(4 + quality * 6);
+  for (let k = 0; k < settled; k++) {
+    const [rx, rz] = geometry.rim[Math.floor(random() * geometry.rim.length)], s = 0.25 + random() * 0.6;
+    drawSakuraPetal(rx * s, top + rz * s * SQUASH, 10 * grow, random() * Math.PI * 2);
   }
 }

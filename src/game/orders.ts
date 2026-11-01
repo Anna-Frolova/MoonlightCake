@@ -142,9 +142,10 @@ function generateSpecialOrder(cat: CatDef, special: SpecialGuest, day: number): 
     palette: special.palette,
     shape: pickPreferring(menu.shapes, cat.favoriteShapes, FAVORITE_SHAPE_CHANCE),
     layerCount: randomInt(2, 3),
-    flavor: pickFromPalette(palette.flavors, menu.flavors),
-    filling: pickFromPalette(palette.fillings, menu.fillings),
-    cream: pickFromPalette(palette.creams, menu.creams),
+    // their own colours even if today's menu lacks them: the layers shelf adds what their order needs
+    flavor: pickFromPalette(palette.flavors, palette.flavors),
+    filling: pickFromPalette(palette.fillings, palette.fillings),
+    cream: pickFromPalette(palette.creams, palette.creams),
     glaze: pickFromPalette(palette.glazes, availableGlazeColors().map(color => color.id)),
     toppings,
     element: special.element,

@@ -77,11 +77,11 @@ export const PALETTES: Record<PaletteId, PaletteDef> = {
     elements: ['blood'],
   },
   shrine: {
-    name: { uk: 'Храмова', ja: '神社' }, swatches: ['#ffffff', '#e8323a', '#ffd86b'], isSpecial: true,
-    flavors: ['vanilla', 'strawberry'], fillings: ['jam', 'honey', 'caramel'], creams: ['butter', 'berry'],
-    glazes: ['white', 'red', 'cherry', 'pink'],
+    name: { uk: 'Самурайська', ja: '侍' }, swatches: ['#ffffff', '#e8323a', '#fff6e2'], isSpecial: true,
+    flavors: ['vanilla', 'strawberry'], fillings: ['jam'], creams: ['butter'],
+    glazes: ['white', 'red'],
     toppings: ['mochi', 'strawberry', 'raspberry', 'roseWhite'],
-    elements: ['foxfire'],
+    elements: ['sakura'],
   },
   cult: {
     name: { uk: 'Таємнича', ja: '秘密結社' }, swatches: ['#1a1022', '#7a3fd0', '#b48cff'], isSpecial: true,

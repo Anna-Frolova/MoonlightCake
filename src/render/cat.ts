@@ -14,8 +14,10 @@ const GOTHIC_RED = '#d0213f';
 const RIM_LIGHT = 'rgba(150,210,255,0.45)';
 const ANGER_RED = '#ff5f8f';
 const BEARD_WHITE = '#f6f3ee';
-/** The kitsune's tails fan out between these angles (radians, 0 = right, upwards is negative). */
-const TAIL_FAN = { from: -2.9, to: -0.25, length: 205, width: 34 };
+/** The katana on the samurai's back: raised so the hilt shows over the left shoulder (the headband's ends flutter on the right). */
+const KATANA_LIFT = -100;
+const KATANA_ANGLE = -0.8;
+
 
 const BODY = { centerY: -46, radiusX: 82, radiusY: 88 };
 const HEAD = { centerY: -150, radiusX: 74, radiusY: 60 };
@@ -81,7 +83,6 @@ export function drawCat(look: CatLook, x: number, y: number, scale: number, time
 }
 
 function drawTail(look: CatLook, outline: string, time: number): void {
-  if ((look.tailCount ?? 1) > 1) { drawTailFan(look, outline, time); return; }
   const sway = Math.sin(time * 1.7) * 14;
   ctx.strokeStyle = outline; ctx.lineWidth = 25;
   ctx.beginPath(); ctx.moveTo(52, -10); ctx.bezierCurveTo(120, -20, 104 + sway, -110, 136 + sway, -142); ctx.stroke();
@@ -99,24 +100,7 @@ function drawTail(look: CatLook, outline: string, time: number): void {
   }
 }
 
-/** Fluffy tails fanned out behind the body, each swaying a little, tips in `tailTipColor`. */
-function drawTailFan(look: CatLook, outline: string, time: number): void {
-  const count = look.tailCount ?? 1, { from, to, length, width } = TAIL_FAN;
-  for (let i = 0; i < count; i++) {
-    const angle = from + ((to - from) * i) / (count - 1) + Math.sin(time * 1.6 + i * 0.9) * 0.06;
-    ctx.save(); ctx.translate(0, -40); ctx.rotate(angle);
-    ctx.beginPath(); ctx.moveTo(10, 0);
-    ctx.bezierCurveTo(length * 0.4, -width, length * 0.85, -width, length, 0); ctx.bezierCurveTo(length * 0.85, width, length * 0.4, width, 10, 0); ctx.closePath();
-    ctx.fillStyle = softGradient(length * 0.6, 0, length * 0.5, width, look.fur); ctx.fill();
-    ctx.strokeStyle = outline; ctx.lineWidth = 2.5; ctx.stroke();
-    ctx.save(); ctx.clip(); // coloured tip
-    ctx.fillStyle = look.tailTipColor ?? look.furAccent; ctx.fillRect(length * 0.8, -width, length * 0.3, width * 2);
-    ctx.restore();
-    ctx.restore();
-  }
-}
-
-/** Wings or a cape behind the cat; wings flap slowly. */
+/** Wings, a cape or a katana behind the cat; wings flap slowly. */
 function drawBack(look: CatLook, outline: string, time: number): void {
   const flap = Math.sin(time * 2.4) * 0.07;
   ctx.save();
@@ -155,6 +139,18 @@ function drawBack(look: CatLook, outline: string, time: number): void {
         ctx.restore();
       }
       break;
+    case 'katana': { // a sheathed katana across the back: the hilt over the left shoulder, the scabbard's end low on the right
+      ctx.save(); ctx.translate(0, KATANA_LIFT); ctx.scale(-1, 1); ctx.rotate(KATANA_ANGLE); // mirrored: the hilt goes over the left shoulder, clear of the headband's ends
+      roundRectPath(-150, -9, 210, 18, 8); ctx.fillStyle = '#1a1418'; ctx.fill(); ctx.strokeStyle = outline; ctx.stroke(); // scabbard
+      ctx.fillStyle = '#c8202a'; for (const cordX of [-40, -20]) ctx.fillRect(cordX, -9, 6, 18); // red cord
+      ellipsePath(62, 0, 6, 17); ctx.fillStyle = '#e8b84a'; ctx.fill(); ctx.stroke(); // tsuba
+      roundRectPath(66, -7, 74, 14, 5); ctx.fillStyle = '#f4efe6'; ctx.fill(); ctx.stroke(); // hilt
+      ctx.fillStyle = '#c8202a'; // the hilt's diamond wrap
+      for (let i = 0; i < 5; i++) { const dx = 74 + i * 13; ctx.beginPath(); ctx.moveTo(dx, 0); ctx.lineTo(dx + 5, -5); ctx.lineTo(dx + 10, 0); ctx.lineTo(dx + 5, 5); ctx.closePath(); ctx.fill(); }
+      roundRectPath(138, -8, 8, 16, 3); ctx.fillStyle = '#e8b84a'; ctx.fill(); // pommel
+      ctx.restore();
+      break;
+    }
     case 'fairyWings': // see-through butterfly wings, a big and a small one on each side
       ctx.globalAlpha = 0.75;
       for (const side of [-1, 1]) {
@@ -501,17 +497,23 @@ function drawOutfit(look: CatLook, outline: string, bodyScale: number): void {
       ctx.strokeStyle = outline; ctx.lineWidth = 2; roundRectPath(30, -20, 34, 26, 6); ctx.stroke(); // pocket
       ctx.fillStyle = '#ff6f9f'; ellipsePath(0, -84, 5, 5); ctx.fill(); // a little brooch
       break;
-    case 'miko': // white kimono top crossed over, red hakama below
-      ctx.fillStyle = '#fbf8ff'; ctx.fillRect(-95, -104, 190, 170);
-      ctx.fillStyle = color; ctx.fillRect(-95, -14, 190, 90);
-      ctx.strokeStyle = shade(color, -0.25); ctx.lineWidth = 2.5; // hakama pleats
-      for (const pleatX of [-50, -18, 18, 50]) { ctx.beginPath(); ctx.moveTo(pleatX, -10); ctx.lineTo(pleatX * 1.1, 60); ctx.stroke(); }
-      ctx.fillStyle = color; // red under-collar
-      ctx.beginPath(); ctx.moveTo(-36, -106); ctx.lineTo(-30, -106); ctx.lineTo(6, -40); ctx.lineTo(0, -34); ctx.closePath(); ctx.fill();
-      ctx.strokeStyle = outline; ctx.lineWidth = 2.5; // the kimono's crossed collar
-      ctx.beginPath(); ctx.moveTo(-38, -106); ctx.lineTo(10, -30); ctx.moveTo(38, -106); ctx.lineTo(-4, -50); ctx.stroke();
-      ctx.fillStyle = color; roundRectPath(-95, -20, 190, 10, 4); ctx.fill(); // sash
+    case 'samurai': { // an indigo kimono over a white under-collar, a red sash, a white crest, grey striped hakama below
+      fillFabric(color, -104);
+      ctx.fillStyle = '#fbf8ff'; // white under-collar showing in the V
+      ctx.beginPath(); ctx.moveTo(-34, -106); ctx.lineTo(34, -106); ctx.lineTo(0, -44); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = color; // the kimono's crossed collar, left over right
+      ctx.beginPath(); ctx.moveTo(-38, -106); ctx.lineTo(-24, -106); ctx.lineTo(8, -40); ctx.lineTo(-2, -32); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(38, -106); ctx.lineTo(24, -106); ctx.lineTo(-2, -52); ctx.stroke();
+      ctx.fillStyle = '#6a6a78'; ctx.fillRect(-95, 0, 190, 70); // hakama
+      ctx.strokeStyle = '#4a4a58'; ctx.lineWidth = 3; for (const stripeX of [-60, -30, 0, 30, 60]) { ctx.beginPath(); ctx.moveTo(stripeX, 4); ctx.lineTo(stripeX * 1.1, 70); ctx.stroke(); }
+      ctx.fillStyle = '#c8202a'; roundRectPath(-95, -14, 190, 16, 6); ctx.fill(); // obi
+      ctx.strokeStyle = outline; ctx.lineWidth = 2.5;
+      ctx.save(); ctx.translate(-48, -64); // the family crest: a little white sakura flower in a circle
+      ellipsePath(0, 0, 13, 13); ctx.fillStyle = '#fbf8ff'; ctx.fill();
+      ctx.fillStyle = '#c8202a'; for (let p = 0; p < 5; p++) { const a = -Math.PI / 2 + (p * Math.PI * 2) / 5; ellipsePath(Math.cos(a) * 5.5, Math.sin(a) * 5.5, 3.6, 3.6); ctx.fill(); }
+      ctx.restore();
       break;
+    }
     case 'cultRobe': // a dark hooded robe with a golden eye emblem and a rope belt
       fillFabric(color, -116);
       ctx.fillStyle = '#e8b84a'; ctx.fillRect(-4, -104, 8, 170);
@@ -719,18 +721,22 @@ function drawHat(look: CatLook, outline: string, headY: number, time: number): v
       ctx.beginPath(); ctx.ellipse(10, 12, 60, 11, 0, 0, Math.PI); ctx.fillStyle = '#54463a'; ctx.fill(); ctx.strokeStyle = outline; ctx.lineWidth = 2.5; ctx.stroke(); // brim
       ellipsePath(6, -38, 6, 3); ctx.fillStyle = '#54463a'; ctx.fill(); // button on top
       break;
-    case 'foxMask': // a white fox mask pushed to the side of the head
-      ctx.translate(44, headY - 52); ctx.rotate(0.45);
-      ctx.beginPath(); ctx.moveTo(-26, -14); ctx.lineTo(-22, -40); ctx.lineTo(-8, -22); ctx.lineTo(8, -22); ctx.lineTo(22, -40); ctx.lineTo(26, -14);
-      ctx.quadraticCurveTo(26, 14, 0, 30); ctx.quadraticCurveTo(-26, 14, -26, -14); ctx.closePath();
-      ctx.fillStyle = '#fffaf2'; ctx.fill(); ctx.stroke();
-      ctx.strokeStyle = '#e8323a'; ctx.lineWidth = 3; // red markings
-      ctx.beginPath(); ctx.moveTo(-18, -4); ctx.lineTo(-6, 2); ctx.moveTo(18, -4); ctx.lineTo(6, 2); ctx.moveTo(0, -18); ctx.lineTo(0, -8); ctx.stroke();
-      ctx.fillStyle = '#e8323a'; ctx.beginPath(); ctx.moveTo(-20, -34); ctx.lineTo(-10, -22); ctx.lineTo(-18, -20); ctx.closePath(); ctx.fill();
-      ctx.beginPath(); ctx.moveTo(20, -34); ctx.lineTo(10, -22); ctx.lineTo(18, -20); ctx.closePath(); ctx.fill();
-      ellipsePath(0, 22, 4, 3); ctx.fillStyle = '#2a1a24'; ctx.fill(); // nose
-      ctx.strokeStyle = '#e8323a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-26, -8); ctx.quadraticCurveTo(-40, 10, -30, 34); ctx.stroke(); // cord
+    case 'topknot': { // a dark topknot folded forward over the crown, and a red hachimaki tied round the forehead
+      const hair = '#2a2228';
+      ctx.fillStyle = hair;
+      ellipsePath(0, headY - 58, 16, 9); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-6, headY - 64); ctx.quadraticCurveTo(-4, headY - 84, 10, headY - 82); ctx.quadraticCurveTo(16, headY - 74, 6, headY - 62); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(0, headY - 4, 74, 52, 0, Math.PI * 1.08, Math.PI * 1.92); // the headband following the head
+      ctx.strokeStyle = '#c8202a'; ctx.lineWidth = 11; ctx.stroke();
+      ctx.strokeStyle = '#fbf8ff'; ctx.lineWidth = 2; ctx.stroke();
+      const flutter = Math.sin(time * 4) * 6;
+      ctx.fillStyle = '#c8202a'; // the knot and its two ends fluttering on the right
+      ellipsePath(66, headY - 22, 8, 7); ctx.fill();
+      for (const [endX, endY] of [[104, headY - 34 + flutter], [98, headY - 8 + flutter * 0.6]]) {
+        ctx.beginPath(); ctx.moveTo(66, headY - 26); ctx.quadraticCurveTo((66 + endX) / 2, endY - 8, endX, endY); ctx.lineTo(endX - 4, endY + 9); ctx.quadraticCurveTo((66 + endX) / 2, endY + 2, 66, headY - 18); ctx.closePath(); ctx.fill();
+      }
       break;
+    }
     case 'hood': { // a pointed hood over the ears; the face looks out of it
       const cloth = look.outfitColor;
       ctx.beginPath();
