@@ -29,8 +29,10 @@ const STROKE_FADE_SECONDS = 0.7;
 /** New stroke points are added only after the pointer moved this far. */
 const MIN_POINT_SPACING = 4;
 const SCRIBBLE_SOUND_INTERVAL = 0.07;
-/** Signs on the wall: the wanted one bigger and bright, the others smaller and dimmer. */
-const SIGN_SCALE = { wanted: 1.15, other: 0.85, otherAlpha: 0.62 };
+/** Signs on the wall: the wanted one is bigger and glows, with a spark tracing it; the others are a little smaller. */
+const SIGN_SCALE = { wanted: 1.15, other: 0.85 };
+/** A dark outline under every sign, so even pale ones (light, ice) read on the bright heaven and meadow kitchens. */
+const SIGN_UNDERLAY = 'rgba(20,10,50,0.55)';
 /** The spark tracing the wanted sign: share of the sign per second, a cycle a bit longer than 1 (a pause at the end), tail dots. */
 const SIGN_TRACE = { speed: 0.55, cycle: 1.3, tail: 5 };
 
@@ -129,9 +131,9 @@ export const magicStation: Station = {
       const def = ELEMENTS[element], isOpen = def.unlockDay <= progress.day, isWanted = order.element === element;
       const centerX = left + i * (w + gap) + w / 2, size = signSize * (isWanted ? SIGN_SCALE.wanted : SIGN_SCALE.other);
       ctx.save();
-      ctx.globalAlpha = !isOpen ? 0.25 : isWanted ? 1 : SIGN_SCALE.otherAlpha;
+      ctx.globalAlpha = isOpen ? 1 : 0.25; // the other signs are not dimmed: on bright kitchens they would vanish
       if (isWanted) drawGlow(centerX, signY, signSize * 1.3, def.color, 0.3 + 0.1 * Math.sin(time * 3));
-      drawSign(element, centerX, signY, size, def.color, isWanted ? 4 : 2.5);
+      drawSign(element, centerX, signY, size, def.color, isWanted ? 4 : 3, SIGN_UNDERLAY);
       if (isWanted) { // the tracing spark with a short fading tail; it rests a moment at the end of the sign
         const k = Math.min(1, (time * SIGN_TRACE.speed) % SIGN_TRACE.cycle);
         for (let tail = SIGN_TRACE.tail; tail >= 0; tail--) {
@@ -143,7 +145,7 @@ export const magicStation: Station = {
         drawGlow(sx, sy, 18, def.color, 0.9);
       }
       ctx.shadowColor = 'rgba(20,10,50,0.9)'; ctx.shadowBlur = 5; // readable on the bright heaven kitchen too
-      drawFittedText(isOpen ? loc(def.name) : t().lockedDay(def.unlockDay), centerX, y + signSize + 16, 16, w - 6, isWanted ? TEXT.main : TEXT.muted, 'center', 900);
+      drawFittedText(isOpen ? loc(def.name) : t().lockedDay(def.unlockDay), centerX, y + signSize + 16, 16, w - 6, TEXT.main, 'center', 900);
       ctx.restore();
     });
   },
