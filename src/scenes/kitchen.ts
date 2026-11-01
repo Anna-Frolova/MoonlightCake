@@ -139,7 +139,7 @@ function drawTicket(): void {
  */
 function drawGuestPortrait(customer: Customer, x: number, y: number, w: number, h: number): void {
   const reaction = currentReaction(), left = patienceLeft(customer), time = clock.time;
-  const mood = reaction ? reactionMood(reaction) : patienceMood(customer);
+  const mood = reaction ? reactionMood() : patienceMood(customer);
   const wobble = Math.max(0, 1 - (time - customer.moodChangedAt) * 2.5) * Math.sin(time * 40) * 5;
   const frameColor = left < PATIENCE_LEVELS.upset ? BUTTON_COLOR.danger : left < PATIENCE_LEVELS.impatient ? BUTTON_COLOR.gold : TEXT.label;
   ctx.save();
@@ -165,7 +165,7 @@ function drawGuestPortrait(customer: Customer, x: number, y: number, w: number, 
   ctx.restore();
 }
 
-/** "!" for surprise, "?" for worry — popping in beside the head (a pleased guest just smiles). */
+/** "!" for surprise, "?" for worry — popping in beside the head (a pleased guest just shows it on their face). */
 function drawReactionMark(reaction: 'surprised' | 'worried', x: number, y: number, time: number): void {
   const pop = 1 + 0.12 * Math.sin(time * 9);
   ctx.save(); ctx.translate(x, y); ctx.scale(pop, pop);

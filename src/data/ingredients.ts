@@ -61,7 +61,7 @@ export const TOPPINGS: Record<ToppingId, ToppingDef> = {
   chili:      { name: { uk: 'Вогняний перчик',  ja: 'ほのおペッパー' } },
   feather:    { name: { uk: "Пір'їнка",         ja: '天使の羽' } },
   bat:        { name: { uk: 'Шоколадний кажан', ja: 'チョココウモリ' } },
-  mochi:      { name: { uk: 'Полуничне моті',   ja: 'いちご大福' } },
+  sushi:      { name: { uk: 'Суші',             ja: 'おすし' } },
   candle:     { name: { uk: 'Чорна свічечка',   ja: '黒いろうそく' } },
   butterfly:  { name: { uk: 'Метелик',          ja: 'ちょうちょ' } },
 };

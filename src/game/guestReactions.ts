@@ -18,13 +18,14 @@ const GAZE_FULL_DISTANCE = 260;
 const GAZE_REST = { x: 0.15, y: 0.2 };
 /** How long each reaction face stays. */
 const REACTION_SECONDS: Record<GuestReaction, number> = { surprised: 1.9, worried: 1.6, pleased: 1.3 };
-/** The face shown for each reaction. */
-const REACTION_MOOD: Record<GuestReaction, Mood> = { surprised: 'surprised', worried: 'thinking', pleased: 'smile' };
-/** A right choice makes the guest smile only now and then, so it stays a nice surprise. */
+/** The face shown for each reaction; a pleased guest picks one of PLEASED_MOODS each time. */
+const REACTION_MOOD: Record<Exclude<GuestReaction, 'pleased'>, Mood> = { surprised: 'surprised', worried: 'thinking' };
+const PLEASED_MOODS: Mood[] = ['content', 'delighted'];
+/** A right choice pleases the guest only now and then, so it stays a nice surprise. */
 const PLEASED_CHANCE = 0.4;
 
 const gaze = { targetX: 0, targetY: 0, since: -Infinity, x: GAZE_REST.x, y: GAZE_REST.y };
-let reaction: { kind: GuestReaction; startTime: number } | null = null;
+let reaction: { kind: GuestReaction; startTime: number; mood: Mood } | null = null;
 
 const isWaitingGuest = (): boolean => runtime.scene === 'kitchen' && runtime.customer?.state === 'waiting';
 
@@ -38,13 +39,13 @@ export function lookAt(x: number, y: number): void {
 export function react(kind: GuestReaction): void {
   const customer = runtime.customer;
   if (!customer || !isWaitingGuest()) return;
-  reaction = { kind, startTime: clock.time };
+  reaction = { kind, startTime: clock.time, mood: kind === 'pleased' ? PLEASED_MOODS[Math.floor(Math.random() * PLEASED_MOODS.length)] : REACTION_MOOD[kind] };
   if (kind !== 'pleased') customer.moodChangedAt = clock.time;
   if (kind === 'surprised') sfx.meow(customer.cat.voicePitch * 1.1, 'neutral');
 }
 
 /**
- * Wrong → the given worried / surprised face. Right → sometimes (PLEASED_CHANCE) a light smile, and only
+ * Wrong → the given worried / surprised face. Right → sometimes (PLEASED_CHANCE) a pleased face, and only
  * when `praise` is set (not for every small step).
  */
 export function judgeChoice(isRight: boolean, whenWrong: Exclude<GuestReaction, 'pleased'>, praise = false): void {
@@ -58,7 +59,8 @@ export function currentReaction(): GuestReaction | null {
   return reaction.kind;
 }
 
-export const reactionMood = (kind: GuestReaction): Mood => REACTION_MOOD[kind];
+/** The face of the current reaction (call only while `currentReaction()` is not null). */
+export const reactionMood = (): Mood => reaction?.mood ?? 'neutral';
 
 /** Forgets reactions and the gaze target (a new guest). */
 export function resetGuestReactions(): void {

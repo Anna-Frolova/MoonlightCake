@@ -13,7 +13,7 @@ export type ToppingId =
   | 'rosePink' | 'roseWhite' | 'leaves' | 'lavender'
   | 'pearl' | 'goldPearl'
   // only the special guests order these (see `special` on CatDef)
-  | 'chili' | 'feather' | 'bat' | 'mochi' | 'candle' | 'butterfly';
+  | 'chili' | 'feather' | 'bat' | 'sushi' | 'candle' | 'butterfly';
 export type GlazeColorId =
   | 'red' | 'yellow' | 'blue' | 'orange' | 'green' | 'purple' | 'sunset' | 'teal' | 'lime'
   | 'pink' | 'sky' | 'lilac' | 'lemon' | 'white' | 'night' | 'plum' | 'forest' | 'cherry' | 'black';
@@ -74,8 +74,11 @@ export type CatOutfit = 'none' | 'dress' | 'vest' | 'cloak' | 'sailor' | 'rainco
 export type CatAccessory = 'none' | 'monocle' | 'glasses' | 'bow' | 'fangs' | 'beard';
 /** Drawn behind the cat: wings, a cape with a tall collar, or a sheathed katana across the back. */
 export type CatBack = 'none' | 'batWings' | 'featherWings' | 'cape' | 'fairyWings' | 'katana';
-/** `smile`: a light smile with open eyes (`happy` is the big beaming face with closed eyes). */
-export type Mood = 'neutral' | 'happy' | 'sad' | 'thinking' | 'angry' | 'surprised' | 'smile';
+/**
+ * `content`: eyes softly closed, mouth as usual; `delighted`: eyes open, mouth a little open in joy (no smile).
+ * Both are the quiet "pleased" faces; `happy` is the big beaming one.
+ */
+export type Mood = 'neutral' | 'happy' | 'sad' | 'thinking' | 'angry' | 'surprised' | 'content' | 'delighted';
 
 /** How a cat looks (also used for the chef mascot and the helper kitten). */
 export interface CatLook {

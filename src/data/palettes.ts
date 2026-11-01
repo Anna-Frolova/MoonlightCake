@@ -80,7 +80,7 @@ export const PALETTES: Record<PaletteId, PaletteDef> = {
     name: { uk: 'Самурайська', ja: '侍' }, swatches: ['#ffffff', '#e8323a', '#fff6e2'], isSpecial: true,
     flavors: ['vanilla', 'strawberry'], fillings: ['jam'], creams: ['butter'],
     glazes: ['white', 'red'],
-    toppings: ['mochi', 'strawberry', 'raspberry', 'roseWhite'],
+    toppings: ['sushi', 'strawberry', 'raspberry', 'roseWhite'],
     elements: ['sakura'],
   },
   cult: {

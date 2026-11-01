@@ -121,7 +121,7 @@ export const SPECIAL_GUESTS: CatDef[] = [
     fur: '#f2ece2', furAccent: '#9a8a78', pattern: 'stripes', eyeColor: '#e8a030',
     hat: 'topknot', outfit: 'samurai', outfitColor: '#2a3a6a', back: 'katana',
     favoritePalettes: ['shrine'], favoriteShapes: ['round', 'square'],
-    special: { theme: 'shrine', palette: 'shrine', element: 'sakura', topping: 'mochi' },
+    special: { theme: 'shrine', palette: 'shrine', element: 'sakura', topping: 'sushi' },
   },
   {
     id: 'cultist', name: { uk: 'Брат Шепіт', ja: 'ささやき兄弟' }, firstDay: 6, voicePitch: 0.8, isGenerous: true, isDarkFur: true,

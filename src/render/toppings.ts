@@ -141,14 +141,16 @@ export function drawTopping(topping: ToppingId, x: number, y: number, scale = 1)
       ellipsePath(-2, -14, 1.2, 0.8); ctx.fillStyle = 'rgba(255,230,200,0.45)'; ctx.fill(); // shine
       break;
     }
-    case 'mochi': { // ichigo daifuku: a soft white mochi with a strawberry peeking out of the top
-      ctx.beginPath(); ctx.moveTo(-6, -15); ctx.quadraticCurveTo(0, -27, 6, -15); ctx.closePath();
-      ctx.fillStyle = '#ff3358'; ctx.fill(); ctx.strokeStyle = '#a1102e'; ctx.lineWidth = 1; ctx.stroke();
-      ctx.fillStyle = '#5cc04a'; ellipsePath(-3, -24, 2.5, 1.4); ctx.fill(); ellipsePath(3, -24, 2.5, 1.4); ctx.fill();
-      ctx.beginPath(); ctx.moveTo(-11, 0); ctx.quadraticCurveTo(-13, -16, -5, -16); ctx.quadraticCurveTo(0, -13, 5, -16); ctx.quadraticCurveTo(13, -16, 11, 0); ctx.closePath();
-      const g = ctx.createRadialGradient(-4, -10, 1, 0, -6, 13); g.addColorStop(0, '#ffffff'); g.addColorStop(1, '#ece4ee');
-      ctx.fillStyle = g; ctx.fill(); ctx.strokeStyle = '#c9bccc'; ctx.stroke();
-      ctx.fillStyle = 'rgba(255,255,255,0.9)'; ellipsePath(-5, -9, 2, 3); ctx.fill(); // powdery shine
+    case 'sushi': { // a tiny salmon nigiri: a block of rice, a striped slice of salmon, a strip of nori
+      ctx.beginPath(); ctx.ellipse(0, -5, 12, 6, 0, 0, Math.PI * 2);
+      ctx.fillStyle = '#fbf8f2'; ctx.fill(); ctx.strokeStyle = '#cfc8bc'; ctx.lineWidth = 1; ctx.stroke();
+      ctx.fillStyle = '#e8e2d6'; for (const [gx, gy] of [[-6, -3], [-1, -2], [5, -3], [8, -6], [-9, -6]]) { ellipsePath(gx, gy, 1.6, 1); ctx.fill(); } // grains
+      ctx.beginPath(); ctx.moveTo(-13, -8); ctx.quadraticCurveTo(-12, -16, 0, -15); ctx.quadraticCurveTo(12, -16, 14, -9); ctx.quadraticCurveTo(0, -6, -13, -8); ctx.closePath();
+      const g = ctx.createLinearGradient(0, -16, 0, -7); g.addColorStop(0, '#ff9a6a'); g.addColorStop(1, '#ff6a3a');
+      ctx.fillStyle = g; ctx.fill(); ctx.strokeStyle = '#d0502a'; ctx.stroke();
+      ctx.strokeStyle = 'rgba(255,240,230,0.85)'; ctx.lineWidth = 1.2; // the salmon's white stripes
+      for (const sx of [-7, -2, 3, 8]) { ctx.beginPath(); ctx.moveTo(sx - 1, -14); ctx.quadraticCurveTo(sx + 1, -11, sx, -8); ctx.stroke(); }
+      ctx.fillStyle = '#24402a'; ctx.fillRect(-2.5, -15.5, 5, 13); // nori band
       break;
     }
     case 'candle': { // a little black candle with a violet flame and a wax drip

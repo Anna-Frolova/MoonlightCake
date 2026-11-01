@@ -28,8 +28,8 @@ const FACE_TURN = { x: 6, y: 4 };
 const IRIS_SHIFT = 0.28;
 /** Surprised eyes are this much bigger. */
 const SURPRISED_EYE_SCALE = 1.14;
-/** A smiling cat blushes a little more. */
-const SMILE_BLUSH_SCALE = 1.25;
+/** A pleased cat blushes a little more. */
+const PLEASED_BLUSH_SCALE = 1.25;
 
 export interface Gaze { x: number; y: number }
 const NO_GAZE: Gaze = { x: 0, y: 0 };
@@ -270,7 +270,7 @@ function drawHead(look: CatLook, outline: string, headY: number): void {
 
 function drawFace(look: CatLook, outline: string, headY: number, time: number, mood: Mood, gaze: Gaze): void {
   ctx.fillStyle = BLUSH;
-  const blush = mood === 'smile' ? SMILE_BLUSH_SCALE : 1;
+  const blush = mood === 'content' || mood === 'delighted' ? PLEASED_BLUSH_SCALE : 1;
   ellipsePath(-46, headY + 20, 13 * blush, 8 * blush); ctx.fill();
   ellipsePath(46, headY + 20, 13 * blush, 8 * blush); ctx.fill();
 
@@ -295,8 +295,9 @@ function drawFace(look: CatLook, outline: string, headY: number, time: number, m
     ellipsePath(0, headY + 29, 5, 3); ctx.fillStyle = '#ff9cbc'; ctx.fill(); // tongue
   } else if (mood === 'sad' || mood === 'angry') {
     ctx.moveTo(-7, headY + 28); ctx.quadraticCurveTo(0, headY + 21, 7, headY + 28); ctx.stroke();
-  } else if (mood === 'smile') { // a soft closed smile
-    ctx.moveTo(-14, headY + 18); ctx.quadraticCurveTo(-7, headY + 31, 0, headY + 24); ctx.quadraticCurveTo(7, headY + 31, 14, headY + 18); ctx.stroke();
+  } else if (mood === 'delighted') { // the mouth a little open in joy: a soft round opening with a tongue
+    ellipsePath(0, headY + 25, 6.5, 4.5); ctx.fillStyle = '#c0406a'; ctx.fill(); ctx.stroke();
+    ellipsePath(0, headY + 27, 3.5, 1.8); ctx.fillStyle = '#ff9cbc'; ctx.fill();
   } else if (mood === 'surprised') { // a little round "o"
     ellipsePath(0, headY + 27, 5, 6.5); ctx.fillStyle = '#c0406a'; ctx.fill(); ctx.stroke();
   } else { // cat "w" mouth
@@ -316,6 +317,11 @@ function drawEye(look: CatLook, outline: string, x: number, y: number, side: num
   const rx = 14 * eyeScale, ry = 17 * eyeScale;
   ctx.strokeStyle = EYE_DARK; ctx.lineWidth = 4.5;
   if (mood === 'happy') { ctx.beginPath(); ctx.arc(x, y + 6, 11 * eyeScale, Math.PI * 1.15, Math.PI * 1.85); ctx.stroke(); return; }
+  if (mood === 'content') { // eyes contentedly closed: soft curved lids with a little lash at the outer corner
+    ctx.beginPath(); ctx.moveTo(x - 12, y + 1); ctx.quadraticCurveTo(x, y + 9, x + 12, y + 1); ctx.stroke();
+    ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(x + side * 12, y + 1); ctx.lineTo(x + side * 16, y - 2); ctx.stroke();
+    return;
+  }
   if (isBlinking) { ctx.beginPath(); ctx.moveTo(x - 11, y + 3); ctx.quadraticCurveTo(x, y + 8, x + 11, y + 3); ctx.stroke(); return; }
   ellipsePath(x, y, rx, ry); ctx.fillStyle = EYE_DARK; ctx.fill();
   // the coloured part and the highlights slide inside the eye towards where the cat looks
@@ -326,10 +332,6 @@ function drawEye(look: CatLook, outline: string, x: number, y: number, side: num
   ellipsePath(lookX + rx * 0.38, lookY + ry * 0.12, rx * 0.17, rx * 0.17); ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.fill();
   ctx.restore();
 
-  if (mood === 'smile') { // cheeks push up the bottom of the eyes
-    ctx.fillStyle = look.fur; ellipsePath(x, y + ry * 1.08, rx * 1.35, ry * 0.5); ctx.fill();
-    ctx.strokeStyle = outline; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(x, y + ry * 1.08, rx * 1.05, ry * 0.5, 0, Math.PI * 1.15, Math.PI * 1.85); ctx.stroke();
-  }
   if (mood === 'sad' || mood === 'thinking' || mood === 'angry') { // eyelid drawn in fur colour over the top of the eye
     if (mood === 'angry') side = -side; // the lid slants the other way: inner corners down, a frown
     ctx.fillStyle = look.fur; ctx.beginPath();
