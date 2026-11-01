@@ -70,6 +70,15 @@ export const INGREDIENT_SHELF = {
   y: 298, centerX: CAKE_CENTER_X, maxWidth: 760, spacing: 104, boardHeight: 18,
   itemScale: 1.25, itemHalfWidth: 48, itemHeight: 100, labelSize: 16,
 };
+export type ShelfLayout = typeof INGREDIENT_SHELF;
+
+/** Layers station: the sponges get the shelf above the cake to themselves, a little bigger. */
+export const FLAVOR_SHELF: ShelfLayout = { ...INGREDIENT_SHELF, spacing: 124, itemScale: 1.5, itemHalfWidth: 58, itemHeight: 110 };
+/** Layers station: jars of filling on their own small shelf left of the cake (under the order ticket's edge). */
+export const FILLING_SHELF: ShelfLayout = {
+  y: 492, centerX: 523, maxWidth: 258, spacing: 70, boardHeight: 14,
+  itemScale: 1.05, itemHalfWidth: 32, itemHeight: 70, labelSize: 15,
+};
 
 /** Layers station: shape switches in a row above the shelf. */
 export const SHAPE_SWITCHES = { y: 120, size: 64, gap: 12 };

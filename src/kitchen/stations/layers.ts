@@ -15,8 +15,9 @@ import { drawShapeIcon } from '../../render/icons';
 import { drawFillingJar, drawLayerPiece } from '../../render/shelfItems';
 import { showToast } from '../../scenes/sceneManager';
 import { cakeTopY, currentCake, currentOrder, SPARKLE_COLORS } from '../kitchen';
-import { CAKE_BASE_Y, CAKE_CENTER_X, CAKE_SIDE_BUTTON, HELPER_SHELF, SHAPE_SWITCHES } from '../layout';
+import { CAKE_BASE_Y, CAKE_CENTER_X, CAKE_SIDE_BUTTON, FILLING_SHELF, FLAVOR_SHELF, HELPER_SHELF, SHAPE_SWITCHES, type ShelfLayout } from '../layout';
 import { drawIngredientShelf, isOverShelfItem, shelfItemXs } from '../widgets';
+import type { Point } from '../../core/math';
 import type { Station } from './station';
 import { judgeChoice } from '../../game/guestReactions';
 
@@ -84,22 +85,25 @@ function removeTopItem(): void {
 }
 
 /**
- * What lies on the layers shelf: a piece of each flavour (in the chosen shape), then a jar of each filling —
- * today's menu, plus a special guest's sponge and filling when the menu doesn't have them (put first).
+ * The sponges (a piece of each flavour, in the chosen shape) stand on the shelf above the cake; the jars of filling
+ * on their own small shelf left of the cake. Today's menu, plus a special guest's sponge and filling when the menu
+ * doesn't have them (put first).
  */
-type LayerShelfItem = `flavor:${FlavorId}` | `filling:${FillingId}`;
-
-function shelfItems(): LayerShelfItem[] {
-  const menu = todaysMenu(), order = currentOrder();
-  const flavors = menu.flavors.includes(order.flavor) ? menu.flavors : [order.flavor, ...menu.flavors];
-  const fillings = !order.filling || menu.fillings.includes(order.filling) ? menu.fillings : [order.filling, ...menu.fillings];
-  return [...flavors.map(id => `flavor:${id}` as const), ...fillings.map(id => `filling:${id}` as const)];
+function shelfFlavors(): FlavorId[] {
+  const menu = todaysMenu().flavors, wanted = currentOrder().flavor;
+  return menu.includes(wanted) ? menu : [wanted, ...menu];
 }
 
-const shelfLabel = (item: LayerShelfItem): string => {
-  const [kind, id] = item.split(':');
-  return kind === 'flavor' ? loc(FLAVORS[id as FlavorId].name) : loc(FILLINGS[id as FillingId].shortName);
-};
+function shelfFillings(): FillingId[] {
+  const menu = todaysMenu().fillings, wanted = currentOrder().filling;
+  return !wanted || menu.includes(wanted) ? menu : [wanted, ...menu];
+}
+
+/** Which of `items` on `shelf` is under the point, if any. */
+function itemAt<T>(items: T[], shelf: ShelfLayout, point: Point): T | undefined {
+  const xs = shelfItemXs(items.length, shelf);
+  return items.find((_, i) => isOverShelfItem(point, xs[i], items.length, shelf));
+}
 
 /** Round switches above the shelf; the chosen shape is lit and every layer on the shelf takes it. */
 function drawShapeSwitches(cake: Cake): void {
@@ -137,23 +141,21 @@ export const layersStation: Station = {
     });
   },
 
-  /** Shape switches, and the shelf with layers in that shape and jars of filling. Tapping one puts it on the cake. */
+  /** Shape switches, the sponges in that shape on the shelf above the cake, the jars of filling left of it. Tapping one puts it on the cake. */
   drawScenery(cake) {
     drawShapeSwitches(cake);
-    drawIngredientShelf(shelfItems(), shelfLabel, (item, x, y, scale) => {
-      const [kind, id] = item.split(':');
-      if (kind === 'flavor') drawLayerPiece(id as FlavorId, cake.shape, x, y, scale);
-      else drawFillingJar(id as FillingId, x, y, scale);
-    }, { isHoverable: !isStackLocked(cake) });
+    const isHoverable = !isStackLocked(cake);
+    drawIngredientShelf(shelfFlavors(), flavor => loc(FLAVORS[flavor].name), (flavor, x, y, scale) => drawLayerPiece(flavor, cake.shape, x, y, scale),
+      { isHoverable, shelf: FLAVOR_SHELF });
+    drawIngredientShelf(shelfFillings(), filling => loc(FILLINGS[filling].shortName), drawFillingJar, { isHoverable, shelf: FILLING_SHELF });
   },
 
   onPointerDown(point) {
-    const items = shelfItems(), xs = shelfItemXs(items.length);
-    const tapped = items.find((_, i) => isOverShelfItem(point, xs[i], items.length));
-    if (!tapped) return false;
-    const [kind, id] = tapped.split(':');
-    if (kind === 'flavor') addLayer(id as FlavorId); else addFilling(id as FillingId);
-    return true;
+    const flavor = itemAt(shelfFlavors(), FLAVOR_SHELF, point);
+    if (flavor) { addLayer(flavor); return true; }
+    const filling = itemAt(shelfFillings(), FILLING_SHELF, point);
+    if (filling) { addFilling(filling); return true; }
+    return false;
   },
 
   /** The magic spatula picks the shape and stacks the ordered layers with fillings. */

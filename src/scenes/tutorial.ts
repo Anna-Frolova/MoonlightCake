@@ -10,7 +10,7 @@ import { cakeHeight, countLayers } from '../game/cake';
 import { availableEssences, progress, runtime, todaysMenu, type StationIndex } from '../game/state';
 import { finishTutorial, tutorial } from '../game/tutorial';
 import { totalDrops } from '../game/colorMixing';
-import { CAKE_BASE_Y, CAKE_CENTER_X, CREAM_ZONE, ELIXIR_SHELF, SHAPE_SWITCHES, TABS } from '../kitchen/layout';
+import { CAKE_BASE_Y, CAKE_CENTER_X, CREAM_ZONE, ELIXIR_SHELF, FILLING_SHELF, FLAVOR_SHELF, SHAPE_SWITCHES, TABS } from '../kitchen/layout';
 import { GLAZE_STATION_INDEX, STATIONS } from '../kitchen/stations';
 import { ingredientShelfRect } from '../kitchen/widgets';
 
@@ -58,10 +58,12 @@ function cakeRect(): Rect {
   };
 }
 
-/** The shape switches and the layers shelf under them. */
+/** The shape switches, the sponge shelf under them and the filling shelf left of the cake (one rect around all). */
 function layersShelfRect(): Rect {
-  const menu = todaysMenu(), shelf = ingredientShelfRect(menu.flavors.length + menu.fillings.length);
-  return { ...shelf, y: SHAPE_SWITCHES.y - 6, h: shelf.y + shelf.h - SHAPE_SWITCHES.y + 6 };
+  const menu = todaysMenu(), sponges = ingredientShelfRect(menu.flavors.length, FLAVOR_SHELF);
+  const jars = ingredientShelfRect(menu.fillings.length, FILLING_SHELF);
+  const left = Math.min(sponges.x, jars.x), right = Math.max(sponges.x + sponges.w, jars.x + jars.w);
+  return { x: left, y: SHAPE_SWITCHES.y - 6, w: right - left, h: jars.y + jars.h - SHAPE_SWITCHES.y + 6 };
 }
 
 /** A kitchen step: first "open this tab", then the station's own hint. */
