@@ -7,6 +7,7 @@ import { CREAMS, FILLINGS, FLAVORS } from '../data/ingredients';
 import type { CreamId, FillingId, FlavorId, ShapeId, ToppingId } from '../data/types';
 import { getShapeGeometry } from '../game/cakeGeometry';
 import { drawPrism } from './cake';
+import { drawPieceHeap, isPieceBorder } from './creamPiping';
 import { drawTopping } from './toppings';
 
 const PORCELAIN = '#f1ecff';
@@ -16,13 +17,8 @@ const PORCELAIN_RIM = '#8e82c8';
 const LAYER_PIECE_SCALE = 0.27, LAYER_PIECE_HEIGHT = 44, LAYER_PIECE_LIFT = 40;
 
 /** A ceramic bowl heaped with a swirl of cream. */
-export function drawCreamBowl(cream: CreamId, x: number, y: number, scale = 1): void {
-  const color = CREAMS[cream].color, dark = shade(color, -0.25);
-  ctx.save();
-  ctx.translate(x, y); ctx.scale(scale, scale);
-  if (CREAMS[cream].glows) drawGlow(0, -40, 46, '#d8c8ff', 0.45);
-
-  // cream swirl: three tiers and a curled tip, peeking out of the bowl
+/** A swirl of piped cream in three tiers with a curled tip, peeking out of the bowl. */
+function drawCreamSwirl(color: string, dark: string, cream: CreamId): void {
   ctx.strokeStyle = dark; ctx.lineWidth = 1.6;
   const tiers: [number, number, number][] = [[0, -30, 26], [0, -44, 19], [2, -55, 12]];
   for (const [tierX, tierY, radius] of tiers) {
@@ -35,7 +31,16 @@ export function drawCreamBowl(cream: CreamId, x: number, y: number, scale = 1): 
   ctx.fillStyle = shade(color, 0.3); ctx.fill(); ctx.stroke();
   ctx.fillStyle = 'rgba(255,255,255,0.7)'; ellipsePath(-9, -48, 5, 3); ctx.fill();
   if (CREAMS[cream].glows) { ctx.fillStyle = '#ffffff'; starPath(12, -50, 5, 2, 4, 0); ctx.fill(); }
+}
 
+export function drawCreamBowl(cream: CreamId, x: number, y: number, scale = 1): void {
+  const color = CREAMS[cream].color, dark = shade(color, -0.25);
+  ctx.save();
+  ctx.translate(x, y); ctx.scale(scale, scale);
+  if (CREAMS[cream].glows) drawGlow(0, -40, 46, '#d8c8ff', 0.45);
+
+  if (isPieceBorder(CREAMS[cream].style)) { ctx.save(); ctx.translate(0, -30); drawPieceHeap(CREAMS[cream].style, color, 1.25); ctx.restore(); }
+  else drawCreamSwirl(color, dark, cream);
   // bowl
   ctx.beginPath(); ctx.moveTo(-34, -26); ctx.quadraticCurveTo(-32, 2, 0, 2); ctx.quadraticCurveTo(32, 2, 34, -26); ctx.closePath();
   const bowl = ctx.createLinearGradient(-34, 0, 34, 0);

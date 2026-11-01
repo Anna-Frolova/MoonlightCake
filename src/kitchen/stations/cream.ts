@@ -100,14 +100,20 @@ export function updateAutoCream(dt: number): void {
   }
 }
 
+/** Today's creams, plus a special guest's cream first when the menu doesn't have it yet. */
+function shelfCreams(): CreamId[] {
+  const menu = todaysMenu().creams, wanted = currentOrder().cream;
+  return menu.includes(wanted) ? menu : [wanted, ...menu];
+}
+
 export const creamStation: Station = {
   get name() { return t().stations.cream; },
   helper: 'cream',
   isDone: cake => cake.creamCoverage >= CREAM_DONE_COVERAGE,
 
-  /** Bowls of today's creams on the shelf above the cake; the chosen one is lifted. */
+  /** Bowls of today's creams (and a special guest's own cream) on the shelf above the cake; the chosen one is lifted. */
   drawScenery() {
-    drawIngredientShelf(todaysMenu().creams, cream => loc(CREAMS[cream].name), drawCreamBowl, {
+    drawIngredientShelf(shelfCreams(), cream => loc(CREAMS[cream].name), drawCreamBowl, {
       isHoverable: !runtime.isPipingCream, lifted: runtime.selectedCream, glowColor: cream => CREAMS[cream].color,
     });
   },
@@ -137,7 +143,7 @@ export const creamStation: Station = {
   },
 
   onPointerDown(point, cake) {
-    const creams = todaysMenu().creams, xs = shelfItemXs(creams.length);
+    const creams = shelfCreams(), xs = shelfItemXs(creams.length);
     const tapped = creams.find((_, i) => isOverShelfItem(point, xs[i], creams.length));
     if (tapped) { selectCream(tapped); return true; }
     if (!isInCreamZone(point)) return false;

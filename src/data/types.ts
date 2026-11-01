@@ -6,7 +6,9 @@ import type { Localized } from '../core/language';
 export type ShapeId = 'round' | 'square' | 'heart' | 'star';
 export type FlavorId = 'vanilla' | 'chocolate' | 'strawberry' | 'lavender' | 'mint' | 'sky' | 'starry';
 export type FillingId = 'jam' | 'caramel' | 'blueberry' | 'honey' | 'jelly';
-export type CreamId = 'butter' | 'berry' | 'cloud' | 'moon';
+export type CreamId = 'butter' | 'berry' | 'cloud' | 'moon' | 'berryMix' | 'chocoBalls';
+/** How a cream goes on the cake's edges (render/creamPiping.ts): a nozzle shape, or a border of pieces. */
+export type CreamStyle = 'shells' | 'rosettes' | 'ruffles' | 'rope' | 'berries' | 'chocoBalls';
 export type EssenceId = 'red' | 'yellow' | 'blue' | 'white' | 'dark';
 export type ToppingId =
   | 'strawberry' | 'currant' | 'blueberry' | 'raspberry'
@@ -43,7 +45,7 @@ export type Recipe = Partial<Drops>;
 export interface ShapeDef { name: Localized; noun: Localized }
 export interface FlavorDef { name: Localized; color: string; sparkles?: boolean }
 export interface FillingDef { name: Localized; shortName: Localized; color: string; glows?: boolean }
-export interface CreamDef { name: Localized; color: string; glows?: boolean }
+export interface CreamDef { name: Localized; color: string; style: CreamStyle; glows?: boolean }
 export interface EssenceDef { name: Localized; color: string; unlockDay: number }
 export interface ToppingDef { name: Localized }
 export interface GlazeColorDef { id: GlazeColorId; name: Localized; recipe: Recipe }

@@ -7,7 +7,7 @@ import type { PaletteDef, PaletteId } from './types';
 export const PALETTES: Record<PaletteId, PaletteDef> = {
   berry: {
     name: { uk: 'Ягідна', ja: 'ベリー' }, swatches: ['#ff86b4', '#ff3d6e', '#fff6e2'],
-    flavors: ['strawberry', 'vanilla', 'chocolate'], fillings: ['jam', 'caramel'], creams: ['berry', 'butter'],
+    flavors: ['strawberry', 'vanilla', 'chocolate'], fillings: ['jam', 'caramel'], creams: ['berry', 'berryMix', 'butter'],
     glazes: ['pink', 'red', 'cherry', 'white'],
     toppings: ['strawberry', 'raspberry', 'rosePink', 'currant', 'leaves', 'pearl'],
     elements: ['fire', 'star'],
@@ -49,7 +49,7 @@ export const PALETTES: Record<PaletteId, PaletteDef> = {
   },
   chocolate: {
     name: { uk: 'Шоколадна', ja: 'チョコ' }, swatches: ['#9a5a3c', '#ff9f2e', '#ffb0d0'],
-    flavors: ['chocolate', 'vanilla'], fillings: ['caramel', 'honey', 'jam'], creams: ['butter', 'berry'],
+    flavors: ['chocolate', 'vanilla'], fillings: ['caramel', 'honey', 'jam'], creams: ['chocoBalls', 'butter', 'berry'],
     glazes: ['cherry', 'orange', 'red', 'white'],
     toppings: ['strawberry', 'raspberry', 'goldPearl', 'currant', 'roseWhite'],
     elements: ['fire', 'nature'],
@@ -57,7 +57,7 @@ export const PALETTES: Record<PaletteId, PaletteDef> = {
   // the special guests' own palettes (their signature topping goes on every cake they order anyway)
   inferno: {
     name: { uk: 'Пекельна', ja: '地獄' }, swatches: ['#2a1a24', '#ff4a2a', '#ffb02e'], isSpecial: true,
-    flavors: ['chocolate', 'starry'], fillings: ['caramel', 'jam', 'honey'], creams: ['butter', 'berry'],
+    flavors: ['chocolate', 'starry'], fillings: ['caramel', 'jam', 'honey'], creams: ['chocoBalls', 'butter'],
     glazes: ['black', 'cherry', 'sunset', 'red'],
     toppings: ['chili', 'raspberry', 'currant', 'goldPearl', 'strawberry'],
     elements: ['dark'],
@@ -71,7 +71,7 @@ export const PALETTES: Record<PaletteId, PaletteDef> = {
   },
   dracula: {
     name: { uk: 'Вампірська', ja: '吸血鬼' }, swatches: ['#7a0f24', '#1a1020', '#e8d8e0'], isSpecial: true,
-    flavors: ['chocolate', 'strawberry', 'starry'], fillings: ['jam', 'blueberry'], creams: ['berry', 'moon'],
+    flavors: ['chocolate', 'strawberry', 'starry'], fillings: ['jam', 'blueberry'], creams: ['berryMix', 'berry', 'moon'],
     glazes: ['cherry', 'black', 'red', 'plum'],
     toppings: ['bat', 'currant', 'raspberry', 'rosePink'],
     elements: ['blood'],

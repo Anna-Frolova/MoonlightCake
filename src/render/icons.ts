@@ -11,6 +11,7 @@ import type {
 import { getShapeGeometry } from '../game/cakeGeometry';
 import { drawPrism } from './cake';
 import { drawCat } from './cat';
+import { drawPieceHeap, isPieceBorder } from './creamPiping';
 import { drawTopping } from './toppings';
 
 /** Saves the context, moves to (x, y), scales, sets the ink outline; restores after `draw`. */
@@ -57,6 +58,7 @@ export function drawCreamIcon(cream: CreamId, x: number, y: number, scale: numbe
   withIconTransform(x, y, scale, () => {
     ctx.beginPath(); ctx.moveTo(-26, -6); ctx.lineTo(26, -6); ctx.lineTo(20, 22); ctx.lineTo(-20, 22); ctx.closePath();
     ctx.fillStyle = '#d8ccff'; ctx.fill(); ctx.stroke();
+    if (isPieceBorder(CREAMS[cream].style)) { ctx.save(); ctx.translate(0, -8); drawPieceHeap(CREAMS[cream].style, CREAMS[cream].color, 1); ctx.restore(); return; }
     ctx.beginPath(); ctx.moveTo(-24, -6);
     ctx.quadraticCurveTo(-26, -22, -8, -18); ctx.quadraticCurveTo(0, -32, 10, -18); ctx.quadraticCurveTo(26, -22, 24, -6);
     ctx.closePath(); ctx.fillStyle = CREAMS[cream].color; ctx.fill(); ctx.stroke();

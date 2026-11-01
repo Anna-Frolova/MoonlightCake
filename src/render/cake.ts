@@ -10,6 +10,7 @@ import type { Cake } from '../data/types';
 import { cakeHeight, CREAM_FULL_COVERAGE } from '../game/cake';
 import { FILLING_HEIGHT, getShapeGeometry, LAYER_HEIGHT, TOP_FACE_SQUASH as SQUASH, type ShapeGeometry } from '../game/cakeGeometry';
 import { drawMagicEffects } from './magicEffects';
+import { drawCreamPiece } from './creamPiping';
 import { drawTopping } from './toppings';
 
 /** A freshly added layer falls from this height. */
@@ -131,19 +132,18 @@ function drawFilling(geometry: ShapeGeometry, bottom: number, height: number, fi
   if (filling.glows) drawGlow(0, bottom - height, 140, '#9ff4ff', 0.25 + 0.1 * Math.sin(clock.time * 3));
 }
 
+/** Size of a cream piece while piping, and once the cream is fully piped. */
+const CREAM_PIECE_SIZE = { piping: 9, full: 10 };
+
+/** The piped cream (or the berry / chocolate border) along one edge, back pieces first; a bit plumper once fully piped. */
 function drawCreamBeads(cake: Cake, ring: 'top' | 'base'): void {
   const cream = CREAMS[cake.cream!];
-  const isFull = cake.creamCoverage >= CREAM_FULL_COVERAGE;
-  const radius = isFull ? 10 : 9, edge = shade(cream.color, -0.32);
-  const beads = cake.creamDots!.filter(d => d.isPiped && d.ring === ring).sort((a, b) => a.y - b.y);
-  for (const bead of beads) {
-    ellipsePath(bead.x, bead.y, radius, radius * 0.86);
-    ctx.fillStyle = cream.color; ctx.fill(); ctx.strokeStyle = edge; ctx.lineWidth = 1.4; ctx.stroke();
-    if (isFull) { ellipsePath(bead.x, bead.y - radius * 0.55, radius * 0.55, radius * 0.5); ctx.fill(); ctx.stroke(); } // rosette tip
-    ellipsePath(bead.x - 3, bead.y - (isFull ? 7 : 3), radius * 0.32, radius * 0.22);
-    ctx.fillStyle = 'rgba(255,255,255,0.8)'; ctx.fill();
-  }
-  if (cream.glows) for (const bead of beads) drawGlow(bead.x, bead.y, 16, '#d8c8ff', 0.18 + 0.08 * Math.sin(clock.time * 3));
+  const size = cake.creamCoverage >= CREAM_FULL_COVERAGE ? CREAM_PIECE_SIZE.full : CREAM_PIECE_SIZE.piping;
+  const beads = cake.creamDots!.map((dot, index) => ({ dot, index })).filter(({ dot }) => dot.isPiped && dot.ring === ring)
+    .sort((a, b) => a.dot.y - b.dot.y);
+  for (const { dot, index } of beads) drawCreamPiece(cream.style, dot.x, dot.y, size, cream.color, index);
+  const beadsOnly = beads.map(({ dot }) => dot);
+  if (cream.glows) for (const bead of beadsOnly) drawGlow(bead.x, bead.y, 16, '#d8c8ff', 0.18 + 0.08 * Math.sin(clock.time * 3));
 }
 
 /** Glaze spreads from the centre of the top, then runs down in thin drips of uneven length. */

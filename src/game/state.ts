@@ -3,7 +3,8 @@
 //  • `runtime`  — what only lives while the page is open (current scene, cake being built, animations…)
 import type { Vec2 } from '../core/math';
 import { ELEMENT_ORDER, ELEMENTS } from '../data/elements';
-import { CREAMS, ESSENCES, GLAZE_COLORS } from '../data/ingredients';
+import { ESSENCES, GLAZE_COLORS } from '../data/ingredients';
+import { STORY_DAYS, UNLOCKS } from '../data/schedule';
 import { SHOP_ITEMS } from '../data/shop';
 import type {
   Cake, CatDef, CatId, CreamId, ElementId, EssenceId, GlazeColorDef, KitchenThemeId, Mood, Order, SaveData, ShopItemId, ToppingId,
@@ -26,9 +27,10 @@ function renameOldGuests(): void {
 
 export function ensureMenuForToday(): void {
   if (!progress.menu || progress.menu.day !== progress.day) progress.menu = buildDailyMenu(progress.day, null, progress.seed);
-  // a menu saved before every cream became available from day 1: give it the full list right away
-  const allCreams = Object.keys(CREAMS) as CreamId[];
-  if (progress.menu.creams.length < allCreams.length) progress.menu.creams = allCreams;
+  // every unlocked cream is always on the menu (a menu saved before new creams were added gets them right away)
+  const unlockedCreams: CreamId[] = UNLOCKS.creams.slice(0, Math.min(progress.day, STORY_DAYS)).flat();
+  const missing = unlockedCreams.filter(cream => !progress.menu!.creams.includes(cream));
+  if (missing.length) progress.menu.creams = [...progress.menu.creams, ...missing];
 }
 
 /** Replaces the whole progress object's contents (new game) while keeping the same reference. */
