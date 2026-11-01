@@ -189,7 +189,7 @@ export interface Cake {
   glazeProgress: number;
   cauldron: Drops;
   toppings: PlacedTopping[];
-  /** Spell quality 0..1, or null if not enchanted yet. */
+  /** 1 once enchanted (how neatly the sign was drawn does not matter), or null if not enchanted yet. */
   magicQuality: number | null;
   element: ElementId | null;
   magicCastTime: number;

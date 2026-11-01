@@ -121,10 +121,8 @@ const uk = {
   noRoomForToppings: 'Більше прикрас не влізе!',
 
   // magic station
-  qualityPerfect: 'ідеально',
-  qualityGreat: 'чудово',
-  qualityOk: 'непогано',
-  castShout: (element: string, quality: string) => `${element}! ${quality[0].toUpperCase() + quality.slice(1)}`,
+  /** Shown when magic is cast; the right element also gets praise. */
+  castShout: (element: string, isWanted: boolean) => (isWanted ? `${element}! Ідеально` : `${element}!`),
   elementLocked: (element: string, day: number) => `Стихія «${element}» відкриється в день ${day}`,
   signNotRecognized: 'Знак не розпізнано — спробуй ще раз, одним рухом',
 
@@ -274,10 +272,7 @@ const ja: UiStrings = {
   removeAll: 'ぜんぶ取る',
   noRoomForToppings: 'もうトッピングがのらないよ！',
 
-  qualityPerfect: 'パーフェクト',
-  qualityGreat: 'すばらしい',
-  qualityOk: 'まあまあ',
-  castShout: (element, quality) => `${element}！${quality}！`,
+  castShout: (element, isWanted) => (isWanted ? `${element}！パーフェクト！` : `${element}！`),
   elementLocked: (element, day) => `属性「${element}」は${day}日目に解放されます`,
   signNotRecognized: 'しるしが読み取れなかったよ — ひと筆でもう一度',
 

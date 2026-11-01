@@ -54,6 +54,9 @@ const RUINED_CAKE_FINE = 10;
 /** Hearts are capped to match: a guest who doesn't pay gives at most 2, a ruined cake gets 1. */
 const MAX_HEARTS = { refused: 2, penalty: 1 };
 
+/** Score of the magic part when the cake has an element, but not the ordered one. */
+const WRONG_MAGIC_SCORE = 0.3;
+
 /** Price building blocks. */
 const PRICE = { base: 14, perLayer: 4, filling: 3, magic: 4, royal: 20, special: 12 };
 /** Tips start from this score. */
@@ -106,8 +109,8 @@ export function scoreCake(cake: Cake, order: Order, cat: CatDef, decorTipBonus: 
   const extraKinds = (Object.keys(placed) as ToppingId[]).filter(kind => !order.toppings[kind]).length;
   parts.push({ kind: 'toppings', score: clamp(accuracy - extraKinds * 0.15, 0, 1), weight: WEIGHTS.toppings });
 
-  const quality = cake.magicQuality ?? 0;
-  const magicScore = !cake.element ? 0 : cake.element === order.element ? quality : quality * 0.3;
+  // how neatly the sign was drawn doesn't matter: the right magic is perfect, the wrong one barely counts
+  const magicScore = !cake.element ? 0 : cake.element === order.element ? 1 : WRONG_MAGIC_SCORE;
   parts.push({ kind: 'magic', score: magicScore, weight: WEIGHTS.magic });
 
   if (patienceLeft !== null) parts.push({ kind: 'speed', score: patienceLeft, weight: WEIGHTS.speed });

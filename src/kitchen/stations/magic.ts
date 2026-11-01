@@ -40,20 +40,21 @@ function shownElements(): ElementId[] {
   return GUEST_ELEMENTS.includes(wanted) ? [...ELEMENT_ORDER, wanted] : ELEMENT_ORDER;
 }
 
-const qualityWord = (quality: number): string => quality >= 1 ? t().qualityPerfect : quality >= 0.8 ? t().qualityGreat : t().qualityOk;
-
-/** Puts the element's magic on the cake with the given quality (0..1). */
-function castMagic(element: ElementId, quality: number): void {
-  const cake = currentCake(), top = cakeTopY(cake), def = ELEMENTS[element];
-  cake.magicQuality = quality;
+/**
+ * Puts the element's magic on the cake. Any recognised sign casts it at full strength: how neatly it was
+ * drawn doesn't matter (hard on a phone), only which element it is.
+ */
+function castMagic(element: ElementId): void {
+  const cake = currentCake(), top = cakeTopY(cake), def = ELEMENTS[element], isWanted = element === currentOrder().element;
+  cake.magicQuality = 1;
   cake.element = element;
   cake.magicCastTime = clock.time;
-  judgeChoice(element === currentOrder().element, 'surprised', true);
+  judgeChoice(isWanted, 'surprised', true);
   sfx.magic(element);
-  burst(CAKE_CENTER_X, top, 26 + quality * 20, [def.color, '#ffffff', shade(def.color, 0.4)],
+  burst(CAKE_CENTER_X, top, 46, [def.color, '#ffffff', shade(def.color, 0.4)],
     { kind: 'star', gravity: element === 'fire' ? -120 : 40, maxSpeed: 300 });
-  floatingText(CAKE_CENTER_X, top - 70, t().castShout(loc(def.name), qualityWord(quality)), shade(def.color, 0.3), 30);
-  if (element === 'bolt' || quality >= 1) runtime.shake = 0.25;
+  floatingText(CAKE_CENTER_X, top - 70, t().castShout(loc(def.name), isWanted), shade(def.color, 0.3), 30);
+  runtime.shake = 0.25;
 }
 
 function finishStroke(): void {
@@ -76,7 +77,7 @@ function finishStroke(): void {
     sfx.fail();
     return;
   }
-  castMagic(recognized.element, recognized.quality);
+  castMagic(recognized.element);
 }
 
 function drawStrokePath(points: Vec2[], color: string, alpha: number, width: number): void {
@@ -150,7 +151,7 @@ export const magicStation: Station = {
   /** The crystal ball casts the ordered element perfectly. */
   autoComplete() {
     if (!requireLayer()) return;
-    castMagic(currentOrder().element, 1);
+    castMagic(currentOrder().element);
   },
 
   onPointerDown(point, cake) {
