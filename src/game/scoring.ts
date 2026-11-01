@@ -14,8 +14,17 @@ export interface ScorePart {
   weight: number;
 }
 
+/**
+ * Whether the guest pays: `paid` as usual; `refused` — more than half of the cake is wrong (or missing),
+ * so the player gets nothing; `penalty` — the cake is ruined (at most one part right), the player pays a fine.
+ */
+export type PayVerdict = 'paid' | 'refused' | 'penalty';
+
 export interface CakeScore {
   parts: ScorePart[];
+  verdict: PayVerdict;
+  /** Coins taken as a fine (only for `penalty`). */
+  penalty: number;
   /** Weighted total, 0..1. */
   score: number;
   /** 1..5 */
@@ -23,7 +32,7 @@ export interface CakeScore {
   payment: number;
   tips: number;
   ingredientCost: number;
-  /** payment + tips − ingredientCost (can be negative). */
+  /** payment + tips − ingredientCost − penalty (can be negative). */
   net: number;
 }
 
@@ -36,6 +45,14 @@ const HEART_THRESHOLDS = [0.9, 0.75, 0.55, 0.35];
 /** Glaze closer than this to the ordered colour counts as perfect; it scores 0 at +90 more. */
 const GLAZE_PERFECT_DISTANCE = 10;
 const GLAZE_ZERO_DISTANCE_RANGE = 90;
+
+/** A part of the cake (shape, layers, cream…) counts as done right from this score. */
+const PART_RIGHT_SCORE = 0.6;
+/** With this many right parts or fewer the cake is ruined and the player is fined RUINED_CAKE_FINE coins. */
+const RUINED_CAKE_MAX_RIGHT_PARTS = 1;
+const RUINED_CAKE_FINE = 10;
+/** Hearts are capped to match: a guest who doesn't pay gives at most 2, a ruined cake gets 1. */
+const MAX_HEARTS = { refused: 2, penalty: 1 };
 
 /** Price building blocks. */
 const PRICE = { base: 14, perLayer: 4, filling: 3, magic: 4, royal: 20, special: 12 };
@@ -108,5 +125,13 @@ export function scoreCake(cake: Cake, order: Order, cat: CatDef, decorTipBonus: 
     : 0;
   const ingredientCost = cake.stack.length + (cake.cream && cake.creamCoverage > 0 ? 2 : 0) + (cake.glaze ? 1 : 0) + Math.ceil(cake.toppings.length / 2);
 
-  return { parts, score, hearts, payment, tips, ingredientCost, net: payment + tips - ingredientCost };
+  // a cake that is mostly wrong earns nothing; a ruined one costs a fine
+  const cakeParts = parts.filter(part => part.kind !== 'speed');
+  const rightParts = cakeParts.filter(part => part.score >= PART_RIGHT_SCORE).length;
+  const verdict: PayVerdict = rightParts <= RUINED_CAKE_MAX_RIGHT_PARTS ? 'penalty' : rightParts < cakeParts.length / 2 ? 'refused' : 'paid';
+  if (verdict !== 'paid') {
+    const penalty = verdict === 'penalty' ? RUINED_CAKE_FINE : 0;
+    return { parts, verdict, penalty, score, hearts: Math.min(hearts, MAX_HEARTS[verdict]), payment: 0, tips: 0, ingredientCost: 0, net: -penalty };
+  }
+  return { parts, verdict, penalty: 0, score, hearts, payment, tips, ingredientCost, net: payment + tips - ingredientCost };
 }

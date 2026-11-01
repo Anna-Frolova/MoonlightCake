@@ -29,6 +29,11 @@ export const GUEST_ENTRY_X = 1480;
 export const GUEST_COUNTER_X = 640;
 /** Last day the queue gets a royal visit. */
 const ROYAL_VISIT_DAY = STORY_DAYS;
+/**
+ * TESTING AID (temporary): from this day on the day's guests are only the special ones, each once, in random
+ * order — every theme is quick to check. Remove (or set to Infinity) to return to normal days.
+ */
+const SPECIALS_ONLY_FROM_DAY = 8;
 /** Special guests a day: one in the story, two in endless mode. */
 const SPECIAL_GUESTS_PER_DAY = { story: 1, endless: 2 };
 /** Cream coverage below which serving asks "serve without cream?". */
@@ -50,6 +55,9 @@ function shuffled<T>(items: readonly T[]): T[] {
  * place in the middle; on day 1 the two tutorial guests come first, on day 5 the Moon Queen comes last.
  */
 function buildGuestQueue(day: number): QueuedGuest[] {
+  if (day >= SPECIALS_ONLY_FROM_DAY) { // testing aid
+    return shuffled(SPECIAL_GUESTS.filter(cat => cat.firstDay <= day)).slice(0, guestsPerDay(day)).map(cat => ({ cat: cat.id }));
+  }
   const storyDay = Math.min(day, STORY_DAYS), specials = pickSpecialGuests(day), hasQueen = day === ROYAL_VISIT_DAY;
   const regularCount = guestsPerDay(day) - specials.length - (hasQueen ? 1 : 0);
   // picky guests stay home on days when the menu can't make their kind of cake

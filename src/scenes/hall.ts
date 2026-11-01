@@ -164,9 +164,14 @@ function updateReaction(customer: Customer, dt: number): void {
     }
   }
   if (crossed(paymentAppearTime(score.hearts))) {
-    sfx.coin();
-    floatingText(640, 380, (score.net >= 0 ? '+' : '') + score.net, '#ffe27a', 40);
-    burst(640, 400, 18, ['#ffd84a', '#fff1b0'], { kind: 'coin', lift: 220, gravity: 500, minSize: 7, maxSize: 10 });
+    if (score.verdict === 'paid') {
+      sfx.coin();
+      floatingText(640, 380, (score.net >= 0 ? '+' : '') + score.net, '#ffe27a', 40);
+      burst(640, 400, 18, ['#ffd84a', '#fff1b0'], { kind: 'coin', lift: 220, gravity: 500, minSize: 7, maxSize: 10 });
+    } else { // no money (or a fine): a sad sound and the number in red
+      sfx.fail();
+      floatingText(640, 380, score.net < 0 ? String(score.net) : '0', '#ff7f9f', 40);
+    }
     if (score.hearts >= 4) {
       burst(640, 300, 14, '#ff7ac0', { kind: 'heart', gravity: -40, lift: 60, minSize: 8, maxSize: 14 });
       sfx.chime();
@@ -378,14 +383,17 @@ function drawResultCard(customer: Customer): void {
       rowY += 6;
       ctx.strokeStyle = 'rgba(159,234,255,0.25)'; ctx.lineWidth = 2;
       ctx.beginPath(); ctx.moveTo(x + 24, rowY - 14); ctx.lineTo(x + w - 24, rowY - 14); ctx.stroke();
-      for (const [label, value] of [[t().payment, '+' + score.payment], [t().tips, '+' + score.tips], [t().ingredients, '−' + score.ingredientCost]]) {
+      const rows: [string, string][] = score.verdict === 'paid'
+        ? [[t().payment, '+' + score.payment], [t().tips, '+' + score.tips], [t().ingredients, '−' + score.ingredientCost]]
+        : score.verdict === 'refused' ? [[t().guestRefusedToPay, '0']] : [[t().ruinedCakeFine, '−' + score.penalty]];
+      for (const [label, value] of rows) {
         drawText(label, x + 26, rowY, 19, TEXT.muted, 'left', 700);
         drawText(value, x + w - 26, rowY, 19, TEXT.muted, 'right', 800);
         rowY += 25;
       }
       drawText(t().total, x + 26, rowY + 4, 22, TEXT.main, 'left', 900);
       drawCoin(x + w - 96, rowY + 4, 11);
-      drawText((score.net >= 0 ? '+' : '') + score.net, x + w - 26, rowY + 4, 22, score.net >= 0 ? '#5ff0c8' : '#ff7f9f', 'right', 900);
+      drawText((score.net > 0 ? '+' : '') + score.net, x + w - 26, rowY + 4, 22, score.verdict === 'paid' && score.net >= 0 ? '#5ff0c8' : '#ff7f9f', 'right', 900);
     }
   });
   if (elapsed > 1.4 + score.hearts * HEART_INTERVAL || elapsed > 2.6) {

@@ -63,6 +63,8 @@ const uk = {
   tips: 'Чайові',
   ingredients: 'Інгредієнти',
   total: 'Разом',
+  guestRefusedToPay: 'Гість не заплатив',
+  ruinedCakeFine: 'Штраф за зіпсований торт',
   finishDay: 'Завершити день',
   nextGuest: 'Наступний гість',
 
@@ -220,6 +222,8 @@ const ja: UiStrings = {
   tips: 'チップ',
   ingredients: '材料費',
   total: '合計',
+  guestRefusedToPay: 'お代はもらえなかった',
+  ruinedCakeFine: 'だめにしたケーキの罰金',
   finishDay: '一日をおえる',
   nextGuest: 'つぎのお客さん',
 
