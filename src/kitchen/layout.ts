@@ -53,6 +53,11 @@ export const CREAM_ZONE = { halfWidth: 175, above: 75, below: 55 };
 export const CREAM_BRUSH_RADIUS = 28;
 /** Area where magic signs can be drawn (right of the order ticket, between the bars). */
 export const MAGIC_DRAW_AREA = { left: 392, top: 64, bottom: 644 };
+/**
+ * Toppings station: the checklist of ordered toppings (big icons with "on the cake / wanted" counts) in the free
+ * space left of the cake, under the shelf.
+ */
+export const TOPPING_CHECKLIST = { x: 400, y: 352, w: 236, titleH: 34, rowH: 60, iconScale: 2.2 };
 /** Kitten helper sits on the table, right of the cake. */
 export const HELPER_KITTEN_SPOT = { x: 1060, y: 548, scale: 0.42 };
 

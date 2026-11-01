@@ -23,7 +23,7 @@ import {
   TICKET, TOP_BAR_HEIGHT,
 } from '../kitchen/layout';
 import { drawGlazeArc, drawGlazeStationScenery, drawMovingBottles } from '../kitchen/stations/glaze';
-import { GLAZE_STATION_INDEX, STATIONS } from '../kitchen/stations';
+import { GLAZE_STATION_INDEX, STATIONS, TOPPINGS_STATION_INDEX } from '../kitchen/stations';
 import { drawMagicStationCircle, drawMagicStrokes } from '../kitchen/stations/magic';
 import { drawDraggedTopping } from '../kitchen/stations/toppings';
 import { drawCake } from '../render/cake';
@@ -130,7 +130,8 @@ function drawTicket(): void {
   drawGuestPortrait(customer, x + 10, y + 10, w - 20, portraitHeight);
   drawFittedText(loc(customer.cat.name), x + 20, y + nameY, 22, w - 40, TEXT.main, 'left', 900);
   if (customer.patience !== null) drawPatienceBar(x + 20, y + patienceY, w - 40, customer);
-  drawOrderCard(customer, x + 10, y + cardY, w - 20, h - cardY - 10);
+  // on the toppings station the wanted cake is shown without its magic, so its toppings are easy to see
+  drawOrderCard(customer, x + 10, y + cardY, w - 20, h - cardY - 10, runtime.station === TOPPINGS_STATION_INDEX);
 }
 
 /**

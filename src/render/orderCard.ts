@@ -16,9 +16,12 @@ const ICON_ROW_HEIGHT = 38;
 /** The cake picture never grows beyond this scale (the kitchen ticket is large). */
 const MAX_PICTURE_SCALE = 1.15;
 
-export function drawOrderCard(customer: Customer, x: number, y: number, w: number, h: number): void {
+/** `hideMagic`: draw the wanted cake without its magic effects (they can hide the toppings). */
+export function drawOrderCard(customer: Customer, x: number, y: number, w: number, h: number, hideMagic = false): void {
   const order = customer.order;
   const picture = customer.orderPicture ??= buildOrderPicture(order);
+  const magic = picture.magicQuality;
+  if (hideMagic) picture.magicQuality = null;
 
   // picture area
   const pictureH = h - ICON_ROW_HEIGHT - 4;
@@ -31,6 +34,7 @@ export function drawOrderCard(customer: Customer, x: number, y: number, w: numbe
   drawGlow(x + w / 2, y + pictureH * 0.6, Math.min(w, pictureH * 1.6) * 0.6, '#e8dcff', 0.45);
   const scale = Math.min(MAX_PICTURE_SCALE, (pictureH - 20) / (cakeHeight(picture) + 110), (w - 20) / 270);
   drawCake(picture, x + w / 2, y + pictureH - 10 - 40 * scale, scale);
+  picture.magicQuality = magic;
   ctx.restore();
 
   // icon row

@@ -1,11 +1,11 @@
 // Station 4: drag toppings from the shelf above the cake onto it — on top or on the sides.
 import { sfx } from '../../audio/sfx';
 import { clock } from '../../core/clock';
-import { drawGlow } from '../../core/draw';
+import { drawFittedText, drawGlow, drawPanel, drawText } from '../../core/draw';
 import { loc } from '../../core/language';
 import { lerp, type Point } from '../../core/math';
 import { burst } from '../../core/particles';
-import { BUTTON_COLOR } from '../../core/theme';
+import { BUTTON_COLOR, TEXT } from '../../core/theme';
 import { button } from '../../core/ui';
 import { TOPPINGS } from '../../data/ingredients';
 import { t } from '../../data/strings';
@@ -17,7 +17,7 @@ import { drawToppingDish } from '../../render/shelfItems';
 import { drawTopping } from '../../render/toppings';
 import { showToast } from '../../scenes/sceneManager';
 import { cakeTopY, currentCake, currentOrder, requireLayer } from '../kitchen';
-import { CAKE_BASE_Y, CAKE_CENTER_X, INGREDIENT_SHELF, STATION_CONTROLS } from '../layout';
+import { CAKE_BASE_Y, CAKE_CENTER_X, INGREDIENT_SHELF, STATION_CONTROLS, TOPPING_CHECKLIST } from '../layout';
 import { drawIngredientShelf, shelfItemHalfWidth, shelfItemXs } from '../widgets';
 import type { Station } from './station';
 import { judgeChoice } from '../../game/guestReactions';
@@ -79,6 +79,33 @@ function dropTopping(point: Point): void {
   burst(CAKE_CENTER_X + x, CAKE_BASE_Y + y, 6, ['#fff', '#ffe27a'], { kind: 'star', gravity: 100, maxSpeed: 120 });
 }
 
+/**
+ * The checklist left of the cake: every ordered topping as a big icon with how many are on the cake out of how
+ * many are wanted (green tick when right, red when too many); toppings that weren't ordered are listed crossed out.
+ */
+function drawToppingChecklist(cake: Cake): void {
+  const order = currentOrder(), { x, y, w, titleH, rowH, iconScale } = TOPPING_CHECKLIST;
+  const placed: Partial<Record<ToppingId, number>> = {};
+  for (const item of cake.toppings) placed[item.topping] = (placed[item.topping] ?? 0) + 1;
+  const wanted = Object.entries(order.toppings) as [ToppingId, number][];
+  const extras = (Object.keys(placed) as ToppingId[]).filter(kind => !order.toppings[kind]);
+  drawPanel(x, y, w, titleH + (wanted.length + extras.length) * rowH + 10, { radius: 18, noStars: true });
+  drawFittedText(t().toppingsNeeded, x + w / 2, y + titleH / 2 + 4, 20, w - 24, TEXT.label, 'center', 900);
+  let rowY = y + titleH;
+  const row = (kind: ToppingId, label: string, color: string, mark: string | null): void => {
+    drawTopping(kind, x + 38, rowY + rowH - 12, iconScale);
+    drawText(label, x + 82, rowY + rowH / 2 + 2, 26, color, 'left', 900);
+    if (mark) drawText(mark, x + w - 30, rowY + rowH / 2 + 2, 26, color, 'center', 900);
+    rowY += rowH;
+  };
+  for (const [kind, want] of wanted) {
+    const got = placed[kind] ?? 0;
+    const color = got === want ? BUTTON_COLOR.confirm : got > want ? BUTTON_COLOR.danger : TEXT.main;
+    row(kind, `${got} / ${want}`, color, got === want ? '✓' : got > want ? '!' : null);
+  }
+  for (const kind of extras) row(kind, `${placed[kind]}`, BUTTON_COLOR.danger, '✗'); // not in the order
+}
+
 export const toppingsStation: Station = {
   get name() { return t().stations.toppings; },
   helper: 'toppings',
@@ -91,6 +118,10 @@ export const toppingsStation: Station = {
       runtime.toppingTray.push({ x: x - halfWidth, y: y - itemHeight, w: halfWidth * 2, h: itemHeight + 36, topping: toppings[i] });
     });
     drawIngredientShelf(toppings, topping => loc(TOPPINGS[topping].name), drawToppingDish, { isHoverable: !runtime.draggedTopping });
+  },
+
+  drawOverlay(cake) {
+    drawToppingChecklist(cake);
   },
 
   drawControls(rightEdge, y, cake) {
