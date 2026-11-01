@@ -57,6 +57,8 @@ const HEART_INTERVAL = 0.22;
 
 const BUBBLE = { x: 770, w: 480, textWidth: 440, lineHeight: 30, textSize: 22, orderPictureHeight: 222, centerY: 255, minY: 70, maxY: 420 };
 const RESULT_CARD = { x: 36, y: 92, w: 380, h: 468 };
+/** The served cake stands on the counter left of the guest (between them and the result card), so it hides neither. */
+const SERVED_CAKE = { offsetX: -170, scale: 0.55 };
 const NAME_TAG_SIZE = 20;
 /** Heart row on the result card. */
 const RESULT_HEARTS = { firstX: RESULT_CARD.x + 66, spacing: 62, y: RESULT_CARD.y + 76 };
@@ -224,10 +226,11 @@ export function renderHall(): void {
   drawCounter(time);
   if (customer) {
     if (customer.state !== 'entering' && customer.state !== 'leaving') drawPaws(customer.cat, customer.x, 520, catScale(customer));
-    if (customer.servedCake && (customer.state === 'judging' || customer.state === 'reacting')) { // the cake on a plate
-      ellipsePath(customer.x, 534, 112, 24); ctx.fillStyle = '#efeaff'; ctx.fill();
+    if (customer.servedCake && (customer.state === 'judging' || customer.state === 'reacting')) { // the cake on a plate, left of the guest
+      const plateX = customer.x + SERVED_CAKE.offsetX, scale = SERVED_CAKE.scale;
+      ellipsePath(plateX, 534, 112 * scale / 0.6, 24 * scale / 0.6); ctx.fillStyle = '#efeaff'; ctx.fill();
       ctx.strokeStyle = 'rgba(127,240,255,0.6)'; ctx.lineWidth = 2; ctx.stroke();
-      drawCake(customer.servedCake, customer.x, COUNTER_TOP_Y + 20, 0.6);
+      drawCake(customer.servedCake, plateX, COUNTER_TOP_Y + 20, scale);
     }
     if (customer.mood === 'angry' && (customer.state === 'storming' || customer.state === 'reacting' || customer.state === 'leaving')) {
       drawAngerMark(customer.x + ANGER_MARK_OFFSET.x, HALL_FLOOR_Y + ANGER_MARK_OFFSET.y, ANGER_MARK_OFFSET.scale, time);
