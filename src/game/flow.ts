@@ -20,6 +20,7 @@ import { createNewSave } from './save';
 import { patienceLeft, patienceSeconds } from './patience';
 import { scoreCake } from './scoring';
 import { resetTutorial } from './tutorial';
+import { resetGuestReactions } from './guestReactions';
 import { decorTipBonus, isOwned, progress, resetProgress, runtime, saveProgress } from './state';
 import { setUpKitchen } from '../kitchen/kitchen';
 
@@ -123,6 +124,7 @@ export function spawnNextGuest(): void {
   };
   runtime.cake = null;
   runtime.isServing = false;
+  resetGuestReactions();
   if (cat.special) sfx.specialArrival(cat.special.theme);
 }
 

@@ -2,7 +2,7 @@
 import { sfx } from '../../audio/sfx';
 import { ctx } from '../../core/canvas';
 import { clock } from '../../core/clock';
-import { rgbToHex, shade, withAlpha } from '../../core/color';
+import { colorDistance, rgbToHex, shade, withAlpha } from '../../core/color';
 import { drawFittedText, drawGlassPill, drawGlow, drawText, ellipsePath, font, roundRectPath, starPath } from '../../core/draw';
 import { loc } from '../../core/language';
 import { clamp, easeOutCubic, lerp, type Point } from '../../core/math';
@@ -13,7 +13,7 @@ import { ESSENCE_ORDER, ESSENCES, glazeColorById } from '../../data/ingredients'
 import { t } from '../../data/strings';
 import type { Cake, EssenceId } from '../../data/types';
 import { cakeHeight, countLayers } from '../../game/cake';
-import { mixDrops, NAMED_COLOR_DISTANCE, nearestGlazeColor, recipeToDrops, totalDrops } from '../../game/colorMixing';
+import { glazeRgb, mixDrops, NAMED_COLOR_DISTANCE, nearestGlazeColor, recipeToDrops, totalDrops } from '../../game/colorMixing';
 import { availableEssences, isOwned, runtime } from '../../game/state';
 import { BOTTLE_NECK_TOP, drawPotionBottle } from '../../render/potionBottle';
 import { showToast } from '../../scenes/sceneManager';
@@ -22,7 +22,12 @@ import {
   CAKE_BASE_Y, CAKE_SIDE_BUTTON, CAULDRON, CAULDRON_CAPACITY, CAULDRON_MOUTH, ELIXIR_SHELF, EMPTY_CAULDRON_BUTTON, POUR_POSITION, POUR_REACH,
 } from '../layout';
 import type { Station } from './station';
+import { judgeChoice, lookAt } from '../../game/guestReactions';
 
+/** The guest is pleased with a glaze at least this close to the ordered colour (scoring counts ≤10 as perfect), worried otherwise. */
+const GLAZE_RIGHT_DISTANCE = 35;
+/** When the glaze arc lands on the cake. */
+const GLAZE_LANDS_MS = 650;
 // Timeline of a pour (seconds): fly to the cauldron and tilt → pour → fly back home.
 const POUR_TIMING = { tiltEnd: 0.3, dropAdded: 0.62, pourEnd: 0.98, end: 1.32 };
 /** Bottle tilt angle while pouring (radians). */
@@ -82,6 +87,9 @@ function pourGlaze(): void {
   setTimeout(sfx.pour, 380);
   setTimeout(sfx.chime, 900);
   runtime.glazeArc = { startTime: clock.time, color: rgbToHex(color) };
+  lookAt(runtime.cakeX, CAKE_BASE_Y - cakeHeight(cake) * runtime.cakeScale);
+  const isRightColor = colorDistance(color, glazeRgb(currentOrder().glaze)) < GLAZE_RIGHT_DISTANCE;
+  setTimeout(() => judgeChoice(isRightColor, 'worried', true), GLAZE_LANDS_MS);
   setTimeout(() => burst(runtime.cakeX, CAKE_BASE_Y - cakeHeight(cake) * runtime.cakeScale - 10, 20, rgbToHex(color), { lift: 120, gravity: 400 }), 420);
 }
 

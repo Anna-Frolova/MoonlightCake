@@ -2,7 +2,7 @@
 // and the wanted cake) on the left, station buttons in the top right corner, station tabs at the bottom.
 import { ctx, SCREEN_W, view } from '../core/canvas';
 import { clock } from '../core/clock';
-import { drawFittedText, drawGlassPill, drawGlow, drawPanel, drawText, ellipsePath, font, roundRectPath, starPath } from '../core/draw';
+import { drawFittedText, drawGlassPill, drawGlow, drawPanel, drawText, ellipsePath, font, heartPath, roundRectPath, starPath } from '../core/draw';
 import { easeOutCubic, lerp } from '../core/math';
 import { burst, drawMotes } from '../core/particles';
 import { sfx } from '../audio/sfx';
@@ -14,7 +14,8 @@ import { HELPER_KITTEN } from '../data/cats';
 import { helperItemId } from '../data/shop';
 import type { Cake } from '../data/types';
 import { isCakeReady, serveCake } from '../game/flow';
-import { patienceLeft, patienceMood, PATIENCE_LEVELS } from '../game/patience';
+import { patienceBarValue, patienceLeft, patienceMood, PATIENCE_CALM_MARK, PATIENCE_LEVELS } from '../game/patience';
+import { currentReaction, reactionMood, updateGaze, type GuestReaction } from '../game/guestReactions';
 import { activeGuestTheme, isOwned, progress, runtime, type Customer, type StationIndex } from '../game/state';
 import { currentCake, resetCake } from '../kitchen/kitchen';
 import {
@@ -128,13 +129,17 @@ function drawTicket(): void {
   drawPanel(x, y, w, h, { radius: 20, noStars: true });
   drawGuestPortrait(customer, x + 10, y + 10, w - 20, portraitHeight);
   drawFittedText(loc(customer.cat.name), x + 20, y + nameY, 22, w - 40, TEXT.main, 'left', 900);
-  if (customer.patience !== null) drawPatienceBar(x + 20, y + patienceY, w - 40, patienceLeft(customer));
+  if (customer.patience !== null) drawPatienceBar(x + 20, y + patienceY, w - 40, customer);
   drawOrderCard(customer, x + 10, y + cardY, w - 20, h - cardY - 10);
 }
 
-/** The guest from the hat to the chest; the face follows their patience and the window wobbles when they get grumpier. */
+/**
+ * The guest from the hat to the chest. They look where the player works, react to their choices for a moment
+ * (game/guestReactions.ts), otherwise their face follows their patience; the window wobbles when they get upset.
+ */
 function drawGuestPortrait(customer: Customer, x: number, y: number, w: number, h: number): void {
-  const mood = patienceMood(customer), left = patienceLeft(customer), time = clock.time;
+  const reaction = currentReaction(), left = patienceLeft(customer), time = clock.time;
+  const mood = reaction ? reactionMood(reaction) : patienceMood(customer);
   const wobble = Math.max(0, 1 - (time - customer.moodChangedAt) * 2.5) * Math.sin(time * 40) * 5;
   const frameColor = left < PATIENCE_LEVELS.upset ? BUTTON_COLOR.danger : left < PATIENCE_LEVELS.impatient ? BUTTON_COLOR.gold : TEXT.label;
   ctx.save();
@@ -147,11 +152,12 @@ function drawGuestPortrait(customer: Customer, x: number, y: number, w: number, 
   drawGlow(headX, headY, h * 0.8, '#c9b6ff', 0.25);
   // the head is ~150 px above the cat's origin at scale 1 (a bit lower for kittens)
   const headLift = 150 * PORTRAIT.catScale * (customer.cat.isKitten ? 0.9 : 1);
-  drawCat(customer.cat, headX, headY + headLift, PORTRAIT.catScale, time, mood);
+  drawCat(customer.cat, headX, headY + headLift, PORTRAIT.catScale, time, mood, updateGaze(headX, headY, clock.delta));
   ctx.restore();
   ctx.strokeStyle = frameColor; ctx.lineWidth = 3; roundRectPath(x + 1.5, y + 1.5, w - 3, h - 3, 15); ctx.stroke();
   const sideX = headX + PORTRAIT.markOffset.x, sideY = headY + PORTRAIT.markOffset.y;
-  if (mood === 'thinking') { // a drop of sweat
+  if (reaction) drawReactionMark(reaction, sideX, sideY, time);
+  else if (mood === 'thinking') { // a drop of sweat
     ctx.fillStyle = '#8fd8ff'; ctx.beginPath();
     ctx.moveTo(sideX, sideY - 16); ctx.quadraticCurveTo(sideX + 11, sideY + 4, sideX, sideY + 8);
     ctx.quadraticCurveTo(sideX - 11, sideY + 4, sideX, sideY - 16); ctx.fill();
@@ -159,13 +165,31 @@ function drawGuestPortrait(customer: Customer, x: number, y: number, w: number, 
   ctx.restore();
 }
 
-/** Drains from green through gold to a blinking red as the guest loses patience. */
-function drawPatienceBar(x: number, y: number, w: number, left: number): void {
-  const color = left < PATIENCE_LEVELS.upset ? BUTTON_COLOR.danger : left < PATIENCE_LEVELS.impatient ? BUTTON_COLOR.gold : BUTTON_COLOR.confirm;
+/** "!" for surprise, "?" for worry, a heart when pleased — popping in beside the head. */
+function drawReactionMark(reaction: GuestReaction, x: number, y: number, time: number): void {
+  const pop = 1 + 0.12 * Math.sin(time * 9);
+  ctx.save(); ctx.translate(x, y); ctx.scale(pop, pop);
+  ctx.shadowColor = 'rgba(20,10,50,0.9)'; ctx.shadowBlur = 6;
+  if (reaction === 'pleased') { ctx.fillStyle = '#ff7ac0'; heartPath(0, 0, 32); ctx.fill(); }
+  else drawText(reaction === 'surprised' ? '!' : '?', 0, 0, 48, reaction === 'surprised' ? TEXT.gold : '#8fd8ff', 'center', 900);
+  ctx.restore();
+}
+
+/**
+ * Drains steadily from the start; a notch marks where the calm part ends. Green before it, then gold,
+ * blinking red when the guest is about to run out of patience.
+ */
+function drawPatienceBar(x: number, y: number, w: number, customer: Customer): void {
+  const value = patienceBarValue(customer), left = patienceLeft(customer);
+  const color = left < PATIENCE_LEVELS.upset ? BUTTON_COLOR.danger : value < PATIENCE_CALM_MARK ? BUTTON_COLOR.gold : BUTTON_COLOR.confirm;
   const blink = left < PATIENCE_LEVELS.upset ? 0.55 + 0.45 * Math.abs(Math.sin(clock.time * 5)) : 1;
   ctx.save(); ctx.globalAlpha = blink;
-  drawProgressBar(x, y, w, PATIENCE_BAR_HEIGHT, left, color);
+  drawProgressBar(x, y, w, PATIENCE_BAR_HEIGHT, value, color);
   ctx.restore();
+  const markX = x + w * PATIENCE_CALM_MARK; // the notch: a line through the bar and a small triangle above it
+  ctx.fillStyle = 'rgba(255,255,255,0.75)';
+  ctx.fillRect(markX - 1, y - 2, 2, PATIENCE_BAR_HEIGHT + 4);
+  ctx.beginPath(); ctx.moveTo(markX - 5, y - 8); ctx.lineTo(markX + 5, y - 8); ctx.lineTo(markX, y - 2); ctx.closePath(); ctx.fill();
 }
 
 /** "Auto" (once the helper is bought) right of the cake under the side button; the station's own buttons. */

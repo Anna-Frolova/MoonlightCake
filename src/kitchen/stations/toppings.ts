@@ -20,6 +20,7 @@ import { cakeTopY, currentCake, currentOrder, requireLayer } from '../kitchen';
 import { CAKE_BASE_Y, CAKE_CENTER_X, INGREDIENT_SHELF, STATION_CONTROLS } from '../layout';
 import { drawIngredientShelf, shelfItemHalfWidth, shelfItemXs } from '../widgets';
 import type { Station } from './station';
+import { judgeChoice } from '../../game/guestReactions';
 
 const CLEAR_BUTTON_WIDTH = 180;
 /** Pick-up radius of a topping already on the cake. */
@@ -73,6 +74,7 @@ function dropTopping(point: Point): void {
   }
   if (cake.toppings.length >= MAX_TOPPINGS) { showToast(t().noRoomForToppings); sfx.fail(); return; }
   cake.toppings.push({ topping: dragged.topping, x, y: y + height, popProgress: 0 });
+  if (!dragged.fromCake) judgeChoice(!!currentOrder().toppings[dragged.topping], 'worried');
   sfx.place();
   burst(CAKE_CENTER_X + x, CAKE_BASE_Y + y, 6, ['#fff', '#ffe27a'], { kind: 'star', gravity: 100, maxSpeed: 120 });
 }

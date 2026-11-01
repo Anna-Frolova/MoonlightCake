@@ -7,6 +7,7 @@ import type { Point } from './core/math';
 import { burst } from './core/particles';
 import { findButtonAt, pointer, ui } from './core/ui';
 import { runtime, type StationIndex } from './game/state';
+import { lookAt } from './game/guestReactions';
 import { GLAZE_STATION_INDEX, STATIONS } from './kitchen/stations';
 import { handleHallEnterKey, skipSpeechTyping } from './scenes/hall';
 import { selectStation } from './scenes/kitchen';
@@ -26,6 +27,7 @@ function onPointerDown(event: PointerEvent): void {
   pointer.isDown = true;
   try { canvas.setPointerCapture(event.pointerId); } catch { /* not supported */ }
   if (runtime.fade) return;
+  if (activeStation()) lookAt(point.x, point.y);
   const hit = findButtonAt(point);
   if (hit) { ui.pressedId = hit.id; return; }
   if (runtime.modal) return;
@@ -35,6 +37,7 @@ function onPointerDown(event: PointerEvent): void {
 
 function onPointerMove(event: PointerEvent): void {
   const point = updatePointer(event);
+  if (pointer.isDown && activeStation()) lookAt(point.x, point.y);
   activeStation()?.onPointerMove?.(point, runtime.cake!);
 }
 

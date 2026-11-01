@@ -18,6 +18,7 @@ import { cakeTopY, currentCake, currentOrder, SPARKLE_COLORS } from '../kitchen'
 import { CAKE_BASE_Y, CAKE_CENTER_X, CAKE_SIDE_BUTTON, HELPER_SHELF, SHAPE_SWITCHES } from '../layout';
 import { drawIngredientShelf, isOverShelfItem, shelfItemXs } from '../widgets';
 import type { Station } from './station';
+import { judgeChoice } from '../../game/guestReactions';
 
 /** Delay before the landing sound, so it matches the falling animation. */
 const LAND_SOUND_DELAY_MS = 160;
@@ -49,6 +50,7 @@ function addLayer(flavor: FlavorId): void {
   if (countLayers(cake) >= MAX_LAYERS) { showToast(t().maxLayers); sfx.fail(); return; }
   cake.stack.push({ kind: 'layer', flavor, dropProgress: 0 });
   cake.creamDots = null;
+  judgeChoice(flavor === currentOrder().flavor, 'worried');
   setTimeout(() => {
     sfx.plop();
     burst(CAKE_CENTER_X, CAKE_BASE_Y - cakeHeight(cake) + 10, 10, FLAVORS[flavor].color, { lift: 120, gravity: 500 });
@@ -66,6 +68,7 @@ function addFilling(filling: FillingId): void {
   if (countLayers(cake) >= MAX_LAYERS) { showToast(t().fillingNoRoom); sfx.fail(); return; }
   cake.stack.push({ kind: 'filling', filling, dropProgress: 0 });
   cake.creamDots = null;
+  judgeChoice(filling === currentOrder().filling, 'worried');
   setTimeout(() => {
     sfx.squish();
     burst(CAKE_CENTER_X, CAKE_BASE_Y - cakeHeight(cake), 8, FILLINGS[filling].color, { lift: 80 });

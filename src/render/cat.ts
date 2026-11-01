@@ -18,6 +18,14 @@ const BODY = { centerY: -46, radiusX: 82, radiusY: 88 };
 const HEAD = { centerY: -150, radiusX: 74, radiusY: 60 };
 const KITTEN_BODY_SCALE = 0.86;
 const KITTEN_HEAD_LIFT = 0.9;
+/** How far (px) the face moves and the eyes' light moves inside them when the cat looks fully to one side. */
+const FACE_TURN = { x: 6, y: 4 };
+const IRIS_SHIFT = 0.28;
+/** Surprised eyes are this much bigger. */
+const SURPRISED_EYE_SCALE = 1.14;
+
+export interface Gaze { x: number; y: number }
+const NO_GAZE: Gaze = { x: 0, y: 0 };
 
 /** Soft outline: the fur colour mixed towards dark violet (no harsh black lines). */
 export function catOutlineColor(look: CatLook): string {
@@ -36,8 +44,9 @@ export function softGradient(x: number, y: number, radiusX: number, radiusY: num
 /**
  * Draws a whole cat standing behind the counter.
  * @param time   seconds, drives breathing, tail sway and blinking
+ * @param gaze   where the cat looks, -1..1 on each axis (0,0 = straight at the player)
  */
-export function drawCat(look: CatLook, x: number, y: number, scale: number, time: number, mood: Mood = 'neutral'): void {
+export function drawCat(look: CatLook, x: number, y: number, scale: number, time: number, mood: Mood = 'neutral', gaze: Gaze = NO_GAZE): void {
   const outline = catOutlineColor(look);
   const bodyScale = look.isKitten ? KITTEN_BODY_SCALE : 1;
   const breathe = Math.sin(time * 2.2) * 2.2;
@@ -53,7 +62,10 @@ export function drawCat(look: CatLook, x: number, y: number, scale: number, time
   drawBody(look, outline, bodyScale, breathe);
   drawEars(look, outline, headY);
   drawHead(look, outline, headY);
-  drawFace(look, outline, headY, time, mood);
+  // the face shifts a little towards where the cat looks, so the head seems to turn
+  ctx.save(); ctx.translate(gaze.x * FACE_TURN.x, gaze.y * FACE_TURN.y);
+  drawFace(look, outline, headY, time, mood, gaze);
+  ctx.restore();
   drawHat(look, outline, headY, time);
   drawAccessory(look, outline, headY);
   ctx.restore();
@@ -213,15 +225,19 @@ function drawHead(look: CatLook, outline: string, headY: number): void {
   ctx.restore();
 }
 
-function drawFace(look: CatLook, outline: string, headY: number, time: number, mood: Mood): void {
+function drawFace(look: CatLook, outline: string, headY: number, time: number, mood: Mood, gaze: Gaze): void {
   ctx.fillStyle = BLUSH;
   ellipsePath(-46, headY + 20, 13, 8); ctx.fill();
   ellipsePath(46, headY + 20, 13, 8); ctx.fill();
 
   // each cat blinks at a slightly different moment
   const isBlinking = (time + look.id.length * 0.7) % 3.7 < 0.13;
-  const eyeScale = look.isKitten ? 1.15 : 1;
-  for (const side of [-1, 1]) drawEye(look, outline, side * 28, headY + 2, side, eyeScale, mood, isBlinking);
+  const eyeScale = (look.isKitten ? 1.15 : 1) * (mood === 'surprised' ? SURPRISED_EYE_SCALE : 1);
+  for (const side of [-1, 1]) drawEye(look, outline, side * 28, headY + 2, side, eyeScale, mood, isBlinking && mood !== 'surprised', gaze);
+  if (mood === 'surprised') { // eyebrows shot up
+    ctx.strokeStyle = outline; ctx.lineWidth = 3;
+    for (const side of [-1, 1]) { ctx.beginPath(); ctx.arc(side * 28, headY - 18, 12, Math.PI * 1.2, Math.PI * 1.8); ctx.stroke(); }
+  }
   if (mood === 'sad') { // tear
     ctx.fillStyle = '#8fd8ff';
     ctx.beginPath(); ctx.moveTo(40, headY + 12); ctx.quadraticCurveTo(47, headY + 23, 40, headY + 27); ctx.quadraticCurveTo(33, headY + 23, 40, headY + 12); ctx.fill();
@@ -235,6 +251,8 @@ function drawFace(look: CatLook, outline: string, headY: number, time: number, m
     ellipsePath(0, headY + 29, 5, 3); ctx.fillStyle = '#ff9cbc'; ctx.fill(); // tongue
   } else if (mood === 'sad' || mood === 'angry') {
     ctx.moveTo(-7, headY + 28); ctx.quadraticCurveTo(0, headY + 21, 7, headY + 28); ctx.stroke();
+  } else if (mood === 'surprised') { // a little round "o"
+    ellipsePath(0, headY + 27, 5, 6.5); ctx.fillStyle = '#c0406a'; ctx.fill(); ctx.stroke();
   } else { // cat "w" mouth
     ctx.moveTo(-9, headY + 21); ctx.quadraticCurveTo(-4.5, headY + 27, 0, headY + 21); ctx.quadraticCurveTo(4.5, headY + 27, 9, headY + 21); ctx.stroke();
   }
@@ -246,17 +264,19 @@ function drawFace(look: CatLook, outline: string, headY: number, time: number, m
 }
 
 /** Big glossy eye: dark oval, coloured lower half, two white highlights. */
-function drawEye(look: CatLook, outline: string, x: number, y: number, side: number, eyeScale: number, mood: Mood, isBlinking: boolean): void {
+function drawEye(look: CatLook, outline: string, x: number, y: number, side: number, eyeScale: number, mood: Mood, isBlinking: boolean, gaze: Gaze): void {
   const rx = 14 * eyeScale, ry = 17 * eyeScale;
   ctx.strokeStyle = EYE_DARK; ctx.lineWidth = 4.5;
   if (mood === 'happy') { ctx.beginPath(); ctx.arc(x, y + 6, 11 * eyeScale, Math.PI * 1.15, Math.PI * 1.85); ctx.stroke(); return; }
   if (isBlinking) { ctx.beginPath(); ctx.moveTo(x - 11, y + 3); ctx.quadraticCurveTo(x, y + 8, x + 11, y + 3); ctx.stroke(); return; }
   ellipsePath(x, y, rx, ry); ctx.fillStyle = EYE_DARK; ctx.fill();
+  // the coloured part and the highlights slide inside the eye towards where the cat looks
+  const lookX = x + gaze.x * rx * IRIS_SHIFT, lookY = y + gaze.y * ry * IRIS_SHIFT;
   ctx.save(); ellipsePath(x, y, rx, ry); ctx.clip();
-  ellipsePath(x, y + ry * 0.8, rx * 1.1, ry * 0.62); ctx.fillStyle = withAlpha(look.eyeColor, 0.9); ctx.fill();
+  ellipsePath(lookX, lookY + ry * 0.8, rx * 1.1, ry * 0.62); ctx.fillStyle = withAlpha(look.eyeColor, 0.9); ctx.fill();
+  ellipsePath(lookX - rx * 0.3, lookY - ry * 0.36, rx * 0.42, ry * 0.34); ctx.fillStyle = '#fff'; ctx.fill();
+  ellipsePath(lookX + rx * 0.38, lookY + ry * 0.12, rx * 0.17, rx * 0.17); ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.fill();
   ctx.restore();
-  ellipsePath(x - rx * 0.3, y - ry * 0.36, rx * 0.42, ry * 0.34); ctx.fillStyle = '#fff'; ctx.fill();
-  ellipsePath(x + rx * 0.38, y + ry * 0.12, rx * 0.17, rx * 0.17); ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.fill();
 
   if (mood === 'sad' || mood === 'thinking' || mood === 'angry') { // eyelid drawn in fur colour over the top of the eye
     if (mood === 'angry') side = -side; // the lid slants the other way: inner corners down, a frown

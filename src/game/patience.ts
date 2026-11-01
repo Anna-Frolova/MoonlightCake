@@ -22,6 +22,17 @@ export function patienceLeft(customer: Customer): number {
   return clamp(1 - (customer.waitTime - calm) / (customer.patience - calm), 0, 1);
 }
 
+/**
+ * The patience bar: drains steadily from the moment the order is taken (1 → 0 over the whole wait), so the
+ * player sees right away how much time they have. Always full for guests in no hurry.
+ */
+export function patienceBarValue(customer: Customer): number {
+  return customer.patience === null ? 1 : clamp(1 - customer.waitTime / customer.patience, 0, 1);
+}
+
+/** Where on the bar the calm stretch ends: past this mark the guest starts losing their good mood (and the speed score). */
+export const PATIENCE_CALM_MARK = 1 - PATIENCE.calmShare;
+
 /** The face that goes with the patience left. */
 export function patienceMood(customer: Customer): Mood {
   const left = patienceLeft(customer);

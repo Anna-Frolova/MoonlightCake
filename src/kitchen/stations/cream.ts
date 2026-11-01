@@ -21,6 +21,7 @@ import { currentCake, currentOrder, requireLayer } from '../kitchen';
 import { CAKE_BASE_Y, CAKE_CENTER_X, CREAM_BRUSH_RADIUS, CREAM_ZONE, STATION_CONTROLS } from '../layout';
 import { drawIngredientShelf, drawProgressBar, isOverShelfItem, shelfItemXs } from '../widgets';
 import type { Station } from './station';
+import { judgeChoice } from '../../game/guestReactions';
 
 /** Minimum seconds between squish sounds while piping. */
 const SQUISH_INTERVAL = 0.09;
@@ -62,6 +63,7 @@ function pipeAt(point: Point): void {
   const cake = currentCake();
   if (!countLayers(cake) || !runtime.selectedCream) return;
   if (!cake.creamDots) createCreamDots(cake);
+  if (cake.cream !== runtime.selectedCream) judgeChoice(runtime.selectedCream === currentOrder().cream, 'surprised', true);
   cake.cream = runtime.selectedCream;
   const localX = point.x - CAKE_CENTER_X, localY = point.y - CAKE_BASE_Y;
   let pipedNow = 0;

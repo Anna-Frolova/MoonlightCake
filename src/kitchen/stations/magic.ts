@@ -20,6 +20,7 @@ import { showToast } from '../../scenes/sceneManager';
 import { cakeTopY, currentCake, currentOrder, requireLayer } from '../kitchen';
 import { CAKE_BASE_Y, CAKE_CENTER_X, ELEMENT_ROW, MAGIC_DRAW_AREA } from '../layout';
 import type { Station } from './station';
+import { judgeChoice } from '../../game/guestReactions';
 
 const STROKE_COLOR = '#9feaff';
 const FAILED_STROKE_COLOR = '#ff7f9f';
@@ -47,6 +48,7 @@ function castMagic(element: ElementId, quality: number): void {
   cake.magicQuality = quality;
   cake.element = element;
   cake.magicCastTime = clock.time;
+  judgeChoice(element === currentOrder().element, 'surprised', true);
   sfx.magic(element);
   burst(CAKE_CENTER_X, top, 26 + quality * 20, [def.color, '#ffffff', shade(def.color, 0.4)],
     { kind: 'star', gravity: element === 'fire' ? -120 : 40, maxSpeed: 300 });
