@@ -3,7 +3,7 @@ import { setBusEnabled } from '../audio/engine';
 import { restartMusic } from '../audio/music';
 import { sfx } from '../audio/sfx';
 import { language, loc, setLanguage, type Language } from '../core/language';
-import { pickRandom, randomInt } from '../core/math';
+import { randomInt } from '../core/math';
 import { burst } from '../core/particles';
 import { clock } from '../core/clock';
 import { pointer } from '../core/ui';
@@ -29,8 +29,7 @@ export const GUEST_ENTRY_X = 1480;
 export const GUEST_COUNTER_X = 640;
 /** Last day the queue gets a royal visit. */
 const ROYAL_VISIT_DAY = STORY_DAYS;
-/** Special guests come from this day on: one a day in the story, two a day in endless mode. */
-const SPECIAL_GUESTS_FROM_DAY = 2;
+/** Special guests a day: one in the story, two in endless mode. */
 const SPECIAL_GUESTS_PER_DAY = { story: 1, endless: 2 };
 /** Cream coverage below which serving asks "serve without cream?". */
 const CREAM_MISSING_COVERAGE = 0.3;
@@ -38,40 +37,45 @@ const CREAM_MISSING_COVERAGE = 0.3;
 const GOODBYE_MEOW_HEARTS = 3;
 const PERFECT_PURR_SECONDS = 2.2;
 
-/** Today's guests in order: random regulars (never the same one twice in a row), plus scripted ones. */
+/** A shuffled copy of `items`. */
+function shuffled<T>(items: readonly T[]): T[] {
+  const result = [...items];
+  for (let i = result.length - 1; i > 0; i--) { const j = randomInt(0, i); [result[i], result[j]] = [result[j], result[i]]; }
+  return result;
+}
+
+/**
+ * Today's guests in order. Every regular comes at most once a day (only if there are too few of them for the
+ * day does someone come again, never twice in a row); one special guest (two in endless mode) takes a random
+ * place in the middle; on day 1 the two tutorial guests come first, on day 5 the Moon Queen comes last.
+ */
 function buildGuestQueue(day: number): QueuedGuest[] {
-  const storyDay = Math.min(day, STORY_DAYS), count = guestsPerDay(day);
+  const storyDay = Math.min(day, STORY_DAYS), specials = pickSpecialGuests(day), hasQueen = day === ROYAL_VISIT_DAY;
+  const regularCount = guestsPerDay(day) - specials.length - (hasQueen ? 1 : 0);
   // picky guests stay home on days when the menu can't make their kind of cake
   const pool = GUESTS.filter(cat => cat.firstDay <= storyDay && canTakeOrder(cat)).map(cat => cat.id);
-  const queue: QueuedGuest[] = [];
-  let previous: string | null = null;
-  while (queue.length < count) {
-    const id = pickRandom(pool.filter(candidate => candidate !== previous));
-    queue.push({ cat: id });
-    previous = id;
+  const queue: QueuedGuest[] = day === 1 ? [{ cat: 'pushinka', tutorial: 1 }, { cat: 'barsyk', tutorial: 2 }] : [];
+  let bag: CatId[] = [];
+  while (queue.length < regularCount) {
+    if (!bag.length) bag = shuffled(pool.filter(id => !queue.some(guest => guest.cat === id)));
+    if (!bag.length) bag = shuffled(pool); // everyone has already come today: a second round
+    const previous = queue[queue.length - 1]?.cat;
+    if (bag[bag.length - 1] === previous && bag.length > 1) [bag[0], bag[bag.length - 1]] = [bag[bag.length - 1], bag[0]];
+    queue.push({ cat: bag.pop()! });
   }
-  if (day === 1) { // two tutorial guests first
-    queue[0] = { cat: 'pushinka', tutorial: 1 };
-    queue[1] = { cat: 'barsyk', tutorial: 2 };
-    if (queue[2].cat === 'barsyk') queue[2] = { cat: 'lihtaryk' };
-  }
-  if (day === ROYAL_VISIT_DAY) queue[count - 1] = { cat: 'queen' };
-  // special guests take random places in the middle of the day (never the first or the last guest)
-  const free = Array.from({ length: count - 2 }, (_, i) => i + 1);
-  for (const id of pickSpecialGuests(day)) {
-    const [index] = free.splice(randomInt(0, free.length - 1), 1);
-    queue[index] = { cat: id };
-  }
+  // special guests: after the tutorial guests and never the last of the regulars' places
+  const firstFree = day === 1 ? 2 : 1;
+  for (const id of specials) queue.splice(randomInt(firstFree, Math.max(firstFree, queue.length - 1)), 0, { cat: id });
+  if (hasQueen) queue.push({ cat: 'queen' });
   return queue;
 }
 
-/** Today's special guests: one who visits for the first time today comes for sure, the rest are random. */
+/** Today's special guests: one who visits for the first time today comes for sure, the rest are random and all different. */
 function pickSpecialGuests(day: number): CatId[] {
-  if (day < SPECIAL_GUESTS_FROM_DAY) return [];
-  const unlocked = SPECIAL_GUESTS.filter(cat => cat.firstDay <= Math.min(day, STORY_DAYS));
+  const unlocked = SPECIAL_GUESTS.filter(cat => cat.firstDay <= day);
   const count = Math.min(unlocked.length, day > STORY_DAYS ? SPECIAL_GUESTS_PER_DAY.endless : SPECIAL_GUESTS_PER_DAY.story);
   const chosen = unlocked.filter(cat => cat.firstDay === day).map(cat => cat.id);
-  while (chosen.length < count) chosen.push(pickRandom(unlocked.filter(cat => !chosen.includes(cat.id))).id);
+  for (const cat of shuffled(unlocked)) if (chosen.length < count && !chosen.includes(cat.id)) chosen.push(cat.id);
   return chosen.slice(0, count);
 }
 

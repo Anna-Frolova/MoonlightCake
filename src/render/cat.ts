@@ -13,6 +13,9 @@ const GOTHIC_RED = '#d0213f';
 /** Bluish light coming from the café's magic, painted on the right edge of the body and head. */
 const RIM_LIGHT = 'rgba(150,210,255,0.45)';
 const ANGER_RED = '#ff5f8f';
+const BEARD_WHITE = '#f6f3ee';
+/** The kitsune's tails fan out between these angles (radians, 0 = right, upwards is negative). */
+const TAIL_FAN = { from: -2.9, to: -0.25, length: 205, width: 34 };
 
 const BODY = { centerY: -46, radiusX: 82, radiusY: 88 };
 const HEAD = { centerY: -150, radiusX: 74, radiusY: 60 };
@@ -69,11 +72,16 @@ export function drawCat(look: CatLook, x: number, y: number, scale: number, time
   drawFace(look, outline, headY, time, mood, gaze);
   ctx.restore();
   drawHat(look, outline, headY, time);
-  drawAccessory(look, outline, headY);
+  // accessories sit on the face (glasses, beard), so they turn with it too
+  ctx.save(); ctx.translate(gaze.x * FACE_TURN.x, gaze.y * FACE_TURN.y);
+  drawAccessory(look.accessory, look, outline, headY);
+  drawAccessory(look.extraAccessory, look, outline, headY);
+  ctx.restore();
   ctx.restore();
 }
 
 function drawTail(look: CatLook, outline: string, time: number): void {
+  if ((look.tailCount ?? 1) > 1) { drawTailFan(look, outline, time); return; }
   const sway = Math.sin(time * 1.7) * 14;
   ctx.strokeStyle = outline; ctx.lineWidth = 25;
   ctx.beginPath(); ctx.moveTo(52, -10); ctx.bezierCurveTo(120, -20, 104 + sway, -110, 136 + sway, -142); ctx.stroke();
@@ -87,6 +95,23 @@ function drawTail(look: CatLook, outline: string, time: number): void {
     ctx.beginPath(); ctx.moveTo(0, -24); ctx.quadraticCurveTo(18, -6, 12, 6); ctx.quadraticCurveTo(6, 10, 0, 4);
     ctx.quadraticCurveTo(-6, 10, -12, 6); ctx.quadraticCurveTo(-18, -6, 0, -24); ctx.closePath();
     ctx.fillStyle = look.furAccent; ctx.fill(); ctx.strokeStyle = outline; ctx.lineWidth = 2.5; ctx.stroke();
+    ctx.restore();
+  }
+}
+
+/** Fluffy tails fanned out behind the body, each swaying a little, tips in `tailTipColor`. */
+function drawTailFan(look: CatLook, outline: string, time: number): void {
+  const count = look.tailCount ?? 1, { from, to, length, width } = TAIL_FAN;
+  for (let i = 0; i < count; i++) {
+    const angle = from + ((to - from) * i) / (count - 1) + Math.sin(time * 1.6 + i * 0.9) * 0.06;
+    ctx.save(); ctx.translate(0, -40); ctx.rotate(angle);
+    ctx.beginPath(); ctx.moveTo(10, 0);
+    ctx.bezierCurveTo(length * 0.4, -width, length * 0.85, -width, length, 0); ctx.bezierCurveTo(length * 0.85, width, length * 0.4, width, 10, 0); ctx.closePath();
+    ctx.fillStyle = softGradient(length * 0.6, 0, length * 0.5, width, look.fur); ctx.fill();
+    ctx.strokeStyle = outline; ctx.lineWidth = 2.5; ctx.stroke();
+    ctx.save(); ctx.clip(); // coloured tip
+    ctx.fillStyle = look.tailTipColor ?? look.furAccent; ctx.fillRect(length * 0.8, -width, length * 0.3, width * 2);
+    ctx.restore();
     ctx.restore();
   }
 }
@@ -129,6 +154,26 @@ function drawBack(look: CatLook, outline: string, time: number): void {
         ctx.stroke();
         ctx.restore();
       }
+      break;
+    case 'fairyWings': // see-through butterfly wings, a big and a small one on each side
+      ctx.globalAlpha = 0.75;
+      for (const side of [-1, 1]) {
+        ctx.save(); ctx.translate(side * 40, -96); ctx.scale(side, 1); ctx.rotate(-flap * 2);
+        for (const [rx, ry, angle, offsetY, color] of [[68, 44, -0.7, -40, '#ffc0dc'], [44, 30, 0.6, 26, '#b8f0c8']] as const) {
+          ctx.save(); ctx.rotate(angle); ctx.translate(rx * 0.9, offsetY * 0.3);
+          ellipsePath(0, 0, rx, ry);
+          const wing = ctx.createRadialGradient(-rx * 0.6, 0, 4, 0, 0, rx);
+          wing.addColorStop(0, '#ffffff'); wing.addColorStop(1, color);
+          ctx.fillStyle = wing; ctx.fill();
+          ctx.strokeStyle = shade(color, -0.25); ctx.lineWidth = 2; ctx.stroke();
+          ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.lineWidth = 1.5; // veins
+          ctx.beginPath(); ctx.moveTo(-rx * 0.9, 0); ctx.lineTo(rx * 0.7, -ry * 0.4); ctx.moveTo(-rx * 0.9, 0); ctx.lineTo(rx * 0.7, ry * 0.4); ctx.stroke();
+          ctx.restore();
+        }
+        ctx.restore();
+      }
+      ctx.globalAlpha = 1;
+      drawGlow(0, -110, 160, '#d8ffe0', 0.25);
       break;
     case 'cape': {
       const lining = '#a0142c';
@@ -445,6 +490,55 @@ function drawOutfit(look: CatLook, outline: string, bodyScale: number): void {
       drawGlow(0, -58, 18, '#ff2a4a', 0.5);
       ctx.fillStyle = GOTHIC_RED; ellipsePath(0, -58, 8, 9); ctx.fill(); ctx.strokeStyle = '#e8b84a'; ctx.lineWidth = 2.5; ctx.stroke();
       break;
+    case 'cardigan': // a white blouse under an open knitted cardigan
+      fillFabric(color, -104);
+      ctx.fillStyle = '#fbf8ff'; ctx.beginPath(); ctx.moveTo(-24, -104); ctx.lineTo(24, -104); ctx.lineTo(16, 60); ctx.lineTo(-16, 60); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#fbf8ff'; // round collar
+      for (const side of [-1, 1]) { ctx.beginPath(); ctx.ellipse(side * 14, -98, 16, 10, side * 0.4, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); }
+      ctx.strokeStyle = shade(color, -0.25); ctx.lineWidth = 2.5; // ribbed edges
+      for (const side of [-1, 1]) { ctx.beginPath(); ctx.moveTo(side * 26, -104); ctx.lineTo(side * 18, 60); ctx.stroke(); }
+      ctx.fillStyle = '#ffe3a0'; for (const buttonY of [-60, -30, 0]) { ellipsePath(-28, buttonY, 4.5, 4.5); ctx.fill(); }
+      ctx.strokeStyle = outline; ctx.lineWidth = 2; roundRectPath(30, -20, 34, 26, 6); ctx.stroke(); // pocket
+      ctx.fillStyle = '#ff6f9f'; ellipsePath(0, -84, 5, 5); ctx.fill(); // a little brooch
+      break;
+    case 'miko': // white kimono top crossed over, red hakama below
+      ctx.fillStyle = '#fbf8ff'; ctx.fillRect(-95, -104, 190, 170);
+      ctx.fillStyle = color; ctx.fillRect(-95, -14, 190, 90);
+      ctx.strokeStyle = shade(color, -0.25); ctx.lineWidth = 2.5; // hakama pleats
+      for (const pleatX of [-50, -18, 18, 50]) { ctx.beginPath(); ctx.moveTo(pleatX, -10); ctx.lineTo(pleatX * 1.1, 60); ctx.stroke(); }
+      ctx.fillStyle = color; // red under-collar
+      ctx.beginPath(); ctx.moveTo(-36, -106); ctx.lineTo(-30, -106); ctx.lineTo(6, -40); ctx.lineTo(0, -34); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = outline; ctx.lineWidth = 2.5; // the kimono's crossed collar
+      ctx.beginPath(); ctx.moveTo(-38, -106); ctx.lineTo(10, -30); ctx.moveTo(38, -106); ctx.lineTo(-4, -50); ctx.stroke();
+      ctx.fillStyle = color; roundRectPath(-95, -20, 190, 10, 4); ctx.fill(); // sash
+      break;
+    case 'cultRobe': // a dark hooded robe with a golden eye emblem and a rope belt
+      fillFabric(color, -116);
+      ctx.fillStyle = '#e8b84a'; ctx.fillRect(-4, -104, 8, 170);
+      ctx.save(); ctx.translate(0, -48);
+      ctx.fillStyle = '#1a1022'; ctx.beginPath(); ctx.moveTo(-22, 0); ctx.quadraticCurveTo(0, -18, 22, 0); ctx.quadraticCurveTo(0, 18, -22, 0); ctx.fill();
+      ctx.strokeStyle = '#e8b84a'; ctx.lineWidth = 2.5; ctx.stroke();
+      drawGlow(0, 0, 18, '#c08cff', 0.6);
+      ctx.fillStyle = '#c08cff'; ellipsePath(0, 0, 6, 6); ctx.fill();
+      ctx.restore();
+      ctx.strokeStyle = '#b89a6a'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(-95, 8); ctx.quadraticCurveTo(0, 20, 95, 8); ctx.stroke(); // rope
+      ctx.beginPath(); ctx.moveTo(20, 14); ctx.lineTo(26, 44); ctx.stroke();
+      break;
+    case 'petalDress': // a leafy green bodice and a skirt of pink petals
+      ctx.fillStyle = '#7fd89a'; ctx.fillRect(-95, -104, 190, 90);
+      ctx.fillStyle = '#5fc07e';
+      for (let i = 0; i < 6; i++) { ctx.save(); ctx.translate(-60 + i * 24, -70 + (i % 2) * 18); ctx.rotate(0.5 + i); ellipsePath(0, 0, 10, 4.5); ctx.fill(); ctx.restore(); }
+      for (let row = 0; row < 2; row++) { // petals overlapping in two rows
+        for (let i = 0; i < 7; i++) {
+          const petalX = -90 + i * 30 + row * 15, petalY = -14 + row * 26;
+          ctx.beginPath(); ctx.ellipse(petalX, petalY + 20, 18, 30, 0, 0, Math.PI * 2);
+          ctx.fillStyle = row ? shade(color, 0.15) : color; ctx.fill(); ctx.strokeStyle = shade(color, -0.2); ctx.lineWidth = 1.5; ctx.stroke();
+        }
+      }
+      ctx.fillStyle = '#fff6a0'; ellipsePath(0, -96, 7, 7); ctx.fill(); // a flower at the neck
+      ctx.fillStyle = '#ffffff'; for (let p = 0; p < 5; p++) { const a = (p * Math.PI * 2) / 5; ellipsePath(Math.cos(a) * 8, -96 + Math.sin(a) * 8, 5, 5); ctx.fill(); }
+      ctx.fillStyle = '#ffd23f'; ellipsePath(0, -96, 4, 4); ctx.fill();
+      break;
     case 'chef':
       ctx.fillStyle = '#ffffff'; ctx.fillRect(-95, -104, 190, 170);
       ctx.fillStyle = '#ece6ff'; ctx.fillRect(-95, -104, 32, 170);
@@ -608,6 +702,62 @@ function drawHat(look: CatLook, outline: string, headY: number, time: number): v
       ctx.beginPath(); ctx.moveTo(-40, headY - 44); ctx.quadraticCurveTo(-20, headY - 58, 10, headY - 56); ctx.stroke();
       break;
     }
+    case 'bun': { // a hair bun on top with a pencil stuck through it
+      const hair = look.furAccent;
+      ctx.strokeStyle = '#ffcf45'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(-34, headY - 92); ctx.lineTo(30, headY - 50); ctx.stroke();
+      ctx.fillStyle = '#ff8fa0'; ellipsePath(-34, headY - 92, 3.5, 3.5); ctx.fill();
+      ellipsePath(0, headY - 70, 24, 20); ctx.fillStyle = softGradient(0, headY - 70, 24, 20, hair); ctx.fill(); ctx.strokeStyle = outline; ctx.lineWidth = 2.5; ctx.stroke();
+      ctx.strokeStyle = shade(hair, -0.2); ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, headY - 70, 12, 0.3, Math.PI * 1.6); ctx.stroke();
+      break;
+    }
+    case 'flatcap': // a tweed flat cap with a short brim
+      ctx.translate(-4, headY - 48); ctx.rotate(-0.08);
+      ctx.beginPath(); ctx.moveTo(-70, 10); ctx.quadraticCurveTo(-64, -40, 6, -40); ctx.quadraticCurveTo(70, -38, 72, 6); ctx.closePath();
+      ctx.fillStyle = '#6a5a4a'; ctx.fill(); ctx.stroke();
+      ctx.strokeStyle = 'rgba(255,240,220,0.18)'; ctx.lineWidth = 2; // tweed
+      for (let i = -3; i <= 3; i++) { ctx.beginPath(); ctx.moveTo(i * 18 - 8, -34); ctx.lineTo(i * 18 + 8, 6); ctx.stroke(); }
+      ctx.beginPath(); ctx.ellipse(10, 12, 60, 11, 0, 0, Math.PI); ctx.fillStyle = '#54463a'; ctx.fill(); ctx.strokeStyle = outline; ctx.lineWidth = 2.5; ctx.stroke(); // brim
+      ellipsePath(6, -38, 6, 3); ctx.fillStyle = '#54463a'; ctx.fill(); // button on top
+      break;
+    case 'foxMask': // a white fox mask pushed to the side of the head
+      ctx.translate(44, headY - 52); ctx.rotate(0.45);
+      ctx.beginPath(); ctx.moveTo(-26, -14); ctx.lineTo(-22, -40); ctx.lineTo(-8, -22); ctx.lineTo(8, -22); ctx.lineTo(22, -40); ctx.lineTo(26, -14);
+      ctx.quadraticCurveTo(26, 14, 0, 30); ctx.quadraticCurveTo(-26, 14, -26, -14); ctx.closePath();
+      ctx.fillStyle = '#fffaf2'; ctx.fill(); ctx.stroke();
+      ctx.strokeStyle = '#e8323a'; ctx.lineWidth = 3; // red markings
+      ctx.beginPath(); ctx.moveTo(-18, -4); ctx.lineTo(-6, 2); ctx.moveTo(18, -4); ctx.lineTo(6, 2); ctx.moveTo(0, -18); ctx.lineTo(0, -8); ctx.stroke();
+      ctx.fillStyle = '#e8323a'; ctx.beginPath(); ctx.moveTo(-20, -34); ctx.lineTo(-10, -22); ctx.lineTo(-18, -20); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(20, -34); ctx.lineTo(10, -22); ctx.lineTo(18, -20); ctx.closePath(); ctx.fill();
+      ellipsePath(0, 22, 4, 3); ctx.fillStyle = '#2a1a24'; ctx.fill(); // nose
+      ctx.strokeStyle = '#e8323a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-26, -8); ctx.quadraticCurveTo(-40, 10, -30, 34); ctx.stroke(); // cord
+      break;
+    case 'hood': { // a pointed hood over the ears; the face looks out of it
+      const cloth = look.outfitColor;
+      ctx.beginPath();
+      ctx.moveTo(-96, headY + 70); ctx.quadraticCurveTo(-100, headY - 70, 0, headY - 122); ctx.quadraticCurveTo(100, headY - 70, 96, headY + 70); ctx.closePath();
+      ctx.moveTo(66, headY + 6); ctx.ellipse(0, headY + 6, 66, 58, 0, 0, Math.PI * 2, true); // the face opening (cut out)
+      const hood = ctx.createLinearGradient(-90, 0, 90, 0); hood.addColorStop(0, shade(cloth, 0.25)); hood.addColorStop(1, shade(cloth, -0.25));
+      ctx.fillStyle = hood; ctx.fill('evenodd'); ctx.stroke();
+      ctx.strokeStyle = '#e8b84a'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.ellipse(0, headY + 6, 70, 62, 0, Math.PI * 1.05, Math.PI * 1.95); ctx.stroke(); // golden trim
+      ctx.fillStyle = 'rgba(10,4,20,0.35)'; ctx.beginPath(); ctx.ellipse(0, headY - 30, 64, 26, 0, Math.PI, 0); ctx.fill(); // shadow over the brow
+      drawGlow(0, headY - 72, 18, '#c08cff', 0.6);
+      ctx.fillStyle = '#c08cff'; starPath(0, headY - 72, 7, 3, 4, 0); ctx.fill(); // a glowing rune
+      break;
+    }
+    case 'leafCrown': { // a crown of leaves with two pink blossoms
+      for (let i = 0; i < 9; i++) {
+        const angle = Math.PI * (1.1 + i * 0.1), lx = Math.cos(angle) * 64, ly = headY + Math.sin(angle) * 52;
+        ctx.save(); ctx.translate(lx, ly); ctx.rotate(angle + Math.PI / 2 + Math.sin(time * 2 + i) * 0.05);
+        ctx.fillStyle = i % 2 ? '#5fc07e' : '#8fe0a0'; ellipsePath(0, -8, 7, 14); ctx.fill(); ctx.strokeStyle = '#3f9a5a'; ctx.lineWidth = 1.5; ctx.stroke();
+        ctx.restore();
+      }
+      for (const [bx, by] of [[-38, headY - 44], [30, headY - 50]]) {
+        for (let p = 0; p < 5; p++) { const a = (p * Math.PI * 2) / 5; ellipsePath(bx + Math.cos(a) * 7, by + Math.sin(a) * 7, 6, 6); ctx.fillStyle = '#ff9ccb'; ctx.fill(); }
+        ellipsePath(bx, by, 4, 4); ctx.fillStyle = '#fff6a0'; ctx.fill();
+      }
+      drawGlow(0, headY - 60, 40, '#fff6c8', 0.3 + 0.15 * Math.sin(time * 3));
+      break;
+    }
     case 'chef':
       ctx.translate(0, headY - 50);
       ctx.fillStyle = '#ffffff'; roundRectPath(-46, -14, 92, 22, 8); ctx.fill(); ctx.stroke();
@@ -623,8 +773,24 @@ function drawHat(look: CatLook, outline: string, headY: number, time: number): v
   ctx.restore();
 }
 
-function drawAccessory(look: CatLook, outline: string, headY: number): void {
-  switch (look.accessory) {
+function drawAccessory(accessory: CatLook['accessory'], look: CatLook, outline: string, headY: number): void {
+  switch (accessory) {
+    case 'beard': { // a long white beard with a curled moustache
+      ctx.fillStyle = BEARD_WHITE; ctx.strokeStyle = shade(BEARD_WHITE, -0.25); ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(-46, headY + 18);
+      ctx.quadraticCurveTo(-44, headY + 64, 0, headY + 92); ctx.quadraticCurveTo(44, headY + 64, 46, headY + 18);
+      ctx.quadraticCurveTo(24, headY + 36, 0, headY + 30); ctx.quadraticCurveTo(-24, headY + 36, -46, headY + 18); ctx.closePath();
+      ctx.fill(); ctx.stroke();
+      ctx.strokeStyle = shade(BEARD_WHITE, -0.15); ctx.lineWidth = 1.5; // a few strands
+      for (const strandX of [-22, -8, 8, 22]) { ctx.beginPath(); ctx.moveTo(strandX, headY + 40); ctx.quadraticCurveTo(strandX * 0.8, headY + 60, strandX * 0.4, headY + 78); ctx.stroke(); }
+      ctx.fillStyle = BEARD_WHITE; ctx.strokeStyle = shade(BEARD_WHITE, -0.25); ctx.lineWidth = 2;
+      for (const side of [-1, 1]) { // moustache
+        ctx.beginPath(); ctx.moveTo(0, headY + 19);
+        ctx.quadraticCurveTo(side * 16, headY + 14, side * 30, headY + 24); ctx.quadraticCurveTo(side * 34, headY + 30, side * 26, headY + 30);
+        ctx.quadraticCurveTo(side * 14, headY + 26, 0, headY + 25); ctx.closePath(); ctx.fill(); ctx.stroke();
+      }
+      break;
+    }
     case 'monocle':
       ctx.strokeStyle = '#e8b93a'; ctx.lineWidth = 3.5; ellipsePath(28, headY + 2, 19, 19); ctx.stroke();
       ctx.fillStyle = 'rgba(200,230,255,0.15)'; ctx.fill();

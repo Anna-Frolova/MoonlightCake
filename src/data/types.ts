@@ -13,20 +13,21 @@ export type ToppingId =
   | 'rosePink' | 'roseWhite' | 'leaves' | 'lavender'
   | 'pearl' | 'goldPearl'
   // only the special guests order these (see `special` on CatDef)
-  | 'chili' | 'feather' | 'bat';
+  | 'chili' | 'feather' | 'bat' | 'mochi' | 'candle' | 'butterfly';
 export type GlazeColorId =
   | 'red' | 'yellow' | 'blue' | 'orange' | 'green' | 'purple' | 'sunset' | 'teal' | 'lime'
   | 'pink' | 'sky' | 'lilac' | 'lemon' | 'white' | 'night' | 'plum' | 'forest' | 'cherry' | 'black';
 export type PaletteId = 'berry' | 'sunny' | 'sea' | 'lavender' | 'forest' | 'night' | 'chocolate'
-  | 'inferno' | 'heaven' | 'dracula';
-/** The last three are the special guests' magic: dark (demon), light (angel), blood (vampire). */
-export type ElementId = 'fire' | 'ice' | 'bolt' | 'nature' | 'star' | 'dark' | 'light' | 'blood';
+  | 'inferno' | 'heaven' | 'dracula' | 'shrine' | 'cult' | 'meadow';
+/** After the everyday five come the special guests' magic: dark (demon, cultist), light (angel), blood (vampire), fox fire (kitsune). */
+export type ElementId = 'fire' | 'ice' | 'bolt' | 'nature' | 'star' | 'dark' | 'light' | 'blood' | 'foxfire';
 /** How the kitchen (and the music) changes while a special guest visits. */
-export type KitchenThemeId = 'dungeon' | 'heaven' | 'palace';
+export type KitchenThemeId = 'dungeon' | 'heaven' | 'palace' | 'shrine' | 'cult' | 'meadow';
 export type CatId =
   | 'pushinka' | 'barsyk' | 'lihtaryk' | 'vusan' | 'mzhychka' | 'bulochka' | 'murlin'
   | 'mokhovyk' | 'serdenko' | 'morok' | 'drimko' | 'queen'
-  | 'demon' | 'angel' | 'vampire';
+  | 'teacher' | 'grandpa'
+  | 'demon' | 'angel' | 'vampire' | 'kitsune' | 'cultist' | 'fairy';
 export type DecorId = 'garland' | 'catnip' | 'gramophone' | 'cushion' | 'vitrage' | 'chandelier';
 /** Kitchen station a helper automates. */
 export type HelperId = 'layers' | 'cream' | 'glaze' | 'toppings' | 'magic';
@@ -66,12 +67,13 @@ export interface PaletteDef {
 
 export type CatPattern = 'none' | 'stripes' | 'points' | 'calico' | 'bicolor';
 export type CatHat = 'none' | 'flowers' | 'tophat' | 'witch' | 'captain' | 'souwester' | 'wizard' | 'kerchief' | 'crown' | 'chef'
-  | 'gothic' | 'mushroom' | 'beret' | 'nightcap' | 'horns' | 'halo' | 'vampire';
+  | 'gothic' | 'mushroom' | 'beret' | 'nightcap' | 'horns' | 'halo' | 'vampire'
+  | 'bun' | 'flatcap' | 'foxMask' | 'hood' | 'leafCrown';
 export type CatOutfit = 'none' | 'dress' | 'vest' | 'cloak' | 'sailor' | 'raincoat' | 'robe' | 'apron' | 'gown' | 'chef' | 'gothic' | 'leafy' | 'pajamas'
-  | 'demon' | 'angel' | 'vampire';
-export type CatAccessory = 'none' | 'monocle' | 'glasses' | 'bow' | 'fangs';
+  | 'demon' | 'angel' | 'vampire' | 'cardigan' | 'miko' | 'cultRobe' | 'petalDress';
+export type CatAccessory = 'none' | 'monocle' | 'glasses' | 'bow' | 'fangs' | 'beard';
 /** Drawn behind the cat: wings or a cape with a tall collar. */
-export type CatBack = 'none' | 'batWings' | 'featherWings' | 'cape';
+export type CatBack = 'none' | 'batWings' | 'featherWings' | 'cape' | 'fairyWings';
 /** `smile`: a light smile with open eyes (`happy` is the big beaming face with closed eyes). */
 export type Mood = 'neutral' | 'happy' | 'sad' | 'thinking' | 'angry' | 'surprised' | 'smile';
 
@@ -95,6 +97,12 @@ export interface CatLook {
   back?: CatBack;
   /** Little devil's tail with a spade tip. */
   hasSpadeTail?: boolean;
+  /** More than one tail, fanned out (the kitsune has nine). */
+  tailCount?: number;
+  /** Colour of the tail tips (the kitsune's are red). */
+  tailTipColor?: string;
+  /** Second accessory worn together with the first one (the grandpa's beard and glasses). */
+  extraAccessory?: CatAccessory;
 }
 
 export interface CatDef extends CatLook {

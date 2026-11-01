@@ -75,10 +75,23 @@ export const GUESTS: CatDef[] = [
     favoritePalettes: ['night', 'sea', 'lavender'], favoriteShapes: ['star'],
     orderRule: { shapes: ['star'] },
   },
+  {
+    id: 'teacher', name: { uk: 'Пані Крейдочка', ja: 'チョーク先生' }, firstDay: 1, voicePitch: 1.05,
+    fur: '#c9cfe0', furAccent: '#8f97b4', pattern: 'stripes', eyeColor: '#6ad0a0',
+    hat: 'bun', outfit: 'cardigan', outfitColor: '#3f9a8a', accessory: 'glasses',
+    favoritePalettes: ['sunny', 'forest', 'berry'], favoriteShapes: ['square', 'round'],
+  },
+  {
+    id: 'grandpa', name: { uk: 'Дідусь Сивоус', ja: '白ひげじいさん' }, firstDay: 3, voicePitch: 0.7,
+    fur: '#b8b0a8', furAccent: '#8a8078', pattern: 'none', eyeColor: '#8fb8ff',
+    hat: 'flatcap', outfit: 'vest', outfitColor: '#7a5a3e', accessory: 'beard', extraAccessory: 'glasses',
+    favoritePalettes: ['chocolate', 'sunny', 'forest'], favoriteShapes: ['round', 'square'],
+  },
 ];
 
 /**
- * Special guests: one of them visits each day from day 2 (the day of their `firstDay` they come for sure).
+ * Special guests: one of them visits every day, two a day in endless mode (the day of their `firstDay` they come
+ * for sure; the cultist first comes on day 6, the first endless day).
  * Each orders cakes in their own style with their own magic, and the kitchen and the music change for them.
  */
 export const SPECIAL_GUESTS: CatDef[] = [
@@ -102,6 +115,27 @@ export const SPECIAL_GUESTS: CatDef[] = [
     hat: 'vampire', outfit: 'vampire', outfitColor: '#1c1222', back: 'cape', accessory: 'fangs',
     favoritePalettes: ['dracula'], favoriteShapes: ['heart', 'square'],
     special: { theme: 'palace', palette: 'dracula', element: 'blood', topping: 'bat' },
+  },
+  {
+    id: 'kitsune', name: { uk: 'Кіцуне Акане', ja: '狐のあかね' }, firstDay: 5, voicePitch: 1.2, isGenerous: true,
+    fur: '#fff8f0', furAccent: '#e8323a', pattern: 'none', eyeColor: '#ffb02e',
+    hat: 'foxMask', outfit: 'miko', outfitColor: '#e8323a', tailCount: 9, tailTipColor: '#e8323a',
+    favoritePalettes: ['shrine'], favoriteShapes: ['round', 'heart'],
+    special: { theme: 'shrine', palette: 'shrine', element: 'foxfire', topping: 'mochi' },
+  },
+  {
+    id: 'cultist', name: { uk: 'Брат Шепіт', ja: 'ささやき兄弟' }, firstDay: 6, voicePitch: 0.8, isGenerous: true, isDarkFur: true,
+    fur: '#3a3448', furAccent: '#24202e', pattern: 'none', eyeColor: '#c08cff',
+    hat: 'hood', outfit: 'cultRobe', outfitColor: '#2e1a44',
+    favoritePalettes: ['cult'], favoriteShapes: ['star', 'square'],
+    special: { theme: 'cult', palette: 'cult', element: 'dark', topping: 'candle' },
+  },
+  {
+    id: 'fairy', name: { uk: 'Фея Росинка', ja: '妖精のしずく' }, firstDay: 1, voicePitch: 1.45, isGenerous: true,
+    fur: '#fff0f6', furAccent: '#ffc0dc', pattern: 'none', eyeColor: '#5fd08a',
+    hat: 'leafCrown', outfit: 'petalDress', outfitColor: '#ff9ccb', back: 'fairyWings',
+    favoritePalettes: ['meadow'], favoriteShapes: ['heart', 'round'],
+    special: { theme: 'meadow', palette: 'meadow', element: 'nature', topping: 'butterfly' },
   },
 ];
 

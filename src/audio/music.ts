@@ -1,5 +1,5 @@
 // Background music, scheduled slightly ahead of time. The café has its own mysterious music-box tune;
-// each special guest brings theirs (dungeon, heaven, palace), which plays while they are in the café.
+// each special guest brings theirs (dungeon, heaven, palace, shrine, cult, meadow), which plays while they are in the café.
 import type { KitchenThemeId } from '../data/types';
 import { audioTime, playTone, type ToneOptions } from './engine';
 
@@ -96,7 +96,69 @@ const palace: Track = {
   },
 };
 
-const TRACKS: Record<MusicTrackId, Track> = { cafe, dungeon, heaven, palace };
+/** Kitsune's shrine: the Japanese miyako-bushi scale (E F A B C) — koto plucks, a breathy flute and taiko drums over a drone. */
+const SHRINE_KOTO = [64, 65, 69, 71, 72, 71, 69, 65, 64, 69, 71, 76, 77, 76, 72, 71];
+const SHRINE_FLUTE = [76, 0, 0, 0, 77, 0, 76, 0, 72, 0, 0, 0, 71, 0, 69, 0, 71, 0, 0, 0, 72, 0, 71, 0, 69, 0, 65, 0, 64, 0, 0, 0];
+const shrine: Track = {
+  stepSeconds: 0.3, stepsPerBar: 8,
+  chords: [[52, 59], [57, 64], [52, 59], [53, 60]],
+  playStep(step, beat, chord, delay) {
+    if (beat % 2 === 0 || Math.random() < 0.3) { // koto: a bright pluck with a quick decay
+      const koto = SHRINE_KOTO[step % SHRINE_KOTO.length];
+      note(koto, 0.9, delay, { wave: 'triangle', volume: 0.03, reverb: 0.5, attack: 0.002 });
+      note(koto + 12, 0.35, delay, { volume: 0.01, reverb: 0.5, attack: 0.002 });
+    }
+    const flute = SHRINE_FLUTE[step % SHRINE_FLUTE.length];
+    if (flute) { // shakuhachi-like: a soft attack and a slight bend up into the note
+      playTone(midiToHz(flute) * 0.985, 1.6, { volume: 0.02, delay, bus: 'music', reverb: 0.8, attack: 0.25, slideTo: midiToHz(flute) });
+    }
+    if (beat === 0) {
+      for (const drone of chord) note(drone - 12, 2.6, delay, { wave: 'triangle', volume: 0.014, reverb: 0.7, attack: 0.6 });
+      note(40, 0.6, delay, { volume: 0.22, slideTo: midiToHz(33), reverb: 0.5 }); // taiko
+    }
+    if (beat === 5) note(40, 0.4, delay, { volume: 0.12, slideTo: midiToHz(33), reverb: 0.4 });
+  },
+};
+
+/** The cultist's hall: a slow chant in C phrygian — a low drone, choir chords, a tolling bell and a two-voice chant. */
+const CULT_CHANT = [60, 0, 61, 0, 60, 0, 58, 0, 60, 0, 63, 0, 61, 0, 60, 0];
+const cult: Track = {
+  stepSeconds: 0.5, stepsPerBar: 8,
+  chords: [[48, 51, 55], [49, 53, 56], [48, 51, 55], [46, 49, 53]],
+  playStep(step, beat, chord, delay) {
+    if (beat === 0) {
+      note(36, 4.2, delay, { wave: 'sawtooth', volume: 0.012, reverb: 0.6, attack: 0.8 });
+      for (const voice of chord) note(voice + 12, 4.2, delay, { wave: 'triangle', volume: 0.016, reverb: 0.9, attack: 1.4 }); // choir
+      note(chord[0] + 24, 3.5, delay, { volume: 0.05, reverb: 0.9, attack: 0.004 }); // bell
+      playTone(midiToHz(chord[0] + 24) * 2.76, 2.5, { volume: 0.012, delay, bus: 'music', reverb: 0.9, attack: 0.004 }); // the bell's inharmonic partial
+    }
+    const chant = CULT_CHANT[step % CULT_CHANT.length];
+    if (chant) { // two voices a fifth apart, sung softly
+      note(chant, 1.1, delay, { wave: 'triangle', volume: 0.022, reverb: 0.8, attack: 0.15 });
+      note(chant - 5, 1.1, delay, { wave: 'triangle', volume: 0.014, reverb: 0.8, attack: 0.15 });
+    }
+  },
+};
+
+/** The fairy's meadow: a light pastoral in 6/8 — pizzicato bass, a flute tune and birds. G – C – D – G – Em – C – D – G. */
+const MEADOW_FLUTE = [79, 0, 81, 83, 0, 79, 84, 0, 83, 81, 0, 79, 81, 0, 79, 78, 0, 74, 79, 0, 0, 0, 0, 0,
+  76, 0, 79, 83, 0, 81, 79, 0, 76, 72, 0, 76, 74, 0, 76, 78, 0, 81, 79, 0, 0, 0, 0, 0];
+const meadow: Track = {
+  stepSeconds: 0.22, stepsPerBar: 6,
+  chords: [[55, 59, 62], [48, 52, 55], [50, 54, 57], [55, 59, 62], [52, 55, 59], [48, 52, 55], [50, 54, 57], [55, 59, 62]],
+  playStep(step, beat, chord, delay) {
+    const pluck: ToneOptions = { wave: 'triangle', reverb: 0.4, attack: 0.002 };
+    if (beat === 0 || beat === 3) note(chord[0] - 12 + (beat === 3 ? 7 : 0), 0.5, delay, { ...pluck, volume: 0.035 });
+    if (beat === 1 || beat === 4) for (const voice of chord) note(voice, 0.3, delay, { ...pluck, volume: 0.009 });
+    const flute = MEADOW_FLUTE[step % MEADOW_FLUTE.length];
+    if (flute) note(flute, 0.6, delay, { volume: 0.022, reverb: 0.6, attack: 0.03 });
+    if (beat === 2 && Math.random() < 0.25) { // a bird: two quick chirps
+      for (const chirp of [0, 0.09]) playTone(2600 + Math.random() * 900, 0.07, { volume: 0.012, delay: delay + chirp, bus: 'music', reverb: 0.4, attack: 0.002, slideTo: 3800 });
+    }
+  },
+};
+
+const TRACKS: Record<MusicTrackId, Track> = { cafe, dungeon, heaven, palace, shrine, cult, meadow };
 
 const scheduler = { nextStepTime: 0, step: 0, track: 'cafe' as MusicTrackId };
 

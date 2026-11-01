@@ -76,4 +76,25 @@ export const PALETTES: Record<PaletteId, PaletteDef> = {
     toppings: ['bat', 'currant', 'raspberry', 'rosePink'],
     elements: ['blood'],
   },
+  shrine: {
+    name: { uk: 'Храмова', ja: '神社' }, swatches: ['#ffffff', '#e8323a', '#ffd86b'], isSpecial: true,
+    flavors: ['vanilla', 'strawberry'], fillings: ['jam', 'honey', 'caramel'], creams: ['butter', 'berry'],
+    glazes: ['white', 'red', 'cherry', 'pink'],
+    toppings: ['mochi', 'strawberry', 'raspberry', 'roseWhite'],
+    elements: ['foxfire'],
+  },
+  cult: {
+    name: { uk: 'Таємнича', ja: '秘密結社' }, swatches: ['#1a1022', '#7a3fd0', '#b48cff'], isSpecial: true,
+    flavors: ['chocolate', 'starry', 'lavender'], fillings: ['blueberry', 'jelly'], creams: ['moon', 'cloud'],
+    glazes: ['black', 'purple', 'plum', 'night'],
+    toppings: ['candle', 'blueberry', 'currant', 'lavender'],
+    elements: ['dark'],
+  },
+  meadow: {
+    name: { uk: 'Квіткова', ja: '花畑' }, swatches: ['#ff9ccb', '#5fe0ae', '#fff6e2'], isSpecial: true,
+    flavors: ['mint', 'strawberry', 'lavender'], fillings: ['honey', 'jam', 'jelly'], creams: ['berry', 'butter'],
+    glazes: ['pink', 'green', 'lime', 'forest'],
+    toppings: ['butterfly', 'leaves', 'rosePink', 'lavender', 'strawberry'],
+    elements: ['nature'],
+  },
 };

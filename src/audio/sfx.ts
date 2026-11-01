@@ -76,6 +76,11 @@ export const sfx = {
         for (const delay of [0, 0.22, 0.75, 0.97]) playTone(70, 0.25, { volume: 0.3, slideTo: 45, delay, reverb: 0.2 });
         [0, 3, 6, 9].forEach((step, i) => bell(step - 5, 0.1 + i * 0.09, 0.05, 1.3));
         break;
+      case 'foxfire': // a roaring whoosh of fire and a bright koto-like run
+        playNoise(0.8, 0.13, 300, { q: 0.6, sweepTo: 2600, reverb: 0.4, filter: 'lowpass' });
+        playTone(220, 0.7, { wave: 'sawtooth', volume: 0.04, slideTo: 440, reverb: 0.4 });
+        [0, 1, 5, 7, 8, 12].forEach((step, i) => bell(step - 3, 0.1 + i * 0.06, 0.06, 1.2));
+        break;
       default:
         sfx.chime(); sfx.sparkle();
     }
@@ -90,6 +95,19 @@ export const sfx = {
         break;
       case 'heaven': // a harp glissando
         [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24].forEach((step, i) => bell(step - 5, i * 0.045, 0.05, 1.4));
+        break;
+      case 'shrine': // a temple bell and a wooden clap
+        playTone(196, 2.5, { volume: 0.12, reverb: 0.8, attack: 0.004 });
+        playTone(196 * 2.76, 1.6, { volume: 0.04, reverb: 0.8, attack: 0.004 });
+        playNoise(0.06, 0.12, 1800, { q: 4, reverb: 0.3 }); playNoise(0.06, 0.12, 1800, { q: 4, reverb: 0.3, delay: 0.18 });
+        break;
+      case 'cult': // a low hum and a choir chord swelling up
+        playTone(65, 2, { wave: 'sawtooth', volume: 0.04, reverb: 0.7, attack: 0.5 });
+        [48, 51, 55, 60].forEach(midi => playTone(440 * Math.pow(2, (midi + 12 - 69) / 12), 2, { wave: 'triangle', volume: 0.025, reverb: 0.9, attack: 0.6 }));
+        break;
+      case 'meadow': // birdsong and a sparkle
+        for (let i = 0; i < 5; i++) playTone(randomRange(2400, 3600), 0.08, { volume: 0.03, slideTo: randomRange(3800, 4600), delay: i * 0.11, reverb: 0.4, attack: 0.002 });
+        sfx.sparkle();
         break;
       case 'palace': // an organ chord and a flutter of bats
         [57, 60, 64, 69].forEach(note => playTone(440 * Math.pow(2, (note - 69) / 12), 1.8, { wave: 'square', volume: 0.018, reverb: 0.8, attack: 0.1 }));

@@ -2,7 +2,7 @@
 // about 20 px tall at scale 1.
 import { ctx } from '../core/canvas';
 import { shade, withAlpha } from '../core/color';
-import { ellipsePath, starPath } from '../core/draw';
+import { ellipsePath, roundRectPath, starPath } from '../core/draw';
 import type { ToppingId } from '../data/types';
 
 /** Glossy sphere (berries, pearls) with a soft outline in its own darker colour. */
@@ -141,6 +141,36 @@ export function drawTopping(topping: ToppingId, x: number, y: number, scale = 1)
       ellipsePath(-2, -14, 1.2, 0.8); ctx.fillStyle = 'rgba(255,230,200,0.45)'; ctx.fill(); // shine
       break;
     }
+    case 'mochi': { // ichigo daifuku: a soft white mochi with a strawberry peeking out of the top
+      ctx.beginPath(); ctx.moveTo(-6, -15); ctx.quadraticCurveTo(0, -27, 6, -15); ctx.closePath();
+      ctx.fillStyle = '#ff3358'; ctx.fill(); ctx.strokeStyle = '#a1102e'; ctx.lineWidth = 1; ctx.stroke();
+      ctx.fillStyle = '#5cc04a'; ellipsePath(-3, -24, 2.5, 1.4); ctx.fill(); ellipsePath(3, -24, 2.5, 1.4); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(-11, 0); ctx.quadraticCurveTo(-13, -16, -5, -16); ctx.quadraticCurveTo(0, -13, 5, -16); ctx.quadraticCurveTo(13, -16, 11, 0); ctx.closePath();
+      const g = ctx.createRadialGradient(-4, -10, 1, 0, -6, 13); g.addColorStop(0, '#ffffff'); g.addColorStop(1, '#ece4ee');
+      ctx.fillStyle = g; ctx.fill(); ctx.strokeStyle = '#c9bccc'; ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,0.9)'; ellipsePath(-5, -9, 2, 3); ctx.fill(); // powdery shine
+      break;
+    }
+    case 'candle': { // a little black candle with a violet flame and a wax drip
+      ctx.fillStyle = '#2a2234'; roundRectPath(-4, -16, 8, 16, 2); ctx.fill(); ctx.strokeStyle = '#120c18'; ctx.lineWidth = 1; ctx.stroke();
+      ctx.fillStyle = '#3e3450'; roundRectPath(-1, -16, 3, 7, 1.5); ctx.fill(); // drip
+      ctx.strokeStyle = '#120c18'; ctx.beginPath(); ctx.moveTo(0, -16); ctx.lineTo(0, -19); ctx.stroke(); // wick
+      ctx.fillStyle = 'rgba(192,140,255,0.4)'; ellipsePath(0, -23, 6, 8); ctx.fill(); // glow
+      ctx.fillStyle = '#c08cff'; ctx.beginPath(); ctx.moveTo(0, -30); ctx.quadraticCurveTo(4, -22, 0, -19); ctx.quadraticCurveTo(-4, -22, 0, -30); ctx.fill();
+      ctx.fillStyle = '#f2e8ff'; ellipsePath(0, -22, 1.4, 2.4); ctx.fill();
+      break;
+    }
+    case 'butterfly': // pink upper wings, green lower wings, a dark body with antennae
+      for (const side of [-1, 1]) {
+        ctx.save(); ctx.scale(side, 1);
+        ctx.fillStyle = '#ff9ccb'; ctx.beginPath(); ctx.ellipse(6, -16, 7, 9, -0.5, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = '#c0507e'; ctx.lineWidth = 1; ctx.stroke();
+        ctx.fillStyle = '#7fd89a'; ctx.beginPath(); ctx.ellipse(5, -6, 5, 6, 0.4, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = '#3f9a5a'; ctx.stroke();
+        ctx.fillStyle = '#ffffff'; ellipsePath(7, -17, 1.8, 1.8); ctx.fill();
+        ctx.restore();
+      }
+      ctx.fillStyle = '#3a2a40'; roundRectPath(-1.5, -20, 3, 16, 1.5); ctx.fill();
+      ctx.strokeStyle = '#3a2a40'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(0, -20); ctx.quadraticCurveTo(-3, -26, -5, -27); ctx.moveTo(0, -20); ctx.quadraticCurveTo(3, -26, 5, -27); ctx.stroke();
+      break;
   }
   ctx.restore();
 }
