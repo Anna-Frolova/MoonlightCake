@@ -12,7 +12,9 @@ import { drawCake } from './cake';
 import { drawSign } from './signs';
 import { drawTopping } from './toppings';
 
-const ICON_ROW_HEIGHT = 34;
+const ICON_ROW_HEIGHT = 38;
+/** The cake picture never grows beyond this scale (the kitchen ticket is large). */
+const MAX_PICTURE_SCALE = 1.15;
 
 export function drawOrderCard(customer: Customer, x: number, y: number, w: number, h: number): void {
   const order = customer.order;
@@ -27,7 +29,7 @@ export function drawOrderCard(customer: Customer, x: number, y: number, w: numbe
   ctx.save();
   roundRectPath(x, y, w, pictureH, 16); ctx.clip();
   drawGlow(x + w / 2, y + pictureH * 0.6, Math.min(w, pictureH * 1.6) * 0.6, '#e8dcff', 0.45);
-  const scale = Math.min(0.9, (pictureH - 20) / (cakeHeight(picture) + 110), (w - 20) / 270);
+  const scale = Math.min(MAX_PICTURE_SCALE, (pictureH - 20) / (cakeHeight(picture) + 110), (w - 20) / 270);
   drawCake(picture, x + w / 2, y + pictureH - 10 - 40 * scale, scale);
   ctx.restore();
 

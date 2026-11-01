@@ -11,7 +11,7 @@ import { button, ui } from '../core/ui';
 import { t } from '../data/strings';
 import { setMusicOn, setSoundOn, switchLanguage } from '../game/flow';
 import { progress, runtime } from '../game/state';
-import { CAKE_CENTER_X } from '../kitchen/layout';
+import { KITCHEN_MESSAGE_X } from '../kitchen/layout';
 
 const DISABLED_ICON_COLOR = '#6e6488';
 const TOAST_SIZE = 22;
@@ -106,7 +106,7 @@ export function drawToast(): void {
   ctx.font = font(TOAST_SIZE, 800);
   const w = ctx.measureText(toast.text).width + 64, h = 50;
   // in the kitchen it sits over the cake area, elsewhere at the top centre
-  const top = runtime.scene === 'kitchen' ? 116 : 74, centerX = runtime.scene === 'kitchen' ? CAKE_CENTER_X + 60 : SCREEN_W / 2;
+  const top = runtime.scene === 'kitchen' ? 116 : 74, centerX = runtime.scene === 'kitchen' ? KITCHEN_MESSAGE_X : SCREEN_W / 2;
   ctx.translate(centerX, top + h / 2); ctx.scale(scale, scale); ctx.translate(-centerX, -(top + h / 2));
   ctx.shadowColor = 'rgba(140,110,255,0.7)'; ctx.shadowBlur = 22;
   drawGlassPill(centerX - w / 2, top, w, h, 0.95);

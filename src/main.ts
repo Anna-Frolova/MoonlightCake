@@ -11,6 +11,7 @@ import { drawParticles, updateMotes, updateParticles } from './core/particles';
 import { beginUiFrame, findButtonAt, pointer, ui } from './core/ui';
 import { t } from './data/strings';
 import { progress, runtime } from './game/state';
+import { updatePatience } from './game/patience';
 import { setUpInput } from './input';
 import { updateAutoCream } from './kitchen/stations/cream';
 import { updatePotions } from './kitchen/stations/glaze';
@@ -67,6 +68,7 @@ function update(dt: number): void {
   updateKitchenLayout(dt);
   updateMusic(progress.musicOn);
   updateHall(dt);
+  updatePatience(dt);
   updateTutorial();
   updateCakeAnimations(dt);
 }

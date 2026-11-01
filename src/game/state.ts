@@ -71,6 +71,12 @@ export interface Customer {
   hasPaid: boolean;
   /** Picture of the ordered cake, built once. */
   orderPicture: Cake | null;
+  /** How many seconds the guest waits for the cake before running out of patience (null = no hurry, tutorial). */
+  patience: number | null;
+  /** Seconds spent waiting while the cake is being made. */
+  waitTime: number;
+  /** When the guest last got grumpier (makes the portrait wobble). */
+  moodChangedAt: number;
 }
 
 export interface RuntimeState {

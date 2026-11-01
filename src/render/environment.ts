@@ -6,7 +6,7 @@ import { t } from '../data/strings';
 import type { Cake, HelperId } from '../data/types';
 import { createCake, createCreamDots, updateCreamCoverage } from '../game/cake';
 import { isOwned, progress, runtime } from '../game/state';
-import { CAKE_BASE_Y, CAKE_CENTER_X } from '../kitchen/layout';
+import { CAKE_BASE_Y, CAKE_CENTER_X, HELPER_SHELF } from '../kitchen/layout';
 import { drawCake } from './cake';
 import { softGradient } from './cat';
 import { drawHelperIcon } from './icons';
@@ -379,7 +379,7 @@ function drawCatnipPot(x: number, time: number): void {
 // ---------------- kitchen ----------------
 
 /** Helpers shown on the kitchen shelf once bought (the glaze cauldron and kitten appear elsewhere). */
-const SHELF_HELPERS: [HelperId, number][] = [['layers', 1045], ['cream', 1105], ['magic', 1165]];
+const SHELF_HELPERS: HelperId[] = ['layers', 'cream', 'magic'];
 
 export function drawKitchenBackground(time: number): void {
   const wall = ctx.createLinearGradient(0, 0, 0, 540);
@@ -397,15 +397,17 @@ export function drawKitchenBackground(time: number): void {
   drawOrb(CAKE_CENTER_X + 170, 90, '#ff9ce6', time, 10);
 
   // shelf with the bought helpers (empty dashed slots otherwise)
-  drawShelfBoard(1010, 172, 250, 16);
-  for (const [helper, x] of SHELF_HELPERS) {
-    if (isOwned(`helper:${helper}`)) drawHelperIcon(helper, x, 148, 0.75, time);
+  const shelf = HELPER_SHELF;
+  drawShelfBoard(shelf.x, shelf.y, shelf.w, 16);
+  SHELF_HELPERS.forEach((helper, i) => {
+    const x = shelf.slotXs[i];
+    if (isOwned(`helper:${helper}`)) drawHelperIcon(helper, x, shelf.y - 24, 0.75, time);
     else {
       ctx.strokeStyle = 'rgba(180,170,255,0.16)'; ctx.setLineDash([4, 4]); ctx.lineWidth = 2;
-      roundRectPath(x - 18, 136, 36, 32, 10); ctx.stroke(); ctx.setLineDash([]);
+      roundRectPath(x - 18, shelf.y - 36, 36, 32, 10); ctx.stroke(); ctx.setLineDash([]);
     }
-  }
-  drawShelfPotion(1226, 172, '#7ff0ff', time, 34);
+  });
+  drawShelfPotion(shelf.potionX, shelf.y, '#7ff0ff', time, 34);
 
   // table
   const table = ctx.createLinearGradient(0, 520, 0, 650);

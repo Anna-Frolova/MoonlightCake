@@ -19,7 +19,7 @@ import { BOTTLE_NECK_TOP, drawPotionBottle } from '../../render/potionBottle';
 import { showToast } from '../../scenes/sceneManager';
 import { currentCake, currentOrder, requireLayer } from '../kitchen';
 import {
-  CAKE_BASE_Y, CAKE_CENTER_X, CAULDRON, CAULDRON_CAPACITY, CAULDRON_MOUTH, ELIXIR_SHELF, POUR_POSITION, POUR_REACH,
+  CAKE_BASE_Y, CAULDRON, CAULDRON_CAPACITY, CAULDRON_MOUTH, ELIXIR_SHELF, POUR_POSITION, POUR_REACH,
 } from '../layout';
 import type { Station } from './station';
 
@@ -136,9 +136,9 @@ export function updatePotions(dt: number): void {
 
 function drawElixirShelf(): void {
   const time = clock.time, unlocked = availableEssences(), isActive = runtime.station === 2;
-  const shelfLeft = CAKE_CENTER_X - 190;
-  ctx.fillStyle = '#4a2c80'; roundRectPath(shelfLeft, ELIXIR_SHELF.y, 380, 22, 11); ctx.fill();
-  ctx.fillStyle = '#6a46a8'; roundRectPath(shelfLeft, ELIXIR_SHELF.y, 380, 7, 4); ctx.fill();
+  const shelfCenter = ELIXIR_SHELF.firstX + ((ESSENCE_ORDER.length - 1) / 2) * ELIXIR_SHELF.spacing, shelfLeft = shelfCenter - ELIXIR_SHELF.boardWidth / 2;
+  ctx.fillStyle = '#4a2c80'; roundRectPath(shelfLeft, ELIXIR_SHELF.y, ELIXIR_SHELF.boardWidth, 22, 11); ctx.fill();
+  ctx.fillStyle = '#6a46a8'; roundRectPath(shelfLeft, ELIXIR_SHELF.y, ELIXIR_SHELF.boardWidth, 7, 4); ctx.fill();
 
   ESSENCE_ORDER.forEach((essence, i) => {
     const home = bottleHome(essence), isUnlocked = unlocked.includes(essence);

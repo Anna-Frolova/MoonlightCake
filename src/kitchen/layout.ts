@@ -14,16 +14,23 @@ export const CAULDRON_MOUTH = { x: CAULDRON.x, y: CAULDRON.y - 120 };
 /** Max drops the cauldron holds. */
 export const CAULDRON_CAPACITY = 10;
 
-/** Elixir shelf: bottles stand at `firstX + i * spacing`, all scaled by `bottleScale`. */
-export const ELIXIR_SHELF = { y: 352, firstX: CAKE_CENTER_X - 144, spacing: 72, bottleScale: 1.35 };
+/** Elixir shelf: bottles stand at `firstX + i * spacing`, all scaled by `bottleScale`; left of the cake so the order ticket never hides a bottle. */
+export const ELIXIR_SHELF = { y: 352, firstX: CAKE_CENTER_X - 200, spacing: 72, bottleScale: 1.35, boardWidth: 380 };
 /** Where a bottle hovers while it tilts and pours. */
 export const POUR_POSITION = { x: CAULDRON.x - 62, y: 418 };
 /** A bottle released this close to the cauldron mouth (and below the shelf) pours into it. */
 export const POUR_REACH = 140;
 
-/** Order ticket (top-left) and the station's tool panel under it. */
-export const TICKET = { x: 16, y: 70, w: 360, h: 220 };
-export const TOOL_PANEL = { x: 16, y: 298, w: 360, h: 344 };
+/**
+ * Order ticket at the top right (big, so the wanted cake is easy to see on phones, with the guest's face
+ * and patience on top) and the station's tool panel at the top left.
+ */
+export const TICKET = { x: 896, y: 70, w: 368, h: 366, headerHeight: 104, portraitRadius: 47 };
+export const TOOL_PANEL = { x: 16, y: 70, w: 360, h: 344 };
+/** Centre of short messages (toasts, "already decorated" hint) between the left panel and the ticket. */
+export const KITCHEN_MESSAGE_X = 636;
+/** Decorative shelf with the bought helpers, on the wall under the tool panel. */
+export const HELPER_SHELF = { x: 40, y: 486, w: 250, slotXs: [80, 140, 200], potionX: 262 };
 /** Station tabs along the bottom. */
 export const TABS = { y: 652, h: 58, gap: 10, sideMargin: 16 };
 /** Top bar with day, coins, reset and serve. */
@@ -40,6 +47,10 @@ export const HELPER_KITTEN_SPOT = { x: 1010, y: 548, scale: 0.42 };
 
 /**
  * Shelf above the cake on the cream and toppings stations (like the elixir shelf on the glaze one):
- * items stand on the board at `y`, centred over the cake, `spacing` apart; names go under the board.
+ * items stand on the board at `y`, `spacing` apart, centred in the gap between the tool panel and the order ticket
+ * (squeezed, and the items made smaller, when more than `maxWidth` would be needed); names go under the board.
  */
-export const INGREDIENT_SHELF = { y: 298, spacing: 104, boardHeight: 18, itemScale: 1.25, itemHalfWidth: 48, itemHeight: 100, labelSize: 16 };
+export const INGREDIENT_SHELF = {
+  y: 298, centerX: KITCHEN_MESSAGE_X, maxWidth: 500, spacing: 104, boardHeight: 18,
+  itemScale: 1.25, itemHalfWidth: 48, itemHeight: 100, labelSize: 16,
+};

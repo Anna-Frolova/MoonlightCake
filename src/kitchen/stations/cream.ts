@@ -138,7 +138,7 @@ export const creamStation: Station = {
 
   onPointerDown(point, cake) {
     const creams = todaysMenu().creams, xs = shelfItemXs(creams.length);
-    const tapped = creams.find((_, i) => isOverShelfItem(point, xs[i]));
+    const tapped = creams.find((_, i) => isOverShelfItem(point, xs[i], creams.length));
     if (tapped) { selectCream(tapped); return true; }
     if (!isInCreamZone(point)) return false;
     if (!countLayers(cake)) { showToast(t().needLayerFirst); return true; }

@@ -4,7 +4,7 @@
 import { loc, type Localized } from '../core/language';
 import type { HelperId, MenuCategory } from './types';
 
-type ScorePartKind = 'shape' | 'layers' | 'filling' | 'cream' | 'glaze' | 'toppings' | 'magic';
+type ScorePartKind = 'shape' | 'layers' | 'filling' | 'cream' | 'glaze' | 'toppings' | 'magic' | 'speed';
 
 const uk = {
   gameTitle: 'Місячний Корж',
@@ -51,7 +51,7 @@ const uk = {
   thinking: ['Хм-м…', 'Ану, ану…', 'Мрр… дай-но подивлюся…', 'Нумо скуштуємо…', 'Так-так-так…', 'Мур… цікаво…'],
   guestScore: 'Оцінка гостя',
   scoreParts: {
-    shape: 'Форма', layers: 'Коржі', filling: 'Начинка', cream: 'Крем', glaze: 'Глазур', toppings: 'Прикраси', magic: 'Магія',
+    shape: 'Форма', layers: 'Коржі', filling: 'Начинка', cream: 'Крем', glaze: 'Глазур', toppings: 'Прикраси', magic: 'Магія', speed: 'Швидкість',
   } as Record<ScorePartKind, string>,
   payment: 'Оплата',
   tips: 'Чайові',
@@ -208,7 +208,7 @@ const ja: UiStrings = {
   thinking: ['うーん…', 'どれどれ…', 'ニャ…ちょっと見せて…', 'では、いただきます…', 'ふむふむ…', 'ニャ…気になるね…'],
   guestScore: 'お客さんの評価',
   scoreParts: {
-    shape: '形', layers: 'スポンジ', filling: 'フィリング', cream: 'クリーム', glaze: 'グレーズ', toppings: 'トッピング', magic: '魔法',
+    shape: '形', layers: 'スポンジ', filling: 'フィリング', cream: 'クリーム', glaze: 'グレーズ', toppings: 'トッピング', magic: '魔法', speed: 'スピード',
   },
   payment: 'お代',
   tips: 'チップ',

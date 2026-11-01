@@ -33,7 +33,7 @@ const HEART_FIRST = 0.4;
 const HEART_INTERVAL = 0.22;
 
 const BUBBLE = { x: 770, w: 480, textWidth: 440, lineHeight: 30, textSize: 22, orderPictureHeight: 222, centerY: 255, minY: 70, maxY: 420 };
-const RESULT_CARD = { x: 36, y: 92, w: 380, h: 440 };
+const RESULT_CARD = { x: 36, y: 92, w: 380, h: 468 };
 const NAME_TAG_SIZE = 20;
 /** Heart row on the result card. */
 const RESULT_HEARTS = { firstX: RESULT_CARD.x + 66, spacing: 62, y: RESULT_CARD.y + 76 };

@@ -10,7 +10,7 @@ import { cakeHeight, countLayers } from '../game/cake';
 import { availableEssences, progress, runtime, todaysMenu, type StationIndex } from '../game/state';
 import { finishTutorial, tutorial } from '../game/tutorial';
 import { totalDrops } from '../game/colorMixing';
-import { CAKE_BASE_Y, CAKE_CENTER_X, CREAM_ZONE, ELIXIR_SHELF, TOOL_PANEL } from '../kitchen/layout';
+import { CAKE_BASE_Y, CAKE_CENTER_X, CREAM_ZONE, ELIXIR_SHELF, TABS, TICKET, TOOL_PANEL } from '../kitchen/layout';
 import { GLAZE_STATION_INDEX, STATIONS } from '../kitchen/stations';
 import { ingredientShelfRect } from '../kitchen/widgets';
 
@@ -29,14 +29,20 @@ interface TutorialStep {
 
 /** Where the hint panel sits: clear of the cake, the tools and the speech bubble. */
 const COACH = {
-  /** Top right on the glaze station (the cake moves right, under it); lower elsewhere, clear of the ingredient shelf. */
-  kitchen: { x: 914, w: 350, glazeY: 150, y: 346 },
+  /**
+   * Under the order ticket; on the glaze station (where the cake moves right) under the tool panel instead.
+   * Moved up if the text is long, so it never covers the station tabs.
+   */
+  kitchen: { x: TICKET.x, y: TICKET.y + TICKET.h + 10, w: TICKET.w },
+  kitchenGlaze: { x: TOOL_PANEL.x, y: TOOL_PANEL.y + TOOL_PANEL.h + 10, w: TOOL_PANEL.w },
   hallOrder: { x: 36, y: 130, w: 380 },
   /** Under the "next guest" button while the result card fills the left side. */
   hallResult: { x: 770, offsetBelowBubble: 90, w: 480 },
 };
 const COACH_TEXT_SIZE = 19;
 const COACH_LINE_HEIGHT = 26;
+/** Gap kept between the kitchen hint panel and the station tabs. */
+const COACH_TAB_GAP = 8;
 /** The result-card hint waits until the hearts have popped in. */
 const SCORE_HINT_DELAY = 1.6;
 
@@ -112,10 +118,7 @@ export function updateTutorial(): void {
 }
 
 function coachPosition(): { x: number; y: number; w: number } {
-  if (runtime.scene === 'kitchen') {
-    const { x, w, glazeY, y } = COACH.kitchen;
-    return { x, w, y: runtime.station === GLAZE_STATION_INDEX ? glazeY : y };
-  }
+  if (runtime.scene === 'kitchen') return runtime.station === GLAZE_STATION_INDEX ? COACH.kitchenGlaze : COACH.kitchen;
   if (runtime.customer?.state === 'reacting') {
     const { x, w, offsetBelowBubble } = COACH.hallResult;
     return { x, y: runtime.speechBubbleBottom + offsetBelowBubble, w };
@@ -151,9 +154,10 @@ export function drawTutorial(): void {
   const target = step.target?.();
   if (target) drawHighlight(target);
 
-  const { x, y, w } = coachPosition();
+  const { x, y: preferredY, w } = coachPosition();
   const lines = wrapText(step.text(), w - 40, COACH_TEXT_SIZE, 700);
   const h = 48 + lines.length * COACH_LINE_HEIGHT + 58;
+  const y = runtime.scene === 'kitchen' ? Math.min(preferredY, TABS.y - COACH_TAB_GAP - h) : preferredY;
   withPopIn(tutorial.shownAt, x + w / 2, y + h / 2, () => {
     drawPanel(x, y, w, h, { light: true, noStars: true });
     ctx.fillStyle = TEXT.gold; starPath(x + 26, y + 24, 8, 3.2); ctx.fill();

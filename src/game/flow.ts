@@ -16,6 +16,7 @@ import { buildDailyMenu } from './dailyMenu';
 import { catLine, pickWithoutRepeat } from './lines';
 import { canTakeOrder, generateOrder } from './orders';
 import { createNewSave } from './save';
+import { patienceLeft, patienceSeconds } from './patience';
 import { scoreCake } from './scoring';
 import { resetTutorial } from './tutorial';
 import { decorTipBonus, isOwned, progress, resetProgress, runtime, saveProgress } from './state';
@@ -89,11 +90,13 @@ export function openCafe(): void {
 export function spawnNextGuest(): void {
   const queue = progress.guestQueue!;
   if (progress.guestIndex >= queue.length) { endDay(); return; }
-  const next = queue[progress.guestIndex], cat = catById(next.cat);
+  const next = queue[progress.guestIndex], cat = catById(next.cat), order = generateOrder(cat, progress.day, next.tutorial);
   runtime.customer = {
-    cat, order: generateOrder(cat, progress.day, next.tutorial), greeting: catLine(cat, 'hello'),
+    cat, order, greeting: catLine(cat, 'hello'),
     state: 'entering', x: GUEST_ENTRY_X, time: 0, mood: 'neutral', speech: null,
     orderShownFor: 0, reactionTime: 0, score: null, servedCake: null, hasPaid: false, orderPicture: null,
+    // the tutorial guests are in no hurry
+    patience: next.tutorial ? null : patienceSeconds(order), waitTime: 0, moodChangedAt: 0,
   };
   runtime.cake = null;
   runtime.isServing = false;
@@ -131,7 +134,7 @@ function handOverCake(): void {
   const customer = runtime.customer, cake = runtime.cake;
   if (runtime.isServing || !customer || !cake) return;
   runtime.isServing = true;
-  customer.score = scoreCake(cake, customer.order, customer.cat, decorTipBonus());
+  customer.score = scoreCake(cake, customer.order, customer.cat, decorTipBonus(), customer.patience === null ? null : patienceLeft(customer));
   customer.servedCake = cake;
   customer.state = 'judging';
   customer.time = 0;

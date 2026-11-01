@@ -18,7 +18,7 @@ import { drawTopping } from '../../render/toppings';
 import { showToast } from '../../scenes/sceneManager';
 import { cakeTopY, currentCake, currentOrder, requireLayer } from '../kitchen';
 import { CAKE_BASE_Y, CAKE_CENTER_X, INGREDIENT_SHELF } from '../layout';
-import { drawIngredientShelf, shelfItemXs } from '../widgets';
+import { drawIngredientShelf, shelfItemHalfWidth, shelfItemXs } from '../widgets';
 import type { Station } from './station';
 
 /** "On the cake" counts in the left panel: a grid of topping × number. */
@@ -84,9 +84,9 @@ export const toppingsStation: Station = {
 
   /** Dishes of today's toppings on the shelf above the cake; they are dragged from there. */
   drawScenery() {
-    const toppings = todaysMenu().toppings, { y, itemHalfWidth, itemHeight } = INGREDIENT_SHELF;
+    const toppings = todaysMenu().toppings, { y, itemHeight } = INGREDIENT_SHELF, halfWidth = shelfItemHalfWidth(toppings.length);
     shelfItemXs(toppings.length).forEach((x, i) => {
-      runtime.toppingTray.push({ x: x - itemHalfWidth, y: y - itemHeight, w: itemHalfWidth * 2, h: itemHeight + 36, topping: toppings[i] });
+      runtime.toppingTray.push({ x: x - halfWidth, y: y - itemHeight, w: halfWidth * 2, h: itemHeight + 36, topping: toppings[i] });
     });
     drawIngredientShelf(toppings, topping => loc(TOPPINGS[topping].name), drawToppingDish, { isHoverable: !runtime.draggedTopping });
   },

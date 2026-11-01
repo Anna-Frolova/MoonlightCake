@@ -27,8 +27,8 @@ export interface CakeScore {
   net: number;
 }
 
-/** Relative importance of each part of the cake. */
-const WEIGHTS = { shape: 12, layers: 20, filling: 15, cream: 18, glaze: 22, toppings: 18, magic: 12 };
+/** Relative importance of each part of the cake. `speed` (how long the guest waited) is big enough that a perfect but very late cake gets 4 hearts. */
+const WEIGHTS = { shape: 12, layers: 20, filling: 15, cream: 18, glaze: 22, toppings: 18, magic: 12, speed: 20 };
 
 /** Total score needed for 5, 4, 3 and 2 hearts. */
 const HEART_THRESHOLDS = [0.9, 0.75, 0.55, 0.35];
@@ -43,7 +43,8 @@ const PRICE = { base: 14, perLayer: 4, filling: 3, magic: 4, royal: 20 };
 const TIPS_MIN_SCORE = 0.7;
 const GENEROUS_TIP_MULTIPLIER = 1.3;
 
-export function scoreCake(cake: Cake, order: Order, cat: CatDef, decorTipBonus: number): CakeScore {
+/** `patienceLeft` is 1..0 when the guest was timed, null when they were in no hurry (no speed part then). */
+export function scoreCake(cake: Cake, order: Order, cat: CatDef, decorTipBonus: number, patienceLeft: number | null): CakeScore {
   const layers = cake.stack.filter(item => item.kind === 'layer');
   const parts: ScorePart[] = [];
 
@@ -91,6 +92,8 @@ export function scoreCake(cake: Cake, order: Order, cat: CatDef, decorTipBonus: 
   const quality = cake.magicQuality ?? 0;
   const magicScore = !cake.element ? 0 : cake.element === order.element ? quality : quality * 0.3;
   parts.push({ kind: 'magic', score: magicScore, weight: WEIGHTS.magic });
+
+  if (patienceLeft !== null) parts.push({ kind: 'speed', score: patienceLeft, weight: WEIGHTS.speed });
 
   const totalWeight = parts.reduce((sum, p) => sum + p.weight, 0);
   const score = clamp(parts.reduce((sum, p) => sum + p.score * p.weight, 0) / totalWeight, 0, 1);
