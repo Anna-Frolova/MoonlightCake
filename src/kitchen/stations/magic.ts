@@ -3,7 +3,7 @@ import { sfx } from '../../audio/sfx';
 import { ctx } from '../../core/canvas';
 import { clock } from '../../core/clock';
 import { shade, withAlpha } from '../../core/color';
-import { drawGlow, drawText, roundRectPath } from '../../core/draw';
+import { drawFittedText, drawGlow, roundRectPath } from '../../core/draw';
 import { loc } from '../../core/language';
 import { pickRandom, randomRange, type Point, type Vec2 } from '../../core/math';
 import { burst, emitParticle, floatingText } from '../../core/particles';
@@ -18,7 +18,7 @@ import { drawMagicCircle } from '../../render/environment';
 import { drawSign } from '../../render/signs';
 import { showToast } from '../../scenes/sceneManager';
 import { cakeTopY, currentCake, currentOrder, requireLayer } from '../kitchen';
-import { CAKE_BASE_Y, CAKE_CENTER_X, MAGIC_DRAW_AREA } from '../layout';
+import { CAKE_BASE_Y, CAKE_CENTER_X, ELEMENT_ROW, MAGIC_DRAW_AREA } from '../layout';
 import type { Station } from './station';
 
 const STROKE_COLOR = '#9feaff';
@@ -105,23 +105,24 @@ export const magicStation: Station = {
   helper: 'magic',
   isDone: cake => cake.magicQuality !== null,
 
-  drawTools({ x, y, w }) {
-    const order = currentOrder(), time = clock.time;
+  /** The elements in a row above the cake: each sign with its name; the one the guest wants glows. */
+  drawScenery() {
+    const order = currentOrder(), time = clock.time, { y, w, h, gap } = ELEMENT_ROW;
+    const left = CAKE_CENTER_X - (ELEMENT_ORDER.length * w + (ELEMENT_ORDER.length - 1) * gap) / 2;
     ELEMENT_ORDER.forEach((element, i) => {
       const def = ELEMENTS[element], isOpen = def.unlockDay <= progress.day, isWanted = order.element === element;
-      const rowY = y + 52 + i * 56;
+      const x = left + i * (w + gap), centerX = x + w / 2;
       ctx.save();
-      if (isWanted) { ctx.shadowColor = def.color; ctx.shadowBlur = 14 + 6 * Math.sin(time * 4); }
-      const fill = ctx.createLinearGradient(0, rowY, 0, rowY + 46);
+      if (isWanted) { ctx.shadowColor = def.color; ctx.shadowBlur = 16 + 8 * Math.sin(time * 4); }
+      const fill = ctx.createLinearGradient(0, y, 0, y + h);
       fill.addColorStop(0, isWanted ? '#5a44a8' : '#3d2e86'); fill.addColorStop(1, isWanted ? '#3a2a80' : '#281d62');
-      ctx.fillStyle = fill; roundRectPath(x + 14, rowY, w - 28, 46, 14); ctx.fill();
+      ctx.fillStyle = fill; roundRectPath(x, y, w, h, 16); ctx.fill();
       ctx.shadowBlur = 0;
-      ctx.strokeStyle = isWanted ? withAlpha(def.color, 0.9) : 'rgba(200,180,255,0.2)'; ctx.lineWidth = isWanted ? 2 : 1.2; ctx.stroke();
+      ctx.strokeStyle = isWanted ? withAlpha(def.color, 0.9) : 'rgba(200,180,255,0.2)'; ctx.lineWidth = isWanted ? 2.5 : 1.2; ctx.stroke();
       ctx.globalAlpha = isOpen ? 1 : 0.35;
-      drawGlow(x + 44, rowY + 23, 26, def.color, 0.25);
-      drawSign(element, x + 44, rowY + 23, 30, def.color, 2.6);
-      drawText(loc(def.name), x + 76, rowY + 24, 21, TEXT.main, 'left', 900);
-      if (!isOpen) drawText(t().lockedDay(def.unlockDay), x + w - 32, rowY + 24, 17, TEXT.muted, 'right', 800);
+      drawGlow(centerX, y + 32, 34, def.color, isWanted ? 0.45 : 0.25);
+      drawSign(element, centerX, y + 32, 38, def.color, 3);
+      drawFittedText(isOpen ? loc(def.name) : t().lockedDay(def.unlockDay), centerX, y + h - 14, 17, w - 10, isOpen ? TEXT.main : TEXT.muted, 'center', 900);
       ctx.restore();
     });
   },

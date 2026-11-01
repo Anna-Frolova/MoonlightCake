@@ -83,13 +83,3 @@ export const GLAZE_COLORS: GlazeColorDef[] = [
   { id: 'black',  name: { uk: 'Чорна',               ja: '黒' },           recipe: { dark: 1 } },
 ];
 export const glazeColorById = (id: GlazeColorId): GlazeColorDef => GLAZE_COLORS.find(c => c.id === id)!;
-
-/** Mixing tips shown on the glaze station (pairs of essences → resulting glaze colour). */
-export const MIXING_TIPS: { a: EssenceId; b: EssenceId; result: GlazeColorId }[] = [
-  { a: 'red', b: 'yellow', result: 'orange' },
-  { a: 'yellow', b: 'blue', result: 'green' },
-  { a: 'red', b: 'blue', result: 'purple' },
-  { a: 'red', b: 'white', result: 'pink' },
-  { a: 'blue', b: 'dark', result: 'night' },
-  { a: 'dark', b: 'dark', result: 'black' },
-];

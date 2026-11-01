@@ -10,7 +10,7 @@ import { cakeHeight, countLayers } from '../game/cake';
 import { availableEssences, progress, runtime, todaysMenu, type StationIndex } from '../game/state';
 import { finishTutorial, tutorial } from '../game/tutorial';
 import { totalDrops } from '../game/colorMixing';
-import { CAKE_BASE_Y, CAKE_CENTER_X, CREAM_ZONE, ELIXIR_SHELF, TABS, TICKET, TOOL_PANEL } from '../kitchen/layout';
+import { CAKE_BASE_Y, CAKE_CENTER_X, CREAM_ZONE, ELIXIR_SHELF, SHAPE_SWITCHES, TABS } from '../kitchen/layout';
 import { GLAZE_STATION_INDEX, STATIONS } from '../kitchen/stations';
 import { ingredientShelfRect } from '../kitchen/widgets';
 
@@ -30,11 +30,11 @@ interface TutorialStep {
 /** Where the hint panel sits: clear of the cake, the tools and the speech bubble. */
 const COACH = {
   /**
-   * Under the order ticket; on the glaze station (where the cake moves right) under the tool panel instead.
+   * Bottom right, beside the cake; on the glaze station (where the cake moves there) top right instead.
    * Moved up if the text is long, so it never covers the station tabs.
    */
-  kitchen: { x: TICKET.x, y: TICKET.y + TICKET.h + 10, w: TICKET.w },
-  kitchenGlaze: { x: TOOL_PANEL.x, y: TOOL_PANEL.y + TOOL_PANEL.h + 10, w: TOOL_PANEL.w },
+  kitchen: { x: 958, y: TABS.y, w: 306 },
+  kitchenGlaze: { x: 958, y: 126, w: 306 },
   hallOrder: { x: 36, y: 130, w: 380 },
   /** Under the "next guest" button while the result card fills the left side. */
   hallResult: { x: 770, offsetBelowBubble: 90, w: 480 },
@@ -58,6 +58,12 @@ function cakeRect(): Rect {
   };
 }
 
+/** The shape switches and the layers shelf under them. */
+function layersShelfRect(): Rect {
+  const menu = todaysMenu(), shelf = ingredientShelfRect(menu.flavors.length + menu.fillings.length);
+  return { ...shelf, y: SHAPE_SWITCHES.y - 6, h: shelf.y + shelf.h - SHAPE_SWITCHES.y + 6 };
+}
+
 /** A kitchen step: first "open this tab", then the station's own hint. */
 function stationStep(index: StationIndex, text: () => string, target: () => Rect | null): TutorialStep {
   return {
@@ -75,7 +81,7 @@ const STEPS: TutorialStep[] = [
     text: () => t().tutorial.order,
     target: () => buttonRect('acceptOrder'),
   },
-  stationStep(0, () => t().tutorial.layers, () => TOOL_PANEL),
+  stationStep(0, () => t().tutorial.layers, layersShelfRect),
   stationStep(1, () => t().tutorial.cream, () => (runtime.selectedCream ? cakeRect() : ingredientShelfRect(todaysMenu().creams.length))),
   stationStep(2,
     () => (runtime.cake && totalDrops(runtime.cake.cauldron) ? t().tutorial.glazePour : t().tutorial.glazeMix),
@@ -101,7 +107,7 @@ const STEPS: TutorialStep[] = [
     isRelevant: () => inKitchen() && runtime.station === 0 && !!runtime.customer?.order.filling,
     isDone: () => progress.guestIndex >= 2 || (inKitchen() && !!runtime.customer?.order.filling && countLayers(runtime.cake!) >= 2),
     text: () => t().tutorial.filling,
-    target: () => TOOL_PANEL,
+    target: layersShelfRect,
   },
 ];
 

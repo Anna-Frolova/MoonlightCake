@@ -1,8 +1,8 @@
-// The kitchen: the cake in the middle, the order ticket and the station's tools on the left,
-// station tabs at the bottom.
+// The kitchen: the cake in the middle with the station's shelf or switches around it, the order (the guest
+// and the wanted cake) on the left, station buttons in the top right corner, station tabs at the bottom.
 import { ctx, SCREEN_W, view } from '../core/canvas';
 import { clock } from '../core/clock';
-import { drawFittedText, drawGlassPill, drawPanel, drawText, ellipsePath, font, roundRectPath, starPath } from '../core/draw';
+import { drawFittedText, drawGlassPill, drawGlow, drawPanel, drawText, ellipsePath, font, roundRectPath, starPath } from '../core/draw';
 import { easeOutCubic, lerp } from '../core/math';
 import { drawMotes } from '../core/particles';
 import { BUTTON_COLOR, TEXT } from '../core/theme';
@@ -17,8 +17,8 @@ import { patienceLeft, patienceMood, PATIENCE_LEVELS } from '../game/patience';
 import { isOwned, progress, runtime, type Customer, type StationIndex } from '../game/state';
 import { currentCake, resetCake } from '../kitchen/kitchen';
 import {
-  CAKE_BASE_Y, CAKE_CENTER_X, GLAZE_STATION_CAKE_SCALE, GLAZE_STATION_CAKE_X, HELPER_KITTEN_SPOT, KITCHEN_MESSAGE_X, TABS, TICKET, TOOL_PANEL,
-  TOP_BAR_HEIGHT,
+  CAKE_BASE_Y, CAKE_CENTER_X, GLAZE_STATION_CAKE_SCALE, GLAZE_STATION_CAKE_X, HELPER_KITTEN_SPOT, KITCHEN_MESSAGE_X, STATION_CONTROLS, TABS,
+  TICKET, TOP_BAR_HEIGHT,
 } from '../kitchen/layout';
 import { drawGlazeArc, drawGlazeStationScenery, drawMovingBottles } from '../kitchen/stations/glaze';
 import { GLAZE_STATION_INDEX, STATIONS } from '../kitchen/stations';
@@ -35,13 +35,13 @@ import { drawCoinCounter, drawSoundButtons } from './hud';
 const GLAZE_LAYOUT_SPEED = 7;
 const HINT_Y = 72;
 const HINT_TEXT_SIZE = 18;
-/** Hint pill and toast are centred a bit right of the cake (clear of the left panels). */
+/** The situational hint is centred over the cake. */
 const HINT_CENTER_X = KITCHEN_MESSAGE_X;
-/** The hint must fit between the tool panel and the order ticket. */
+/** The hint must not reach the station buttons in the top right. */
 const HINT_MAX_WIDTH = 480;
-const PORTRAIT_CAT_SCALE = 0.74;
-/** How far below the portrait's centre the cat's head sits (share of the radius): leaves room for the hat. */
-const PORTRAIT_HEAD_OFFSET = 0.12;
+/** The guest's window: cat scale, where the head sits (share of the height), where sweat / anger marks go (from the head). */
+const PORTRAIT = { catScale: 1, headAt: 0.6, markOffset: { x: 82, y: -62 } };
+const AUTO_BUTTON_WIDTH = 110;
 const PATIENCE_BAR_HEIGHT = 16;
 
 /** Moves the cake aside while the glaze station is open (called every frame). */
@@ -81,7 +81,7 @@ export function renderKitchen(): void {
   drawGlazeArc(cake);
   drawTopBar();
   drawTicket();
-  drawToolPanel(cake);
+  drawStationControls(cake);
   drawStationTabs(cake);
   drawMovingBottles();
   drawDraggedTopping();
@@ -105,39 +105,42 @@ function drawTopBar(): void {
   button('serveCake', SCREEN_W - 228, 8, 212, 46, t().serveCake, { color: BUTTON_COLOR.confirm, fontSize: 22, glow: isCakeReady(), onClick: serveCake });
 }
 
-/** The order: the guest's face, name and patience on top, the wanted cake below. */
+/** The order: the guest in a big window, name and patience under it, the wanted cake below. */
 function drawTicket(): void {
-  const { x, y, w, h, headerHeight, portraitRadius } = TICKET, customer = runtime.customer!;
+  const { x, y, w, h, portraitHeight, nameY, patienceY, cardY } = TICKET, customer = runtime.customer!;
   drawPanel(x, y, w, h, { radius: 20, noStars: true });
-  const portraitX = x + 18 + portraitRadius, portraitY = y + headerHeight / 2 + 2;
-  drawGuestPortrait(customer, portraitX, portraitY, portraitRadius);
-  const textX = portraitX + portraitRadius + 16, textW = x + w - 18 - textX;
-  drawFittedText(loc(customer.cat.name), textX, y + 34, 20, textW, TEXT.main, 'left', 900);
-  if (customer.patience !== null) drawPatienceBar(textX, y + 56, textW, patienceLeft(customer));
-  drawOrderCard(customer, x + 10, y + headerHeight, w - 20, h - headerHeight - 10);
+  drawGuestPortrait(customer, x + 10, y + 10, w - 20, portraitHeight);
+  drawFittedText(loc(customer.cat.name), x + 20, y + nameY, 22, w - 40, TEXT.main, 'left', 900);
+  if (customer.patience !== null) drawPatienceBar(x + 20, y + patienceY, w - 40, patienceLeft(customer));
+  drawOrderCard(customer, x + 10, y + cardY, w - 20, h - cardY - 10);
 }
 
-/** Round portrait of the guest; the face follows their patience and wobbles when they get grumpier. */
-function drawGuestPortrait(customer: Customer, cx: number, cy: number, radius: number): void {
+/** The guest from the hat to the chest; the face follows their patience and the window wobbles when they get grumpier. */
+function drawGuestPortrait(customer: Customer, x: number, y: number, w: number, h: number): void {
   const mood = patienceMood(customer), left = patienceLeft(customer), time = clock.time;
-  const wobble = Math.max(0, 1 - (time - customer.moodChangedAt) * 2.5) * Math.sin(time * 40) * 4;
-  const ringColor = left < PATIENCE_LEVELS.upset ? BUTTON_COLOR.danger : left < PATIENCE_LEVELS.impatient ? BUTTON_COLOR.gold : TEXT.label;
+  const wobble = Math.max(0, 1 - (time - customer.moodChangedAt) * 2.5) * Math.sin(time * 40) * 5;
+  const frameColor = left < PATIENCE_LEVELS.upset ? BUTTON_COLOR.danger : left < PATIENCE_LEVELS.impatient ? BUTTON_COLOR.gold : TEXT.label;
   ctx.save();
   ctx.translate(wobble, 0);
-  ellipsePath(cx, cy, radius, radius); ctx.fillStyle = '#3d2e86'; ctx.fill();
-  ctx.save(); ctx.clip();
+  const backdrop = ctx.createLinearGradient(0, y, 0, y + h);
+  backdrop.addColorStop(0, '#2c1a62'); backdrop.addColorStop(1, '#4a2f8e');
+  ctx.fillStyle = backdrop; roundRectPath(x, y, w, h, 16); ctx.fill();
+  const headX = x + w / 2, headY = y + h * PORTRAIT.headAt;
+  ctx.save(); roundRectPath(x, y, w, h, 16); ctx.clip();
+  drawGlow(headX, headY, h * 0.8, '#c9b6ff', 0.25);
   // the head is ~150 px above the cat's origin at scale 1 (a bit lower for kittens)
-  const scale = PORTRAIT_CAT_SCALE, headLift = 150 * scale * (customer.cat.isKitten ? 0.9 : 1);
-  drawCat(customer.cat, cx, cy + headLift + radius * PORTRAIT_HEAD_OFFSET, scale, time, mood);
+  const headLift = 150 * PORTRAIT.catScale * (customer.cat.isKitten ? 0.9 : 1);
+  drawCat(customer.cat, headX, headY + headLift, PORTRAIT.catScale, time, mood);
   ctx.restore();
-  ctx.strokeStyle = ringColor; ctx.lineWidth = 3; ellipsePath(cx, cy, radius, radius); ctx.stroke();
+  ctx.strokeStyle = frameColor; ctx.lineWidth = 3; roundRectPath(x + 1.5, y + 1.5, w - 3, h - 3, 15); ctx.stroke();
+  const sideX = headX + PORTRAIT.markOffset.x, sideY = headY + PORTRAIT.markOffset.y;
   if (mood === 'thinking') { // a drop of sweat
     ctx.fillStyle = '#8fd8ff'; ctx.beginPath();
-    ctx.moveTo(cx + radius * 0.75, cy - radius * 0.75); ctx.quadraticCurveTo(cx + radius * 0.95, cy - radius * 0.35, cx + radius * 0.75, cy - radius * 0.3);
-    ctx.quadraticCurveTo(cx + radius * 0.55, cy - radius * 0.35, cx + radius * 0.75, cy - radius * 0.75); ctx.fill();
+    ctx.moveTo(sideX, sideY - 16); ctx.quadraticCurveTo(sideX + 11, sideY + 4, sideX, sideY + 8);
+    ctx.quadraticCurveTo(sideX - 11, sideY + 4, sideX, sideY - 16); ctx.fill();
   } else if (mood === 'sad' && customer.patience !== null) { // pulsing anger mark
-    const pulse = 1 + 0.15 * Math.sin(time * 8);
-    ctx.save(); ctx.translate(cx + radius * 0.8, cy - radius * 0.8); ctx.scale(pulse, pulse);
+    const pulse = 1.5 + 0.25 * Math.sin(time * 8);
+    ctx.save(); ctx.translate(sideX, sideY); ctx.scale(pulse, pulse);
     ctx.strokeStyle = BUTTON_COLOR.danger; ctx.lineWidth = 3.5; ctx.lineCap = 'round';
     for (const [dx, dy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) { // four bent strokes around a centre
       ctx.beginPath(); ctx.moveTo(dx * 3, dy * 9); ctx.quadraticCurveTo(dx * 3, dy * 3, dx * 9, dy * 3); ctx.stroke();
@@ -156,17 +159,15 @@ function drawPatienceBar(x: number, y: number, w: number, left: number): void {
   ctx.restore();
 }
 
-function drawToolPanel(cake: Cake): void {
-  const panel = TOOL_PANEL, station = STATIONS[runtime.station];
-  drawPanel(panel.x, panel.y, panel.w, panel.h, { radius: 20 });
-  drawText(station.title?.(cake) ?? station.name, panel.x + 20, panel.y + 25, 23, TEXT.main, 'left', 900);
-  const hasHelper = isOwned(helperItemId(station.helper));
-  const autoButtonX = panel.x + panel.w - 118;
-  if (hasHelper) {
-    button('auto', autoButtonX, panel.y + 7, 104, 38, t().auto, { color: BUTTON_COLOR.gold, fontSize: 19, glow: true, onClick: station.autoComplete });
+/** "Auto" (once the helper is bought) and the station's own buttons, right-aligned in the top right corner. */
+function drawStationControls(cake: Cake): void {
+  const { right, y, h, gap } = STATION_CONTROLS, station = STATIONS[runtime.station];
+  let edge = right;
+  if (isOwned(helperItemId(station.helper))) {
+    button('auto', right - AUTO_BUTTON_WIDTH, y, AUTO_BUTTON_WIDTH, h, t().auto, { color: BUTTON_COLOR.gold, fontSize: 20, glow: true, onClick: station.autoComplete });
+    edge = right - AUTO_BUTTON_WIDTH - gap;
   }
-  station.drawHeaderButtons?.(panel, cake, hasHelper ? autoButtonX - 6 : panel.x + panel.w - 14);
-  station.drawTools(panel, cake);
+  station.drawControls?.(edge, y, cake);
 }
 
 function drawStationTabs(cake: Cake): void {

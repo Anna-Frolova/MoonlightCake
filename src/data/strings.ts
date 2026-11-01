@@ -84,8 +84,6 @@ const uk = {
   } as Record<HelperId, string>,
 
   // layers station
-  layersTitle: (count: number, max: number) => `Коржі · ${count}/${max}`,
-  fillingsLabel: 'Начинки',
   lockedShape: 'Торт уже прикрашено. Щоб змінити форму — «Скинути».',
   lockedLayers: 'Торт уже прикрашено. Щоб змінити коржі — «Скинути».',
   lockedStack: 'Торт уже прикрашено. Щоб змінити — «Скинути».',
@@ -96,7 +94,6 @@ const uk = {
   fillingNoRoom: 'Начинка кладеться між коржами, а їх уже три',
 
   // cream station
-  creamBorders: 'Бортики',
   pickCreamOnShelf: 'Спершу обери крем на полиці',
   niceBorders: 'Гарні бортики!',
   oldCreamRemoved: 'Старий крем знято — обводь новим',
@@ -105,7 +102,6 @@ const uk = {
   cauldronEmpty: 'Казан порожній',
   colorLabel: (name: string) => 'Колір: ' + name,
   unusualShade: 'Незвичайний відтінок',
-  cheatSheet: 'Шпаргалка',
   pourOut: 'Вилити',
   pourOnCake: 'Полити торт',
   cauldronFull: 'Казан повний! Вилий або полий торт.',
@@ -113,7 +109,6 @@ const uk = {
   lockedDay: (day: number) => `день ${day}`,
 
   // toppings station
-  onTheCake: 'На торті:',
   removeAll: 'Зняти всі',
   noRoomForToppings: 'Більше прикрас не влізе!',
 
@@ -144,7 +139,7 @@ const uk = {
     gotIt: 'Зрозуміло!',
     openTab: (station: string) => `Відкрий вкладку «${station}» унизу.`,
     order: 'Гість показує картинку торта — це замовлення. Роздивись його й натисни «Прийняти замовлення».',
-    layers: 'Замовлення тепер зліва вгорі. Обери форму торта, а потім натисни на корж потрібного смаку.',
+    layers: 'Замовлення — зліва. Обери форму торта вгорі, а потім натисни на корж потрібного смаку на полиці.',
     cream: 'Обери крем на полиці, а потім, затиснувши палець, веди по краях торта — по верхньому й біля основи.',
     glazeMix: 'Перетягуй колби з полиці в казан: кожна колба — одна крапля. Назва кольору з’явиться під казаном.',
     glazePour: 'Колір готовий? Натисни «Полити торт».',
@@ -239,8 +234,6 @@ const ja: UiStrings = {
     magic: '魔法',
   },
 
-  layersTitle: (count, max) => `スポンジ · ${count}/${max}`,
-  fillingsLabel: 'フィリング',
   lockedShape: 'もうデコレーション済み。形を変えるなら「やり直す」。',
   lockedLayers: 'もうデコレーション済み。スポンジを変えるなら「やり直す」。',
   lockedStack: 'もうデコレーション済み。変えるなら「やり直す」。',
@@ -250,7 +243,6 @@ const ja: UiStrings = {
   fillingAlreadyThere: 'フィリングはもうあるよ — 上にスポンジをのせてね',
   fillingNoRoom: 'フィリングはスポンジの間に。もう3枚あるよ',
 
-  creamBorders: 'ふち',
   pickCreamOnShelf: 'まず棚のクリームを選んでね',
   niceBorders: 'きれいなふち！',
   oldCreamRemoved: '前のクリームを取ったよ — 新しいのでなぞってね',
@@ -258,14 +250,12 @@ const ja: UiStrings = {
   cauldronEmpty: '大釜はからっぽ',
   colorLabel: name => '色：' + name,
   unusualShade: 'ふしぎな色合い',
-  cheatSheet: 'まぜかたメモ',
   pourOut: '捨てる',
   pourOnCake: 'ケーキにかける',
   cauldronFull: '大釜がいっぱい！捨てるかケーキにかけてね。',
   addEssenceFirst: '大釜にエッセンスを入れてね',
   lockedDay: day => `${day}日目`,
 
-  onTheCake: 'ケーキの上：',
   removeAll: 'ぜんぶ取る',
   noRoomForToppings: 'もうトッピングがのらないよ！',
 
@@ -293,7 +283,7 @@ const ja: UiStrings = {
     gotIt: 'わかった！',
     openTab: station => `下の「${station}」タブを開いてね。`,
     order: 'お客さんが見せている絵が注文だよ。よく見て「注文を受ける」を押そう。',
-    layers: '注文は左上に出ているよ。ケーキの形を選んで、注文どおりの味のスポンジをタップしよう。',
+    layers: '注文は左に出ているよ。上でケーキの形を選んで、棚から注文どおりの味のスポンジをタップしよう。',
     cream: '棚のクリームを選んで、押したままケーキのふちをなぞろう — 上のふちと下のふち。',
     glazeMix: '棚のびんを大釜までドラッグしよう。1本で1しずく。色の名前は大釜の下に出るよ。',
     glazePour: '色ができたら「ケーキにかける」を押そう。',

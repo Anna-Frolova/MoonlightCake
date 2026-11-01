@@ -1,15 +1,15 @@
 // Station 4: drag toppings from the shelf above the cake onto it — on top or on the sides.
 import { sfx } from '../../audio/sfx';
 import { clock } from '../../core/clock';
-import { drawGlow, drawText } from '../../core/draw';
+import { drawGlow } from '../../core/draw';
 import { loc } from '../../core/language';
 import { lerp, type Point } from '../../core/math';
 import { burst } from '../../core/particles';
-import { BUTTON_COLOR, TEXT } from '../../core/theme';
+import { BUTTON_COLOR } from '../../core/theme';
 import { button } from '../../core/ui';
 import { TOPPINGS } from '../../data/ingredients';
 import { t } from '../../data/strings';
-import type { Cake, ToppingId } from '../../data/types';
+import type { Cake } from '../../data/types';
 import { arrangeToppings, cakeHeight, countLayers, MAX_TOPPINGS } from '../../game/cake';
 import { getShapeGeometry, isInsideTopFace } from '../../game/cakeGeometry';
 import { runtime, todaysMenu } from '../../game/state';
@@ -17,12 +17,11 @@ import { drawToppingDish } from '../../render/shelfItems';
 import { drawTopping } from '../../render/toppings';
 import { showToast } from '../../scenes/sceneManager';
 import { cakeTopY, currentCake, currentOrder, requireLayer } from '../kitchen';
-import { CAKE_BASE_Y, CAKE_CENTER_X, INGREDIENT_SHELF } from '../layout';
+import { CAKE_BASE_Y, CAKE_CENTER_X, INGREDIENT_SHELF, STATION_CONTROLS } from '../layout';
 import { drawIngredientShelf, shelfItemHalfWidth, shelfItemXs } from '../widgets';
 import type { Station } from './station';
 
-/** "On the cake" counts in the left panel: a grid of topping × number. */
-const COUNT_COLUMNS = 2, COUNT_COLUMN_WIDTH = 160, COUNT_ROW_HEIGHT = 46;
+const CLEAR_BUTTON_WIDTH = 180;
 /** Pick-up radius of a topping already on the cake. */
 const PICK_RADIUS = 18;
 /** When dropped just off the cake, the topping is nudged towards the centre in this many steps. */
@@ -71,12 +70,6 @@ function dropTopping(point: Point): void {
   burst(CAKE_CENTER_X + x, CAKE_BASE_Y + y, 6, ['#fff', '#ffe27a'], { kind: 'star', gravity: 100, maxSpeed: 120 });
 }
 
-function countByKind(cake: Cake): [ToppingId, number][] {
-  const counts = new Map<ToppingId, number>();
-  for (const placed of cake.toppings) counts.set(placed.topping, (counts.get(placed.topping) ?? 0) + 1);
-  return [...counts];
-}
-
 export const toppingsStation: Station = {
   get name() { return t().stations.toppings; },
   helper: 'toppings',
@@ -91,17 +84,8 @@ export const toppingsStation: Station = {
     drawIngredientShelf(toppings, topping => loc(TOPPINGS[topping].name), drawToppingDish, { isHoverable: !runtime.draggedTopping });
   },
 
-  /** What is on the cake now, by kind. */
-  drawTools(panel, cake) {
-    const { x, y, h } = panel;
-    const counts = countByKind(cake);
-    if (counts.length) drawText(t().onTheCake, x + 20, y + 72, 19, TEXT.label, 'left', 900);
-    counts.forEach(([topping, count], i) => {
-      const entryX = x + 40 + (i % COUNT_COLUMNS) * COUNT_COLUMN_WIDTH, entryY = y + 122 + Math.floor(i / COUNT_COLUMNS) * COUNT_ROW_HEIGHT;
-      drawTopping(topping, entryX, entryY + 12, 1.5);
-      drawText('× ' + count, entryX + 26, entryY, 24, TEXT.main, 'left', 900);
-    });
-    button('clearToppings', x + 14, y + h - 56, 170, 46, t().removeAll, {
+  drawControls(rightEdge, y, cake) {
+    button('clearToppings', rightEdge - CLEAR_BUTTON_WIDTH, y, CLEAR_BUTTON_WIDTH, STATION_CONTROLS.h, t().removeAll, {
       color: BUTTON_COLOR.secondary, fontSize: 19, disabled: !cake.toppings.length,
       onClick: () => { cake.toppings = []; sfx.poof(); },
     });

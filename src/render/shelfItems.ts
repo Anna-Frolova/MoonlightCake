@@ -1,15 +1,19 @@
-// Ingredients standing on the kitchen shelf as real objects: bowls of cream and dishes of toppings.
+// Ingredients on the kitchen shelves as real objects: cake layers, jars of filling, bowls of cream, dishes of toppings.
 // Each is drawn with (x, y) at the middle of its base, standing on the shelf board.
 import { ctx } from '../core/canvas';
 import { shade } from '../core/color';
-import { drawGlow, ellipsePath, starPath } from '../core/draw';
-import { CREAMS } from '../data/ingredients';
-import type { CreamId, ToppingId } from '../data/types';
+import { drawGlow, ellipsePath, roundRectPath, starPath } from '../core/draw';
+import { CREAMS, FILLINGS, FLAVORS } from '../data/ingredients';
+import type { CreamId, FillingId, FlavorId, ShapeId, ToppingId } from '../data/types';
+import { getShapeGeometry } from '../game/cakeGeometry';
+import { drawPrism } from './cake';
 import { drawTopping } from './toppings';
 
 const PORCELAIN = '#f1ecff';
 const PORCELAIN_SHADOW = '#b9aee6';
 const PORCELAIN_RIM = '#8e82c8';
+/** A layer piece is drawn with the cake's own geometry, shrunk to shelf size and lifted to sit on the board. */
+const LAYER_PIECE_SCALE = 0.27, LAYER_PIECE_HEIGHT = 44, LAYER_PIECE_LIFT = 40;
 
 /** A ceramic bowl heaped with a swirl of cream. */
 export function drawCreamBowl(cream: CreamId, x: number, y: number, scale = 1): void {
@@ -59,5 +63,34 @@ export function drawToppingDish(topping: ToppingId, x: number, y: number, scale 
   ctx.strokeStyle = PORCELAIN_RIM; ctx.lineWidth = 2; ctx.stroke();
   ellipsePath(0, -7, 27, 6); ctx.fillStyle = 'rgba(142,130,200,0.25)'; ctx.fill();
   for (const [dx, dy] of DISH_PILE) drawTopping(topping, dx, dy, 1.15);
+  ctx.restore();
+}
+
+/** One cake layer of the flavour, in the given shape (the shelf follows the shape switches). */
+export function drawLayerPiece(flavor: FlavorId, shape: ShapeId, x: number, y: number, scale = 1): void {
+  ctx.save();
+  ctx.translate(x, y); ctx.scale(scale * LAYER_PIECE_SCALE, scale * LAYER_PIECE_SCALE);
+  drawPrism(getShapeGeometry(shape), -LAYER_PIECE_LIFT, LAYER_PIECE_HEIGHT, FLAVORS[flavor].color);
+  if (FLAVORS[flavor].sparkles) {
+    ctx.fillStyle = '#fff6c8';
+    starPath(-40, -LAYER_PIECE_LIFT - 22, 13, 5, 4, 0); ctx.fill();
+    starPath(36, -LAYER_PIECE_LIFT - 14, 10, 4, 4, 0); ctx.fill();
+  }
+  ctx.restore();
+}
+
+/** A glass jar of filling with a lid and a shine. */
+export function drawFillingJar(filling: FillingId, x: number, y: number, scale = 1): void {
+  const color = FILLINGS[filling].color;
+  ctx.save();
+  ctx.translate(x, y); ctx.scale(scale, scale);
+  if (FILLINGS[filling].glows) drawGlow(0, -26, 40, color, 0.4);
+  ctx.strokeStyle = PORCELAIN_RIM; ctx.lineWidth = 2;
+  roundRectPath(-22, -48, 44, 48, 12); ctx.fillStyle = 'rgba(230,240,255,0.35)'; ctx.fill(); ctx.stroke(); // glass
+  roundRectPath(-18, -32, 36, 29, 9); ctx.fillStyle = color; ctx.fill(); // filling inside
+  ctx.fillStyle = shade(color, 0.35); ellipsePath(0, -31, 17, 4); ctx.fill(); // its surface
+  roundRectPath(-25, -58, 50, 13, 6); ctx.fillStyle = '#8e6ff0'; ctx.fill(); ctx.stroke(); // lid
+  ctx.fillStyle = 'rgba(255,255,255,0.35)'; roundRectPath(-21, -56, 20, 4, 2); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.6)'; ellipsePath(-12, -22, 3.5, 9); ctx.fill(); // shine on the glass
   ctx.restore();
 }

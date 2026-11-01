@@ -1,8 +1,8 @@
 // Paint-like mixing of essences in the cauldron (RYB colour model: red + blue = purple, etc.).
 import { colorDistance, mixRgb, type Rgb } from '../core/color';
 import { lerp } from '../core/math';
-import { ESSENCES, GLAZE_COLORS, glazeColorById } from '../data/ingredients';
-import type { Drops, EssenceId, GlazeColorDef, GlazeColorId, Recipe } from '../data/types';
+import { GLAZE_COLORS, glazeColorById } from '../data/ingredients';
+import type { Drops, GlazeColorDef, GlazeColorId, Recipe } from '../data/types';
 
 /** Corners of the RYB cube in RGB (0..1); the colour in between is interpolated. */
 const RYB_CORNERS = {
@@ -66,4 +66,3 @@ export function nearestGlazeColor(rgb: Rgb): { color: GlazeColorDef; distance: n
 /** Below this distance the cauldron shows the colour's name instead of "unusual shade". */
 export const NAMED_COLOR_DISTANCE = 22;
 
-export const essenceIsUnlocked = (essence: EssenceId, day: number): boolean => ESSENCES[essence].unlockDay <= day;

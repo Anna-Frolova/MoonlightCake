@@ -9,17 +9,17 @@ import { clamp, easeOutCubic, lerp, type Point } from '../../core/math';
 import { burst } from '../../core/particles';
 import { BUTTON_COLOR, TEXT } from '../../core/theme';
 import { button, pointer, springScale } from '../../core/ui';
-import { ESSENCE_ORDER, ESSENCES, glazeColorById, MIXING_TIPS } from '../../data/ingredients';
+import { ESSENCE_ORDER, ESSENCES, glazeColorById } from '../../data/ingredients';
 import { t } from '../../data/strings';
 import type { Cake, EssenceId } from '../../data/types';
 import { cakeHeight, countLayers } from '../../game/cake';
-import { glazeRgb, mixDrops, NAMED_COLOR_DISTANCE, nearestGlazeColor, recipeToDrops, totalDrops } from '../../game/colorMixing';
+import { mixDrops, NAMED_COLOR_DISTANCE, nearestGlazeColor, recipeToDrops, totalDrops } from '../../game/colorMixing';
 import { availableEssences, isOwned, runtime } from '../../game/state';
 import { BOTTLE_NECK_TOP, drawPotionBottle } from '../../render/potionBottle';
 import { showToast } from '../../scenes/sceneManager';
 import { currentCake, currentOrder, requireLayer } from '../kitchen';
 import {
-  CAKE_BASE_Y, CAULDRON, CAULDRON_CAPACITY, CAULDRON_MOUTH, ELIXIR_SHELF, POUR_POSITION, POUR_REACH,
+  CAKE_BASE_Y, CAULDRON, CAULDRON_CAPACITY, CAULDRON_MOUTH, ELIXIR_SHELF, POUR_POSITION, POUR_REACH, STATION_CONTROLS,
 } from '../layout';
 import type { Station } from './station';
 
@@ -30,6 +30,7 @@ const POUR_TILT = 1.95;
 const RETURN_TO_SHELF_SECONDS = 0.28;
 const GLAZE_ARC_SECONDS = 1;
 const CAULDRON_LABEL_SIZE = 19;
+const POUR_BUTTON_WIDTH = 200, EMPTY_BUTTON_WIDTH = 130;
 /** Bottle grab area around its resting point. */
 const BOTTLE_HIT = { halfWidth: 30, above: 62, below: 38 };
 /** The bottle's body rests this far above the shelf board. */
@@ -321,48 +322,15 @@ export const glazeStation: Station = {
   helper: 'glaze',
   isDone: cake => !!cake.glaze,
 
-  drawTools(panel, cake) {
-    const { x, y, w, h } = panel;
-    const drops = cake.cauldron, total = totalDrops(drops);
-    // drops in the cauldron: a slot per possible drop
-    const dropsY = y + 66, dropSpacing = 18;
-    for (let n = 0; n < CAULDRON_CAPACITY; n++) {
-      ellipsePath(x + 28 + n * dropSpacing, dropsY, 7, 7); ctx.fillStyle = 'rgba(255,255,255,0.08)'; ctx.fill();
-    }
-    let dropX = x + 28;
-    for (const essence of ESSENCE_ORDER) {
-      for (let n = 0; n < drops[essence]; n++) {
-        drawGlow(dropX, dropsY, 14, ESSENCES[essence].color, 0.4);
-        ellipsePath(dropX, dropsY, 7, 7); ctx.fillStyle = ESSENCES[essence].color; ctx.fill();
-        dropX += dropSpacing;
-      }
-    }
-    // current mix
-    const mix = mixDrops(drops);
-    if (mix) {
-      const nearest = nearestGlazeColor(mix), mixY = y + 102;
-      ellipsePath(x + 31, mixY, 11, 11); ctx.fillStyle = rgbToHex(mix); ctx.fill();
-      ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 1.5; ctx.stroke();
-      drawFittedText(nearest.distance < NAMED_COLOR_DISTANCE ? loc(nearest.color.name) : t().unusualShade, x + 52, mixY, 20, w - 72, TEXT.main, 'left', 800);
-    }
-    // cheat sheet: only tips whose essences are already unlocked
-    drawText(t().cheatSheet, x + 20, y + 142, 18, TEXT.label, 'left', 900);
-    const essences = availableEssences();
-    MIXING_TIPS.filter(tip => essences.includes(tip.a) && essences.includes(tip.b)).forEach((tip, i) => {
-      const tipX = x + (i < 3 ? 0 : 172), tipY = y + 172 + (i % 3) * 32;
-      // essence + essence = a swatch of the resulting glaze (no names: the colours say it)
-      ctx.strokeStyle = 'rgba(255,255,255,0.4)'; ctx.lineWidth = 1.5; // outline keeps the dark essence visible
-      ellipsePath(tipX + 32, tipY, 10, 10); ctx.fillStyle = ESSENCES[tip.a].color; ctx.fill(); ctx.stroke();
-      drawText('+', tipX + 54, tipY, 20, TEXT.muted, 'center', 900);
-      ellipsePath(tipX + 76, tipY, 10, 10); ctx.fillStyle = ESSENCES[tip.b].color; ctx.fill(); ctx.stroke();
-      drawText('=', tipX + 100, tipY, 20, TEXT.muted, 'center', 900);
-      const result = rgbToHex(glazeRgb(tip.result));
-      drawGlow(tipX + 128, tipY, 22, result, 0.35);
-      ellipsePath(tipX + 128, tipY, 13, 13); ctx.fillStyle = result; ctx.fill();
-      ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = 1.5; ctx.stroke();
+  /** Empty the cauldron / pour the glaze — in the top right corner; the colour's name is under the cauldron. */
+  drawControls(rightEdge, y, cake) {
+    const total = totalDrops(cake.cauldron), { h, gap } = STATION_CONTROLS;
+    button('pourGlaze', rightEdge - POUR_BUTTON_WIDTH, y, POUR_BUTTON_WIDTH, h, t().pourOnCake, {
+      color: BUTTON_COLOR.pink, fontSize: 20, disabled: total === 0 || !countLayers(cake), onClick: pourGlaze,
     });
-    button('emptyCauldron', x + 14, y + h - 56, 130, 46, t().pourOut, { color: BUTTON_COLOR.secondary, fontSize: 19, disabled: total === 0, onClick: emptyCauldron });
-    button('pourGlaze', x + 154, y + h - 56, 192, 46, t().pourOnCake, { color: BUTTON_COLOR.pink, fontSize: 20, disabled: total === 0 || !countLayers(cake), onClick: pourGlaze });
+    button('emptyCauldron', rightEdge - POUR_BUTTON_WIDTH - gap - EMPTY_BUTTON_WIDTH, y, EMPTY_BUTTON_WIDTH, h, t().pourOut, {
+      color: BUTTON_COLOR.secondary, fontSize: 19, disabled: total === 0, onClick: emptyCauldron,
+    });
   },
 
   /** The smart cauldron mixes the ordered colour and pours it. */

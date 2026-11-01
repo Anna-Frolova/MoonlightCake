@@ -1,20 +1,22 @@
-// Station 1: pick the shape and stack layers with fillings in between.
+// Station 1: switch the cake's shape and tap layers and fillings on the shelf above the cake to stack them.
 import { sfx } from '../../audio/sfx';
-import { drawText } from '../../core/draw';
+import { ctx } from '../../core/canvas';
+import { ellipsePath } from '../../core/draw';
 import { loc } from '../../core/language';
 import { burst } from '../../core/particles';
-import { BUTTON_COLOR, TEXT } from '../../core/theme';
+import { BUTTON_COLOR } from '../../core/theme';
 import { button } from '../../core/ui';
-import { FILLINGS, FLAVORS, SHAPES } from '../../data/ingredients';
+import { FILLINGS, FLAVORS } from '../../data/ingredients';
 import { t } from '../../data/strings';
-import type { FillingId, FlavorId, ShapeId } from '../../data/types';
+import type { Cake, FillingId, FlavorId, ShapeId } from '../../data/types';
 import { cakeHeight, countLayers, isStackLocked, MAX_LAYERS } from '../../game/cake';
 import { todaysMenu } from '../../game/state';
-import { drawFillingIcon, drawFlavorIcon, drawShapeIcon } from '../../render/icons';
+import { drawShapeIcon } from '../../render/icons';
+import { drawFillingJar, drawLayerPiece } from '../../render/shelfItems';
 import { showToast } from '../../scenes/sceneManager';
 import { cakeTopY, currentCake, currentOrder, SPARKLE_COLORS } from '../kitchen';
-import { CAKE_BASE_Y, CAKE_CENTER_X } from '../layout';
-import { toolCard } from '../widgets';
+import { CAKE_BASE_Y, CAKE_CENTER_X, HELPER_SHELF, SHAPE_SWITCHES, STATION_CONTROLS } from '../layout';
+import { drawIngredientShelf, isOverShelfItem, shelfItemXs } from '../widgets';
 import type { Station } from './station';
 
 /** Delay before the landing sound, so it matches the falling animation. */
@@ -22,7 +24,8 @@ const LAND_SOUND_DELAY_MS = 160;
 /** Helper stacks one item every this many ms. */
 const AUTO_STACK_INTERVAL_MS = 150;
 /** Where the helper's sparkle appears (its spot on the shelf). */
-const HELPER_SHELF_SPOT = { x: 975, y: 210 };
+const HELPER_SHELF_SPOT = { x: HELPER_SHELF.slotXs[0], y: HELPER_SHELF.y - 24 };
+const UNDO_BUTTON_WIDTH = 60;
 
 function complainIfLocked(message: string): boolean {
   if (!isStackLocked(currentCake())) return false;
@@ -78,34 +81,70 @@ function removeTopItem(): void {
   sfx.pickup();
 }
 
+/** What lies on the layers shelf: a piece of each flavour (in the chosen shape), then a jar of each filling. */
+type LayerShelfItem = `flavor:${FlavorId}` | `filling:${FillingId}`;
+
+function shelfItems(): LayerShelfItem[] {
+  const menu = todaysMenu();
+  return [...menu.flavors.map(id => `flavor:${id}` as const), ...menu.fillings.map(id => `filling:${id}` as const)];
+}
+
+const shelfLabel = (item: LayerShelfItem): string => {
+  const [kind, id] = item.split(':');
+  return kind === 'flavor' ? loc(FLAVORS[id as FlavorId].name) : loc(FILLINGS[id as FillingId].shortName);
+};
+
+/** Round switches above the shelf; the chosen shape is lit and every layer on the shelf takes it. */
+function drawShapeSwitches(cake: Cake): void {
+  const shapes = todaysMenu().shapes, { y, size, gap } = SHAPE_SWITCHES;
+  const left = CAKE_CENTER_X - (shapes.length * size + (shapes.length - 1) * gap) / 2;
+  shapes.forEach((shape, i) => {
+    const isChosen = cake.shape === shape;
+    button('shape_' + shape, left + i * (size + gap), y, size, size, '', {
+      onClick: () => setShape(shape), hoverScale: 1.1,
+      draw: (bx, by, bw, bh, hovered) => {
+        ctx.save();
+        if (isChosen) { ctx.shadowColor = 'rgba(95,216,255,0.9)'; ctx.shadowBlur = 18; }
+        ellipsePath(bx + bw / 2, by + bh / 2, bw / 2, bh / 2);
+        ctx.fillStyle = isChosen ? '#4f6fd8' : hovered ? '#5a44a8' : '#3d2e86'; ctx.fill();
+        ctx.restore();
+        ctx.strokeStyle = isChosen ? 'rgba(159,234,255,0.95)' : 'rgba(200,180,255,0.3)'; ctx.lineWidth = isChosen ? 3 : 1.5;
+        ellipsePath(bx + bw / 2, by + bh / 2, bw / 2 - 1, bh / 2 - 1); ctx.stroke();
+        drawShapeIcon(shape, bx + bw / 2, by + bh / 2 + 2, 0.82);
+      },
+    });
+  });
+}
+
 export const layersStation: Station = {
   get name() { return t().stations.layers; },
   helper: 'layers',
   isDone: cake => countLayers(cake) > 0,
-  title: cake => t().layersTitle(countLayers(cake), MAX_LAYERS),
   currentHint: cake => isStackLocked(cake) ? t().lockedHint : null,
 
-  drawHeaderButtons(panel, cake, rightEdge) {
-    button('undo', rightEdge - 46, panel.y + 7, 46, 38, '↶', {
-      color: BUTTON_COLOR.secondary, fontSize: 22, disabled: isStackLocked(cake) || !cake.stack.length, onClick: removeTopItem,
+  drawControls(rightEdge, y, cake) {
+    button('undo', rightEdge - UNDO_BUTTON_WIDTH, y, UNDO_BUTTON_WIDTH, STATION_CONTROLS.h, '↶', {
+      color: BUTTON_COLOR.secondary, fontSize: 26, disabled: isStackLocked(cake) || !cake.stack.length, onClick: removeTopItem,
     });
   },
 
-  drawTools({ x, y }, cake) {
-    const menu = todaysMenu();
-    menu.shapes.forEach((shape, i) => toolCard(
-      'shape_' + shape, x + 14 + i * 84, y + 48, 78, 58, loc(SHAPES[shape].name),
-      (cx, cy) => drawShapeIcon(shape, cx, cy + 2, 0.8), () => setShape(shape), { selected: cake.shape === shape },
-    ));
-    menu.flavors.forEach((flavor, i) => toolCard(
-      'flavor_' + flavor, x + 14 + (i % 4) * 84, y + 112 + Math.floor(i / 4) * 68, 78, 62, loc(FLAVORS[flavor].name),
-      (cx, cy) => drawFlavorIcon(flavor, cx, cy, 0.85), () => addLayer(flavor), { silent: true },
-    ));
-    drawText(t().fillingsLabel, x + 20, y + 254, 17, TEXT.label, 'left', 900);
-    menu.fillings.forEach((filling, i) => toolCard(
-      'filling_' + filling, x + 14 + i * 67, y + 268, 62, 66, loc(FILLINGS[filling].shortName),
-      (cx, cy) => drawFillingIcon(filling, cx, cy + 2, 0.75), () => addFilling(filling), { silent: true },
-    ));
+  /** Shape switches, and the shelf with layers in that shape and jars of filling. Tapping one puts it on the cake. */
+  drawScenery(cake) {
+    drawShapeSwitches(cake);
+    drawIngredientShelf(shelfItems(), shelfLabel, (item, x, y, scale) => {
+      const [kind, id] = item.split(':');
+      if (kind === 'flavor') drawLayerPiece(id as FlavorId, cake.shape, x, y, scale);
+      else drawFillingJar(id as FillingId, x, y, scale);
+    }, { isHoverable: !isStackLocked(cake) });
+  },
+
+  onPointerDown(point) {
+    const items = shelfItems(), xs = shelfItemXs(items.length);
+    const tapped = items.find((_, i) => isOverShelfItem(point, xs[i], items.length));
+    if (!tapped) return false;
+    const [kind, id] = tapped.split(':');
+    if (kind === 'flavor') addLayer(id as FlavorId); else addFilling(id as FillingId);
+    return true;
   },
 
   /** The magic spatula picks the shape and stacks the ordered layers with fillings. */

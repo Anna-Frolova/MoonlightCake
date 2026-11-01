@@ -2,11 +2,11 @@
 import { sfx } from '../../audio/sfx';
 import { ctx } from '../../core/canvas';
 import { clock } from '../../core/clock';
-import { drawGlow, drawText, ellipsePath } from '../../core/draw';
+import { drawGlassPill, drawGlow, drawText, ellipsePath } from '../../core/draw';
 import { loc } from '../../core/language';
 import { randomRange, type Point } from '../../core/math';
 import { burst, emitParticle, floatingText } from '../../core/particles';
-import { BUTTON_COLOR, TEXT } from '../../core/theme';
+import { BUTTON_COLOR } from '../../core/theme';
 import { pointer } from '../../core/ui';
 import { CREAMS } from '../../data/ingredients';
 import { t } from '../../data/strings';
@@ -18,7 +18,7 @@ import { runtime, todaysMenu } from '../../game/state';
 import { drawCreamBowl } from '../../render/shelfItems';
 import { showToast } from '../../scenes/sceneManager';
 import { currentCake, currentOrder, requireLayer } from '../kitchen';
-import { CAKE_BASE_Y, CAKE_CENTER_X, CREAM_BRUSH_RADIUS, CREAM_ZONE } from '../layout';
+import { CAKE_BASE_Y, CAKE_CENTER_X, CREAM_BRUSH_RADIUS, CREAM_ZONE, STATION_CONTROLS } from '../layout';
 import { drawIngredientShelf, drawProgressBar, isOverShelfItem, shelfItemXs } from '../widgets';
 import type { Station } from './station';
 
@@ -27,6 +27,8 @@ const SQUISH_INTERVAL = 0.09;
 /** The helper's whisk pipes all beads within this many seconds (plus a short finishing pause). */
 const AUTO_PIPE_SECONDS = 0.8;
 const AUTO_FINISH_SECONDS = 0.9;
+/** Piping progress in the top right corner. */
+const PROGRESS_BAR = { w: 200, h: 26 };
 
 function isInCreamZone(point: Point): boolean {
   const height = runtime.cake ? cakeHeight(runtime.cake) : 0;
@@ -109,16 +111,12 @@ export const creamStation: Station = {
   },
 
   /** Piping progress, and the cream in the bag right now. */
-  drawTools(panel, cake) {
-    const { x, y, w, h } = panel;
-    const barY = y + 74;
-    drawText(t().creamBorders, x + 20, barY, 19, TEXT.label, 'left', 900);
-    drawProgressBar(x + 110, barY - 12, 220, 24, cake.creamCoverage, cake.creamCoverage >= CREAM_DONE_COVERAGE ? BUTTON_COLOR.confirm : BUTTON_COLOR.gold);
-    drawText(Math.round(cake.creamCoverage * 100) + '%', x + 220, barY + 1, 17, '#fff', 'center', 900);
-    if (runtime.selectedCream) {
-      drawGlow(x + w / 2, y + h - 110, 90, CREAMS[runtime.selectedCream].color, 0.3);
-      drawCreamBowl(runtime.selectedCream, x + w / 2, y + h - 40, 1.8);
-    }
+  /** How much of the borders is piped, as a bar in the top right corner. */
+  drawControls(rightEdge, y, cake) {
+    const barX = rightEdge - PROGRESS_BAR.w, barY = y + (STATION_CONTROLS.h - PROGRESS_BAR.h) / 2;
+    drawGlassPill(barX - 8, y, PROGRESS_BAR.w + 16, STATION_CONTROLS.h);
+    drawProgressBar(barX, barY, PROGRESS_BAR.w, PROGRESS_BAR.h, cake.creamCoverage, cake.creamCoverage >= CREAM_DONE_COVERAGE ? BUTTON_COLOR.confirm : BUTTON_COLOR.gold);
+    drawText(Math.round(cake.creamCoverage * 100) + '%', barX + PROGRESS_BAR.w / 2, barY + PROGRESS_BAR.h / 2 + 1, 18, '#fff', 'center', 900);
   },
 
   /** The enchanted whisk pipes the ordered cream bead by bead. */
