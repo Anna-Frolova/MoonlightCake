@@ -2,7 +2,7 @@
 // ruffles, a twisted rope), and two "creams" are borders laid piece by piece (a berry mix, chocolate balls).
 // A piece is drawn around (x, y) = its bead's point, about 20 px wide at size 9.
 import { ctx } from '../core/canvas';
-import { shade } from '../core/color';
+import { shade, withAlpha } from '../core/color';
 import { ellipsePath } from '../core/draw';
 import type { CreamStyle } from '../data/types';
 
@@ -12,6 +12,38 @@ const BASE_SIZE = 9;
 const CHOCOLATE = { dark: ['#b27a5a', '#5a3220', '#2e160a'], golden: ['#ffe7b0', '#c08a4a', '#8a5a20'] } as const;
 /** The berry mix: strawberry halves, raspberries and blueberries in turn. */
 const BERRY_KINDS = 3;
+
+/** The soft shadow under a piece of cream (so it sits on the cake rather than looking stuck on) and its offset. */
+const CREAM_SHADOW = 'rgba(50,25,70,0.28)';
+const SHADOW_OFFSET = { x: 1.2, y: 2.4 };
+
+/**
+ * A plump piece of whipped cream: its shadow first, then the shape (`path` builds it) filled with light from the
+ * top left fading to shaded edges around (cx, cy), and a thin outline.
+ */
+function plumpPiece(path: () => void, color: string, edge: string, cx: number, cy: number, radius: number): void {
+  ctx.save(); ctx.translate(SHADOW_OFFSET.x, SHADOW_OFFSET.y); path(); ctx.fillStyle = CREAM_SHADOW; ctx.fill(); ctx.restore();
+  path();
+  const g = ctx.createRadialGradient(cx - radius * 0.35, cy - radius * 0.45, radius * 0.1, cx, cy, radius * 1.15);
+  g.addColorStop(0, shade(color, 0.6)); g.addColorStop(0.45, color); g.addColorStop(1, shade(color, -0.24));
+  ctx.fillStyle = g; ctx.fill();
+  ctx.strokeStyle = edge; ctx.lineWidth = 1.2; ctx.stroke();
+}
+
+/** A groove pressed by the star nozzle: a dark line with a light ridge just above it (`line` adds the segments). */
+function groove(line: () => void, color: string): void {
+  ctx.save();
+  ctx.strokeStyle = withAlpha(shade(color, -0.4), 0.75); ctx.lineWidth = 1.3; ctx.beginPath(); line(); ctx.stroke();
+  ctx.translate(-0.6, -0.9);
+  ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.lineWidth = 1; ctx.beginPath(); line(); ctx.stroke();
+  ctx.restore();
+}
+
+/** A glossy highlight: a little shine and a sparkle beside it. */
+function gloss(x: number, y: number): void {
+  ellipsePath(x, y, 2.6, 1.6); ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.fill();
+  ellipsePath(x + 3.2, y + 1.6, 0.9, 0.9); ctx.fillStyle = 'rgba(255,255,255,0.65)'; ctx.fill();
+}
 
 /** A glossy ball with a highlight (berries, chocolate). */
 function glossyBall(x: number, y: number, radius: number, [highlight, base, edge]: readonly [string, string, string]): void {
@@ -25,37 +57,41 @@ function glossyBall(x: number, y: number, radius: number, [highlight, base, edge
  * the way the line runs), `index` gives each bead a stable variety (berry kind, golden balls).
  */
 export function drawCreamPiece(style: CreamStyle, x: number, y: number, size: number, color: string, index: number): void {
-  const edge = shade(color, -0.35), light = shade(color, 0.45);
+  const edge = shade(color, -0.35);
   ctx.save();
   ctx.translate(x, y); ctx.scale(size / BASE_SIZE, size / BASE_SIZE);
   ctx.lineJoin = 'round'; ctx.lineCap = 'round';
   switch (style) {
     case 'shells': { // a teardrop with ridges from a star nozzle, leaning along the line
       ctx.scale(x >= 0 ? 1 : -1, 1);
-      ctx.beginPath(); ctx.moveTo(-11, 3); ctx.quadraticCurveTo(-12, -9, 0, -9); ctx.quadraticCurveTo(10, -8, 9, 1); ctx.quadraticCurveTo(6, 6, -11, 3);
-      ctx.fillStyle = color; ctx.fill(); ctx.strokeStyle = edge; ctx.lineWidth = 1.3; ctx.stroke();
-      ctx.strokeStyle = light; ctx.lineWidth = 1.4;
-      for (let k = -2; k <= 2; k++) { ctx.beginPath(); ctx.moveTo(-9 + k * 0.5, 2); ctx.quadraticCurveTo(-2 + k * 2, -7 + Math.abs(k), 6 + k, 0); ctx.stroke(); }
+      const shell = (): void => { ctx.beginPath(); ctx.moveTo(-11, 3); ctx.quadraticCurveTo(-12, -9, 0, -9); ctx.quadraticCurveTo(10, -8, 9, 1); ctx.quadraticCurveTo(6, 6, -11, 3); };
+      plumpPiece(shell, color, edge, -1, -3, 11);
+      for (let k = -1; k <= 1; k++) groove(() => { ctx.moveTo(-9 + k * 0.5, 2); ctx.quadraticCurveTo(-2 + k * 2.6, -7 + Math.abs(k), 6 + k, 0); }, color);
+      gloss(-4, -6);
       break;
     }
-    case 'rosettes': // a small swirl seen from above
-      ellipsePath(0, 0, 9, 8); ctx.fillStyle = color; ctx.fill(); ctx.strokeStyle = edge; ctx.lineWidth = 1.3; ctx.stroke();
-      ctx.beginPath();
-      for (let t = 0; t <= 1; t += 0.04) { const radius = 7 * (1 - t), angle = t * Math.PI * 4; ctx.lineTo(Math.cos(angle) * radius, -2 + Math.sin(angle) * radius * 0.8); }
-      ctx.stroke();
-      ellipsePath(-3, -4, 2, 1.4); ctx.fillStyle = 'rgba(255,255,255,0.75)'; ctx.fill();
+    case 'rosettes': { // a small swirl seen from above
+      plumpPiece(() => { ctx.beginPath(); ctx.ellipse(0, 0, 9, 8, 0, 0, Math.PI * 2); }, color, edge, 0, -1, 9);
+      groove(() => {
+        for (let t = 0; t <= 1; t += 0.04) { const radius = 7 * (1 - t), angle = t * Math.PI * 4; ctx.lineTo(Math.cos(angle) * radius, -2 + Math.sin(angle) * radius * 0.8); }
+      }, color);
+      gloss(-3, -5);
       break;
-    case 'ruffles': // a soft wavy frill
-      ctx.beginPath(); ctx.moveTo(-10, 4); ctx.quadraticCurveTo(-7, -9, 0, -4); ctx.quadraticCurveTo(7, -9, 10, 4); ctx.quadraticCurveTo(0, 8, -10, 4);
-      ctx.fillStyle = color; ctx.fill(); ctx.strokeStyle = edge; ctx.lineWidth = 1.3; ctx.stroke();
-      ctx.strokeStyle = light; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(-6, 2); ctx.quadraticCurveTo(0, -4, 6, 2); ctx.stroke();
+    }
+    case 'ruffles': { // a soft wavy frill
+      const frill = (): void => { ctx.beginPath(); ctx.moveTo(-10, 4); ctx.quadraticCurveTo(-7, -9, 0, -4); ctx.quadraticCurveTo(7, -9, 10, 4); ctx.quadraticCurveTo(0, 8, -10, 4); };
+      plumpPiece(frill, color, edge, 0, -1, 10);
+      groove(() => { ctx.moveTo(-6, 2); ctx.quadraticCurveTo(0, -4, 6, 2); }, color);
+      gloss(-5, -3);
       break;
-    case 'rope': // one slanted twist of a rope border
+    }
+    case 'rope': { // one slanted twist of a rope border
       ctx.rotate(Math.max(-1, Math.min(1, x / 120)) * 0.25);
-      ctx.beginPath(); ctx.ellipse(0, 0, 10, 6.5, -0.6, 0, Math.PI * 2);
-      ctx.fillStyle = color; ctx.fill(); ctx.strokeStyle = edge; ctx.lineWidth = 1.3; ctx.stroke();
-      ctx.strokeStyle = light; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(-7, 3); ctx.quadraticCurveTo(0, -5, 7, -3); ctx.stroke();
+      plumpPiece(() => { ctx.beginPath(); ctx.ellipse(0, 0, 10, 6.5, -0.6, 0, Math.PI * 2); }, color, edge, -1, -1, 10);
+      groove(() => { ctx.moveTo(-7, 3); ctx.quadraticCurveTo(0, -5, 7, -3); }, color);
+      gloss(-4, -2);
       break;
+    }
     case 'berries':
       switch ((index * 7) % BERRY_KINDS) {
         case 0: { // a strawberry half, cut side out
