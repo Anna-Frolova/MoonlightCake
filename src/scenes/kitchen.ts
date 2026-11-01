@@ -161,7 +161,7 @@ function drawGuestPortrait(customer: Customer, x: number, y: number, w: number, 
     ctx.fillStyle = '#8fd8ff'; ctx.beginPath();
     ctx.moveTo(sideX, sideY - 16); ctx.quadraticCurveTo(sideX + 11, sideY + 4, sideX, sideY + 8);
     ctx.quadraticCurveTo(sideX - 11, sideY + 4, sideX, sideY - 16); ctx.fill();
-  } else if (mood === 'sad' && customer.patience !== null) drawAngerMark(sideX, sideY, 1.5, time);
+  } else if (mood === 'angry') drawAngerMark(sideX, sideY, 1.5, time); // a sad guest just has a tear (drawn on the face)
   ctx.restore();
 }
 

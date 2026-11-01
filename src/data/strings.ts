@@ -50,6 +50,11 @@ const uk = {
 
   // hall
   orderSpeech: (greeting: string, ask: string) => `${greeting} ${ask}`,
+  /** A guest who waited too long starts with a reproach, then says what they think of the cake. */
+  lateSpeech: (reproach: string, line: string) => `${reproach} ${line}`,
+  // reproaches are said by every guest, so they avoid gendered verb forms
+  lateSad: ['Ох, як же довго це було…', 'Ціла вічність минула…', 'Так довго чекати — це так сумно…', 'Ох, мої лапки аж затерпли від чекання…'],
+  lateAngry: ['Нарешті! Скільки можна чекати?!', 'Ну нарешті! Ще трохи — і мене б тут не було!', 'Це ж скільки часу минуло?!', 'Повільніше не можна було?!'],
   acceptOrder: 'Прийняти замовлення',
   thinking: ['Хм-м…', 'Ану, ану…', 'Мрр… дай-но подивлюся…', 'Нумо скуштуємо…', 'Так-так-так…', 'Мур… цікаво…'],
   /** The guest ran out of patience: throws the unfinished cake / leaves when there is no cake. */
@@ -208,6 +213,9 @@ const ja: UiStrings = {
   toShop: 'お店へ',
 
   orderSpeech: (greeting, ask) => `${greeting}${ask}`,
+  lateSpeech: (reproach, line) => `${reproach}${line}`,
+  lateSad: ['もう来ないかと思った…', 'ずいぶん待ったなあ…さびしかった。', '永遠に待った気分…', 'さびしくて眠っちゃうところだった。'],
+  lateAngry: ['やっとか！どれだけ待たせるんだ！', 'ようやくだ！帰ろうかと思ったぞ！', 'いったい何分たったと思ってる！', 'これ以上おそくはできなかったのか！'],
   acceptOrder: '注文を受ける',
   thinking: ['うーん…', 'どれどれ…', 'ニャ…ちょっと見せて…', 'では、いただきます…', 'ふむふむ…', 'ニャ…気になるね…'],
   stormWithCake: ['シャーッ！もう待てない！このケーキ、返すよ！', 'ニャーッ！ずっと待ってたのに！えいっ！', 'フーッ！作りかけのケーキなんていらない！', 'もうがまんの限界！受け取れ！'],

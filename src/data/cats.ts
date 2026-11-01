@@ -10,7 +10,7 @@ export const GUESTS: CatDef[] = [
     favoritePalettes: ['berry', 'lavender'], favoriteShapes: ['heart', 'round'],
   },
   {
-    id: 'barsyk', name: { uk: 'Сер Барсик', ja: 'バルシク卿' }, firstDay: 1, voicePitch: 0.85, isGenerous: true,
+    id: 'barsyk', temper: 'angry', name: { uk: 'Сер Барсик', ja: 'バルシク卿' }, firstDay: 1, voicePitch: 0.85, isGenerous: true,
     fur: '#ffa24f', furAccent: '#e0762c', pattern: 'stripes', eyeColor: '#7fe06a',
     hat: 'tophat', outfit: 'vest', outfitColor: '#3c3f8b', accessory: 'monocle',
     favoritePalettes: ['chocolate', 'berry', 'sunny'], favoriteShapes: ['square', 'round'],
@@ -22,7 +22,7 @@ export const GUESTS: CatDef[] = [
     favoritePalettes: ['sunny', 'forest'], favoriteShapes: ['star', 'round'],
   },
   {
-    id: 'vusan', name: { uk: 'Капітан Вусань', ja: 'ヒゲ船長' }, firstDay: 1, voicePitch: 0.75,
+    id: 'vusan', temper: 'angry', name: { uk: 'Капітан Вусань', ja: 'ヒゲ船長' }, firstDay: 1, voicePitch: 0.75,
     fur: '#a9b4c8', furAccent: '#6f7a92', pattern: 'stripes', eyeColor: '#ffc24a',
     hat: 'captain', outfit: 'sailor', outfitColor: '#2f5fc8',
     favoritePalettes: ['sea', 'night'], favoriteShapes: ['square', 'star'],
@@ -36,7 +36,7 @@ export const GUESTS: CatDef[] = [
     orderRule: { glazes: ['purple', 'plum', 'lilac'] },
   },
   {
-    id: 'bulochka', name: { uk: 'Тітонька Булочка', ja: 'マフィンおばさん' }, firstDay: 2, voicePitch: 0.95, ordersBigCakes: true,
+    id: 'bulochka', temper: 'angry', name: { uk: 'Тітонька Булочка', ja: 'マフィンおばさん' }, firstDay: 2, voicePitch: 0.95, ordersBigCakes: true,
     fur: '#fff6ea', furAccent: '#ff9a45', furPatch: '#4a3a40', pattern: 'calico', eyeColor: '#9be05a',
     hat: 'kerchief', outfit: 'apron', outfitColor: '#ff5a7a',
     favoritePalettes: ['chocolate', 'sunny', 'berry'], favoriteShapes: ['round', 'square', 'heart'],
@@ -62,7 +62,7 @@ export const GUESTS: CatDef[] = [
     favoritePalettes: ['night', 'sea', 'lavender'], favoriteShapes: ['star', 'square'],
   },
   {
-    id: 'morok', name: { uk: 'Граф Морок', ja: 'ヤミヨ伯爵' }, firstDay: 3, voicePitch: 0.8, isDarkFur: true, isGenerous: true,
+    id: 'morok', temper: 'angry', name: { uk: 'Граф Морок', ja: 'ヤミヨ伯爵' }, firstDay: 3, voicePitch: 0.8, isDarkFur: true, isGenerous: true,
     fur: '#2c2536', furAccent: '#1a1522', pattern: 'none', eyeColor: '#ff4f6e',
     hat: 'gothic', outfit: 'gothic', outfitColor: '#2a1f3a',
     favoritePalettes: ['night'], favoriteShapes: ['heart', 'star', 'square'],
@@ -82,7 +82,7 @@ export const GUESTS: CatDef[] = [
     favoritePalettes: ['sunny', 'forest', 'berry'], favoriteShapes: ['square', 'round'],
   },
   {
-    id: 'grandpa', name: { uk: 'Дідусь Сивоус', ja: '白ひげじいさん' }, firstDay: 3, voicePitch: 0.7,
+    id: 'grandpa', temper: 'angry', name: { uk: 'Дідусь Сивоус', ja: '白ひげじいさん' }, firstDay: 3, voicePitch: 0.7,
     fur: '#b8b0a8', furAccent: '#8a8078', pattern: 'none', eyeColor: '#8fb8ff',
     hat: 'flatcap', outfit: 'vest', outfitColor: '#7a5a3e', accessory: 'beard', extraAccessory: 'glasses',
     favoritePalettes: ['chocolate', 'sunny', 'forest'], favoriteShapes: ['round', 'square'],
@@ -96,7 +96,7 @@ export const GUESTS: CatDef[] = [
  */
 export const SPECIAL_GUESTS: CatDef[] = [
   {
-    id: 'demon', name: { uk: 'Демон Жарик', ja: '悪魔のホムラ' }, firstDay: 2, voicePitch: 0.7, isGenerous: true,
+    id: 'demon', temper: 'angry', name: { uk: 'Демон Жарик', ja: '悪魔のホムラ' }, firstDay: 2, voicePitch: 0.7, isGenerous: true,
     fur: '#c8423a', furAccent: '#8a2228', pattern: 'stripes', eyeColor: '#ffd23f',
     hat: 'horns', outfit: 'demon', outfitColor: '#2a1418', back: 'batWings', hasSpadeTail: true,
     favoritePalettes: ['inferno'], favoriteShapes: ['star', 'square'],
@@ -110,14 +110,14 @@ export const SPECIAL_GUESTS: CatDef[] = [
     special: { theme: 'heaven', palette: 'heaven', element: 'light', topping: 'feather' },
   },
   {
-    id: 'vampire', name: { uk: 'Князь Вампурр', ja: 'ヴァンプール公' }, firstDay: 4, voicePitch: 0.85, isGenerous: true,
+    id: 'vampire', temper: 'angry', name: { uk: 'Князь Вампурр', ja: 'ヴァンプール公' }, firstDay: 4, voicePitch: 0.85, isGenerous: true,
     fur: '#ece4ef', furAccent: '#3a2a40', pattern: 'points', eyeColor: '#ff2a4a',
     hat: 'vampire', outfit: 'vampire', outfitColor: '#1c1222', back: 'cape', accessory: 'fangs',
     favoritePalettes: ['dracula'], favoriteShapes: ['heart', 'square'],
     special: { theme: 'palace', palette: 'dracula', element: 'blood', topping: 'bat' },
   },
   {
-    id: 'samurai', name: { uk: 'Самурай Котаро', ja: '侍のコタロウ' }, firstDay: 5, voicePitch: 0.85, isGenerous: true,
+    id: 'samurai', temper: 'angry', name: { uk: 'Самурай Котаро', ja: '侍のコタロウ' }, firstDay: 5, voicePitch: 0.85, isGenerous: true,
     fur: '#f2ece2', furAccent: '#9a8a78', pattern: 'stripes', eyeColor: '#e8a030',
     hat: 'topknot', outfit: 'samurai', outfitColor: '#2a3a6a', back: 'katana',
     favoritePalettes: ['shrine'], favoriteShapes: ['round', 'square'],

@@ -3,7 +3,7 @@ import { sfx } from '../audio/sfx';
 import { ctx, SCREEN_W } from '../core/canvas';
 import { clock } from '../core/clock';
 import { drawCoin, drawFittedText, drawHeart, drawPanel, drawText, drawTitle, ellipsePath, font, roundRectPath, withPopIn, wrapText } from '../core/draw';
-import { loc } from '../core/language';
+import { language, loc } from '../core/language';
 import { clamp, easeOutBack, lerp, seededRandom } from '../core/math';
 import { rgbToHex, shade } from '../core/color';
 import { CREAMS, FLAVORS } from '../data/ingredients';
@@ -15,7 +15,8 @@ import { t } from '../data/strings';
 import {
   acceptOrder, collectPayment, GUEST_COUNTER_X, isLastGuestOfDay, say, sendGuestAway, spawnNextGuest,
 } from '../game/flow';
-import { catLine } from '../game/lines';
+import { catLine, hasLines, pickWithoutRepeat } from '../game/lines';
+import { patienceLeft, PATIENCE_LEVELS } from '../game/patience';
 import { progress, runtime, type Customer } from '../game/state';
 import { drawCake } from '../render/cake';
 import { drawAngerMark, drawCat, drawPaws } from '../render/cat';
@@ -45,6 +46,8 @@ const THROW_TARGET = { x: 640, y: 420, scale: 3.4, spins: 2.2 };
 const SPLAT = { radius: 230, seconds: 3.4, fadeSeconds: 0.9, drips: 9, crumbs: 14 };
 /** Where the anger mark floats beside the guest's head in the hall. */
 const ANGER_MARK_OFFSET = { x: 92, y: -250, scale: 2 };
+/** An angry guest's meow is a little lower, a growl. */
+const ANGRY_VOICE = 0.8;
 /** Guest is gone once past this x. */
 const OFF_SCREEN_X = 1500;
 const JUDGING_SECONDS = 1.5;
@@ -141,14 +144,22 @@ function splatColors(cake: Cake): { color: string; crumbColor: string } {
   return { color, crumbColor };
 }
 
+/**
+ * The guest tastes the cake and reacts. An unhappy guest is sad or angry, by their temper, with lines to match;
+ * a guest who was kept waiting too long starts with a reproach (hurt or cross) whatever the cake.
+ */
 function startReaction(customer: Customer): void {
-  const hearts = customer.score!.hearts;
+  const hearts = customer.score!.hearts, cat = customer.cat, isAngryType = cat.temper === 'angry';
   customer.state = 'reacting';
   customer.reactionTime = 0;
-  const mood = hearts >= 4 ? 'happy' : hearts === 3 ? 'neutral' : 'sad';
-  customer.mood = mood;
-  say(catLine(customer.cat, hearts >= 4 ? 'good' : hearts === 3 ? 'ok' : 'bad'));
-  sfx.meow(customer.cat.voicePitch, mood);
+  const isUnhappy = hearts < 3;
+  customer.mood = hearts >= 4 ? 'happy' : !isUnhappy ? 'neutral' : isAngryType ? 'angry' : 'sad';
+  let line = catLine(cat, hearts >= 4 ? 'good' : !isUnhappy ? 'ok' : isAngryType && hasLines(cat, 'angry') ? 'angry' : 'bad');
+  const waitedTooLong = customer.patience !== null && patienceLeft(customer) < PATIENCE_LEVELS.impatient;
+  if (waitedTooLong) line = t().lateSpeech(pickWithoutRepeat(`late:${isAngryType}:${language()}`, isAngryType ? t().lateAngry : t().lateSad), line);
+  say(line);
+  if (customer.mood === 'angry') { sfx.hiss(); sfx.meow(cat.voicePitch * ANGRY_VOICE, 'sad'); }
+  else sfx.meow(cat.voicePitch, customer.mood === 'happy' ? 'happy' : customer.mood === 'sad' ? 'sad' : 'neutral');
   collectPayment();
 }
 
@@ -218,7 +229,7 @@ export function renderHall(): void {
       ctx.strokeStyle = 'rgba(127,240,255,0.6)'; ctx.lineWidth = 2; ctx.stroke();
       drawCake(customer.servedCake, customer.x, COUNTER_TOP_Y + 20, 0.6);
     }
-    if (customer.state === 'storming' || (customer.state === 'leaving' && customer.mood === 'angry')) {
+    if (customer.mood === 'angry' && (customer.state === 'storming' || customer.state === 'reacting' || customer.state === 'leaving')) {
       drawAngerMark(customer.x + ANGER_MARK_OFFSET.x, HALL_FLOOR_Y + ANGER_MARK_OFFSET.y, ANGER_MARK_OFFSET.scale, time);
     }
     if (customer.state === 'storming' && customer.servedCake && customer.time < STORM.throwAt) drawLiftedCake(customer, customer.servedCake);

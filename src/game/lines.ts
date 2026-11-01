@@ -28,6 +28,9 @@ export function pickWithoutRepeat<T>(key: string, items: readonly T[]): T {
   return items[index];
 }
 
-/** A line of `cat` of the given kind, in the current language. */
+/** Does `cat` have lines of this kind (the optional `angry` ones)? */
+export const hasLines = (cat: CatDef, kind: keyof CatLines): boolean => !!loc(CAT_LINES[cat.id])[kind]?.length;
+
+/** A line of `cat` of the given kind, in the current language (`bad` when they have no lines of that kind). */
 export const catLine = (cat: CatDef, kind: keyof CatLines): string =>
-  pickWithoutRepeat(`${cat.id}:${kind}:${language()}`, loc(CAT_LINES[cat.id])[kind]);
+  pickWithoutRepeat(`${cat.id}:${kind}:${language()}`, loc(CAT_LINES[cat.id])[kind] ?? loc(CAT_LINES[cat.id]).bad);

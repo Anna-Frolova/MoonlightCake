@@ -9,6 +9,8 @@ import { runtime, type Customer } from './state';
 
 /** Seconds a guest waits for an order: bigger cakes get more time. The first `calmShare` of it patience stays full. */
 const PATIENCE = { baseSeconds: 70, perLayerSeconds: 12, perToppingSeconds: 3, calmShare: 0.45 };
+/** An angry guest's meow is a little lower, a growl. */
+const ANGRY_VOICE = 0.8;
 /** Below these levels the guest looks impatient, then upset. */
 export const PATIENCE_LEVELS = { impatient: 0.5, upset: 0.2 };
 
@@ -37,7 +39,8 @@ export const PATIENCE_CALM_MARK = 1 - PATIENCE.calmShare;
 export function patienceMood(customer: Customer): Mood {
   const left = patienceLeft(customer);
   if (customer.patience === null) return 'happy';
-  return left < PATIENCE_LEVELS.upset ? 'sad' : left < PATIENCE_LEVELS.impatient ? 'thinking' : 'neutral';
+  if (left < PATIENCE_LEVELS.upset) return customer.cat.temper === 'angry' ? 'angry' : 'sad';
+  return left < PATIENCE_LEVELS.impatient ? 'thinking' : 'neutral';
 }
 
 /**
@@ -52,7 +55,8 @@ export function updatePatience(dt: number): boolean {
   const after = patienceMood(customer);
   if (after !== before) {
     customer.moodChangedAt = clock.time;
-    sfx.meow(customer.cat.voicePitch, 'sad');
+    if (after === 'angry') sfx.hiss();
+    sfx.meow(customer.cat.voicePitch * (after === 'angry' ? ANGRY_VOICE : 1), 'sad');
   }
   return customer.patience !== null && customer.waitTime >= customer.patience;
 }

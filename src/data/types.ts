@@ -118,6 +118,8 @@ export interface CatDef extends CatLook {
   favoriteShapes: ShapeId[];
   /** A picky guest orders only cakes that follow this rule. */
   orderRule?: OrderRule;
+  /** Gets angry instead of sad when kept waiting or served a bad cake (with angry lines instead of sad ones). */
+  temper?: 'angry';
   /** A special guest: orders cakes in their own style and transforms the kitchen and the music. */
   special?: SpecialGuest;
 }
@@ -138,7 +140,8 @@ export interface OrderRule {
 }
 
 /** What a guest says; every list is used up before any line repeats (see game/lines.ts). */
-export interface CatLines { hello: string[]; ask: string[]; good: string[]; ok: string[]; bad: string[] }
+/** `angry` (only for guests with an angry temper) replaces `bad` when such a guest is unhappy with the cake. */
+export interface CatLines { hello: string[]; ask: string[]; good: string[]; ok: string[]; bad: string[]; angry?: string[] }
 
 /** Decor shows its tip bonus instead of a description; helpers have a short description. */
 export interface ShopItemDef { id: ShopItemId; tab: 'decor' | 'helpers'; name: Localized; description?: Localized; price: number; tipBonus?: number }
