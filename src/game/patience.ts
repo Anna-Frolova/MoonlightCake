@@ -29,10 +29,13 @@ export function patienceMood(customer: Customer): Mood {
   return left < PATIENCE_LEVELS.upset ? 'sad' : left < PATIENCE_LEVELS.impatient ? 'thinking' : 'neutral';
 }
 
-/** Counts the wait while the cake is made (called every frame); the guest meows when getting grumpier. */
-export function updatePatience(dt: number): void {
+/**
+ * Counts the wait while the cake is made (called every frame); the guest meows when getting grumpier.
+ * Returns true on the frame the guest runs out of patience.
+ */
+export function updatePatience(dt: number): boolean {
   const customer = runtime.customer;
-  if (!customer || customer.state !== 'waiting' || runtime.scene !== 'kitchen' || runtime.fade || runtime.modal) return;
+  if (!customer || customer.state !== 'waiting' || runtime.scene !== 'kitchen' || runtime.fade || runtime.modal || runtime.isServing) return false;
   const before = patienceMood(customer);
   customer.waitTime += dt;
   const after = patienceMood(customer);
@@ -40,4 +43,5 @@ export function updatePatience(dt: number): void {
     customer.moodChangedAt = clock.time;
     sfx.meow(customer.cat.voicePitch, 'sad');
   }
+  return customer.patience !== null && customer.waitTime >= customer.patience;
 }

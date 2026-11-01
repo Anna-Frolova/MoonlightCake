@@ -4,7 +4,10 @@ import { ctx, SCREEN_W } from '../core/canvas';
 import { clock } from '../core/clock';
 import { drawCoin, drawFittedText, drawHeart, drawPanel, drawText, drawTitle, ellipsePath, font, roundRectPath, withPopIn, wrapText } from '../core/draw';
 import { loc } from '../core/language';
-import { clamp, easeOutBack } from '../core/math';
+import { clamp, easeOutBack, lerp, seededRandom } from '../core/math';
+import { rgbToHex, shade } from '../core/color';
+import { CREAMS, FLAVORS } from '../data/ingredients';
+import type { Cake } from '../data/types';
 import { burst, drawMotes, floatingText } from '../core/particles';
 import { BUTTON_COLOR, TEXT } from '../core/theme';
 import { button } from '../core/ui';
@@ -15,7 +18,7 @@ import {
 import { catLine } from '../game/lines';
 import { progress, runtime, type Customer } from '../game/state';
 import { drawCake } from '../render/cake';
-import { drawCat, drawPaws } from '../render/cat';
+import { drawAngerMark, drawCat, drawPaws } from '../render/cat';
 import { COUNTER_TOP_Y, drawCounter, drawHallBackground, HALL_FLOOR_Y } from '../render/environment';
 import { kitchenTheme } from '../render/kitchenThemes';
 import { drawOrderCard } from '../render/orderCard';
@@ -28,6 +31,20 @@ const WALK_IN_MIN_SPEED = 120;
 const WALK_OUT_SPEED = 760;
 /** Height of the sparks burst when a special guest reaches the counter (around their head). */
 const SPECIAL_ARRIVAL_SPARKS_Y = 330;
+/** A guest purring after a perfect cake strolls out slower, trailing hearts. */
+const PURRING_WALK_OUT_SPEED = 420;
+const PURR_HEARTS_PER_SECOND = 7;
+/**
+ * A guest out of patience (seconds in the hall): hisses and lifts the cake over their head, throws it,
+ * it hits the screen, then they storm off. Without a cake they just leave after saying their piece.
+ */
+const STORM = { liftAt: 0.9, throwAt: 1.45, hitAt: 1.85, leaveWithCake: 3.3, leaveNoCake: 2.4, liftedY: 250, trembleSpeed: 50, tremble: 3 };
+/** Where the thrown cake lands (screen centre), how big it is then and how many turns it makes on the way. */
+const THROW_TARGET = { x: 640, y: 420, scale: 3.4, spins: 2.2 };
+/** The cake splat on the screen: its size, how long it stays and fades. */
+const SPLAT = { radius: 230, seconds: 3.4, fadeSeconds: 0.9, drips: 9, crumbs: 14 };
+/** Where the anger mark floats beside the guest's head in the hall. */
+const ANGER_MARK_OFFSET = { x: 92, y: -250, scale: 2 };
 /** Guest is gone once past this x. */
 const OFF_SCREEN_X = 1500;
 const JUDGING_SECONDS = 1.5;
@@ -81,11 +98,47 @@ export function updateHall(dt: number): void {
     case 'reacting':
       updateReaction(customer, dt);
       break;
+    case 'storming':
+      updateStorm(customer, dt);
+      break;
     case 'leaving':
-      customer.x += dt * WALK_OUT_SPEED;
+      if (clock.time < runtime.purrUntil) {
+        customer.x += dt * PURRING_WALK_OUT_SPEED;
+        if (Math.random() < dt * PURR_HEARTS_PER_SECOND) {
+          burst(customer.x - 20, HALL_FLOOR_Y - 230, 1, '#ff7ac0', { kind: 'heart', gravity: -70, maxSpeed: 60, minSize: 6, maxSize: 10 });
+        }
+      } else customer.x += dt * WALK_OUT_SPEED;
       if (customer.x > OFF_SCREEN_X) { runtime.customer = null; spawnNextGuest(); }
       break;
   }
+}
+
+function updateStorm(customer: Customer, dt: number): void {
+  const crossed = (moment: number) => customer.time - dt < moment && customer.time >= moment;
+  const cake = customer.servedCake;
+  if (!cake) {
+    if (crossed(0.2)) sfx.hiss();
+    if (customer.time >= STORM.leaveNoCake) { customer.state = 'leaving'; customer.speech = null; }
+    return;
+  }
+  if (crossed(STORM.liftAt)) sfx.hiss();
+  if (crossed(STORM.throwAt)) sfx.throwCake();
+  if (crossed(STORM.hitAt)) {
+    const colors = splatColors(cake);
+    sfx.splat();
+    runtime.shake = 0.4;
+    runtime.splat = { startTime: clock.time, ...colors, seed: cake.seed };
+    burst(THROW_TARGET.x, THROW_TARGET.y - 60, 24, [colors.color, colors.crumbColor, '#ffffff'], { gravity: 600, maxSpeed: 520 });
+  }
+  if (customer.time >= STORM.leaveWithCake) { customer.state = 'leaving'; customer.speech = null; }
+}
+
+/** The splat takes the colour of the outermost thing on the cake: glaze, else cream, else the sponge. */
+function splatColors(cake: Cake): { color: string; crumbColor: string } {
+  const layer = cake.stack.find(item => item.kind === 'layer');
+  const crumbColor = layer?.kind === 'layer' ? FLAVORS[layer.flavor].color : '#ffd86b';
+  const color = cake.glaze ? rgbToHex(cake.glaze) : cake.cream && cake.creamCoverage > 0.1 ? CREAMS[cake.cream].color : crumbColor;
+  return { color, crumbColor };
 }
 
 function startReaction(customer: Customer): void {
@@ -149,7 +202,8 @@ export function renderHall(): void {
     else if (customer.state === 'reacting' && customer.mood === 'happy') { // happy hops that calm down
       bob = -Math.abs(Math.sin(customer.reactionTime * 6)) * 8 * Math.max(0, 1 - customer.reactionTime / 2.5);
     }
-    drawCat(customer.cat, customer.x, HALL_FLOOR_Y + bob, catScale(customer), time, customer.mood);
+    const tremble = customer.state === 'storming' ? Math.sin(time * STORM.trembleSpeed) * STORM.tremble : 0;
+    drawCat(customer.cat, customer.x + tremble, HALL_FLOOR_Y + bob, catScale(customer), time, customer.mood);
   }
   drawCounter(time);
   if (customer) {
@@ -159,6 +213,10 @@ export function renderHall(): void {
       ctx.strokeStyle = 'rgba(127,240,255,0.6)'; ctx.lineWidth = 2; ctx.stroke();
       drawCake(customer.servedCake, customer.x, COUNTER_TOP_Y + 20, 0.6);
     }
+    if (customer.state === 'storming' || (customer.state === 'leaving' && customer.mood === 'angry')) {
+      drawAngerMark(customer.x + ANGER_MARK_OFFSET.x, HALL_FLOOR_Y + ANGER_MARK_OFFSET.y, ANGER_MARK_OFFSET.scale, time);
+    }
+    if (customer.state === 'storming' && customer.servedCake && customer.time < STORM.throwAt) drawLiftedCake(customer, customer.servedCake);
   }
   drawMotes();
   if (customer) {
@@ -169,10 +227,76 @@ export function renderHall(): void {
       });
     }
     if (customer.state === 'reacting') drawResultCard(customer);
+    if (customer.state === 'storming' && customer.servedCake) drawThrownCake(customer, customer.servedCake);
   }
+  if (runtime.splat) drawSplat(runtime.splat);
   drawDayCounter();
   drawCoinCounter(262, 12);
   drawSoundButtons(SCREEN_W - 124, 16);
+}
+
+/** Before the throw: the cake sits on the counter, then the guest hoists it over their head. */
+function drawLiftedCake(customer: Customer, cake: Cake): void {
+  const k = clamp((customer.time - STORM.liftAt) / (STORM.throwAt - STORM.liftAt), 0, 1);
+  const lift = easeOutBack(k), wobble = k > 0 ? Math.sin(clock.time * 30) * 4 : 0;
+  if (k === 0) { ellipsePath(customer.x, 534, 112, 24); ctx.fillStyle = '#efeaff'; ctx.fill(); }
+  drawCake(cake, customer.x + wobble, lerp(COUNTER_TOP_Y + 20, STORM.liftedY, lift), 0.6);
+}
+
+/** The throw: the cake spins towards the player and grows until it hits the screen. */
+function drawThrownCake(customer: Customer, cake: Cake): void {
+  const k = (customer.time - STORM.throwAt) / (STORM.hitAt - STORM.throwAt);
+  if (k < 0 || k >= 1) return;
+  const eased = k * k, x = lerp(customer.x, THROW_TARGET.x, k), y = lerp(STORM.liftedY, THROW_TARGET.y, k) - Math.sin(k * Math.PI) * 80;
+  ctx.save();
+  ctx.translate(x, y); ctx.rotate(eased * Math.PI * 2 * THROW_TARGET.spins); ctx.translate(-x, -y);
+  drawCake(cake, x, y + 60, lerp(0.6, THROW_TARGET.scale, eased));
+  ctx.restore();
+}
+
+/** A blob of glaze with crumbs stuck on the screen; drips run down, then it fades away. */
+function drawSplat(splat: NonNullable<typeof runtime.splat>): void {
+  const age = clock.time - splat.startTime;
+  if (age > SPLAT.seconds) { runtime.splat = null; return; }
+  const random = seededRandom(splat.seed * 7 + 3), pop = easeOutBack(Math.min(1, age * 7)), radius = SPLAT.radius * pop;
+  const cx = THROW_TARGET.x + (random() - 0.5) * 80, cy = THROW_TARGET.y - 80 + (random() - 0.5) * 40;
+  ctx.save();
+  ctx.globalAlpha = clamp((SPLAT.seconds - age) / SPLAT.fadeSeconds, 0, 1);
+  ctx.fillStyle = splat.color;
+  for (let i = 0; i < SPLAT.drips; i++) { // drips sliding down from the blob
+    const dx = (random() - 0.5) * radius * 1.5, width = 10 + random() * 16, length = radius * 0.5 + (60 + random() * 180) * Math.min(1, age / 2.2);
+    roundRectPath(cx + dx - width / 2, cy, width, length, width / 2); ctx.fill();
+    ellipsePath(cx + dx, cy + length - width * 0.3, width * 0.62, width * 0.7); ctx.fill();
+  }
+  // the lumpy blob: a smooth curve through the midpoints of uneven points, every few of them a splash finger
+  const lumps = 18;
+  const blob = Array.from({ length: lumps }, (_, i) => {
+    const angle = (i / lumps) * Math.PI * 2, r = radius * (i % 4 === 1 ? 1.15 + random() * 0.2 : 0.78 + random() * 0.22);
+    return [cx + Math.cos(angle) * r, cy + Math.sin(angle) * r * 0.85] as const;
+  });
+  const midpoint = (i: number) => {
+    const [ax, ay] = blob[i % lumps], [bx, by] = blob[(i + 1) % lumps];
+    return [(ax + bx) / 2, (ay + by) / 2] as const;
+  };
+  ctx.beginPath(); ctx.moveTo(...midpoint(lumps - 1));
+  for (let i = 0; i < lumps; i++) ctx.quadraticCurveTo(blob[i][0], blob[i][1], ...midpoint(i));
+  ctx.closePath();
+  const fill = ctx.createRadialGradient(cx - radius * 0.3, cy - radius * 0.3, radius * 0.1, cx, cy, radius);
+  fill.addColorStop(0, shade(splat.color, 0.3)); fill.addColorStop(1, shade(splat.color, -0.15));
+  ctx.fillStyle = fill; ctx.fill();
+  ctx.fillStyle = splat.color; // droplets flung around
+  for (let i = 0; i < 10; i++) {
+    const angle = random() * Math.PI * 2, distance = radius * (1.05 + random() * 0.5), size = 6 + random() * 14;
+    ellipsePath(cx + Math.cos(angle) * distance, cy + Math.sin(angle) * distance * 0.85, size * pop, size * pop); ctx.fill();
+  }
+  for (let i = 0; i < SPLAT.crumbs; i++) { // sponge crumbs stuck in it
+    const px = cx + (random() - 0.5) * radius * 1.3, py = cy + (random() - 0.5) * radius, size = (8 + random() * 14) * pop;
+    ctx.fillStyle = splat.crumbColor; roundRectPath(px - size / 2, py - size / 2, size, size * 0.8, size * 0.3); ctx.fill();
+    ctx.fillStyle = shade(splat.crumbColor, -0.25); roundRectPath(px - size / 2, py + size * 0.15, size, size * 0.15, 2); ctx.fill();
+  }
+  ctx.fillStyle = 'rgba(255,255,255,0.45)'; // shine
+  ellipsePath(cx - radius * 0.35, cy - radius * 0.35, radius * 0.18, radius * 0.08); ctx.fill();
+  ctx.restore();
 }
 
 /** Speech bubble with the cat's name, typed text and — while ordering — the order picture. */

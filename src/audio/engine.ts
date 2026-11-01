@@ -160,3 +160,29 @@ export function playMeow(pitch: number, mood: 'neutral' | 'happy' | 'sad'): void
   envelope.connect(graph.sfxDry); envelope.connect(send); send.connect(graph.sfxWet);
   oscillator.start(start); oscillator.stop(start + 0.6);
 }
+
+/**
+ * A cat's purr: a low buzzing tone through a low-pass filter, its loudness throbbing ~25 times a second,
+ * in slow "breaths" (louder on the inhale). `pitch` follows the cat's voice.
+ */
+export function playPurr(pitch: number, duration: number, delay = 0): void {
+  if (!graph) return;
+  const { context } = graph;
+  const start = context.currentTime + delay;
+  const voice = context.createOscillator(), filter = context.createBiquadFilter(), envelope = context.createGain();
+  voice.type = 'sawtooth'; voice.frequency.value = 42 * pitch;
+  filter.type = 'lowpass'; filter.frequency.value = 380; filter.Q.value = 2;
+  const throb = context.createOscillator(), throbDepth = context.createGain(), throbbing = context.createGain();
+  throb.frequency.value = 24; throbDepth.gain.value = 0.5; throbbing.gain.value = 0.5;
+  throb.connect(throbDepth); throbDepth.connect(throbbing.gain);
+  envelope.gain.setValueAtTime(0.0001, start);
+  const breath = 0.9; // seconds per breath
+  for (let t = 0; t < duration; t += breath) {
+    envelope.gain.linearRampToValueAtTime(0.22, start + t + breath * 0.4);
+    envelope.gain.linearRampToValueAtTime(0.08, start + t + breath * 0.95);
+  }
+  envelope.gain.linearRampToValueAtTime(0.0001, start + duration + 0.2);
+  voice.connect(filter); filter.connect(throbbing); throbbing.connect(envelope); envelope.connect(graph.sfxDry);
+  voice.start(start); throb.start(start);
+  voice.stop(start + duration + 0.3); throb.stop(start + duration + 0.3);
+}

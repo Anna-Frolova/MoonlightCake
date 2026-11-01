@@ -49,6 +49,9 @@ const uk = {
   orderSpeech: (greeting: string, ask: string) => `${greeting} ${ask}`,
   acceptOrder: 'Прийняти замовлення',
   thinking: ['Хм-м…', 'Ану, ану…', 'Мрр… дай-но подивлюся…', 'Нумо скуштуємо…', 'Так-так-так…', 'Мур… цікаво…'],
+  /** The guest ran out of patience: throws the unfinished cake / leaves when there is no cake. */
+  stormWithCake: ['Ш-ш-ш! Досить чекати! Забирайте свій торт!', 'Мяу-у-у! Я чекав цілу вічність! Ось вам!', 'Ф-ф-ф! Тримайте свій недопечений торт!', 'Все! Мій терпець урвався! Лови!'],
+  stormNoCake: ['Ш-ш-ш! Я йду звідси!', 'Мяу! Тут навіть коржа немає! Бувайте!', 'Ф-ф-ф! Більше я сюди не прийду… до завтра.', 'Все, мій терпець урвався! Піду в інше кафе!'],
   guestScore: 'Оцінка гостя',
   scoreParts: {
     shape: 'Форма', layers: 'Коржі', filling: 'Начинка', cream: 'Крем', glaze: 'Глазур', toppings: 'Прикраси', magic: 'Магія', speed: 'Швидкість',
@@ -201,6 +204,8 @@ const ja: UiStrings = {
   orderSpeech: (greeting, ask) => `${greeting}${ask}`,
   acceptOrder: '注文を受ける',
   thinking: ['うーん…', 'どれどれ…', 'ニャ…ちょっと見せて…', 'では、いただきます…', 'ふむふむ…', 'ニャ…気になるね…'],
+  stormWithCake: ['シャーッ！もう待てない！このケーキ、返すよ！', 'ニャーッ！ずっと待ってたのに！えいっ！', 'フーッ！作りかけのケーキなんていらない！', 'もうがまんの限界！受け取れ！'],
+  stormNoCake: ['シャーッ！もう帰る！', 'ニャッ！スポンジすらないじゃない！さよなら！', 'フーッ！もう来ないから…明日までは。', 'がまんの限界！ほかのカフェに行く！'],
   guestScore: 'お客さんの評価',
   scoreParts: {
     shape: '形', layers: 'スポンジ', filling: 'フィリング', cream: 'クリーム', glaze: 'グレーズ', toppings: 'トッピング', magic: '魔法', speed: 'スピード',

@@ -26,7 +26,7 @@ import { GLAZE_STATION_INDEX, STATIONS } from '../kitchen/stations';
 import { drawMagicStationCircle, drawMagicStrokes } from '../kitchen/stations/magic';
 import { drawDraggedTopping } from '../kitchen/stations/toppings';
 import { drawCake } from '../render/cake';
-import { drawCat, drawPaws } from '../render/cat';
+import { drawAngerMark, drawCat, drawPaws } from '../render/cat';
 import { drawKitchenAmbience, drawKitchenBackground } from '../render/environment';
 import { kitchenTheme } from '../render/kitchenThemes';
 import { drawOrderCard } from '../render/orderCard';
@@ -156,15 +156,7 @@ function drawGuestPortrait(customer: Customer, x: number, y: number, w: number, 
     ctx.fillStyle = '#8fd8ff'; ctx.beginPath();
     ctx.moveTo(sideX, sideY - 16); ctx.quadraticCurveTo(sideX + 11, sideY + 4, sideX, sideY + 8);
     ctx.quadraticCurveTo(sideX - 11, sideY + 4, sideX, sideY - 16); ctx.fill();
-  } else if (mood === 'sad' && customer.patience !== null) { // pulsing anger mark
-    const pulse = 1.5 + 0.25 * Math.sin(time * 8);
-    ctx.save(); ctx.translate(sideX, sideY); ctx.scale(pulse, pulse);
-    ctx.strokeStyle = BUTTON_COLOR.danger; ctx.lineWidth = 3.5; ctx.lineCap = 'round';
-    for (const [dx, dy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) { // four bent strokes around a centre
-      ctx.beginPath(); ctx.moveTo(dx * 3, dy * 9); ctx.quadraticCurveTo(dx * 3, dy * 3, dx * 9, dy * 3); ctx.stroke();
-    }
-    ctx.restore();
-  }
+  } else if (mood === 'sad' && customer.patience !== null) drawAngerMark(sideX, sideY, 1.5, time);
   ctx.restore();
 }
 

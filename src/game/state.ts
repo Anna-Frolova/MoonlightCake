@@ -51,7 +51,8 @@ export type SceneId = 'title' | 'dayStart' | 'hall' | 'kitchen' | 'dayEnd' | 'fi
 /** Kitchen stations in order: layers → cream → glaze → toppings → magic. */
 export type StationIndex = 0 | 1 | 2 | 3 | 4;
 
-export type CustomerState = 'entering' | 'ordering' | 'waiting' | 'judging' | 'reacting' | 'leaving';
+/** `storming`: ran out of patience — back in the hall, throws the unfinished cake (if any) and leaves without paying. */
+export type CustomerState = 'entering' | 'ordering' | 'waiting' | 'judging' | 'reacting' | 'storming' | 'leaving';
 
 export interface Customer {
   cat: CatDef;
@@ -122,6 +123,10 @@ export interface RuntimeState {
   fadingStroke: { points: Vec2[]; startTime: number; color: string } | null;
   /** 0 → ordinary kitchen, 1 → fully transformed for the special guest. Animated. */
   kitchenThemeBlend: number;
+  /** A thrown cake stuck on the screen: colours of its glaze/cream and its sponge, when it hit. */
+  splat: { startTime: number; color: string; crumbColor: string; seed: number } | null;
+  /** The guest leaving after a perfect cake purrs and trails hearts until this time. */
+  purrUntil: number;
 }
 
 export const runtime: RuntimeState = {
@@ -132,7 +137,7 @@ export const runtime: RuntimeState = {
   draggedTopping: null, toppingTray: [], helperKittenJump: 0,
   heldPotion: null, pouringPotion: null, returningPotion: null, glazeArc: null,
   glazeLayoutBlend: 0, cakeX: 760, cakeScale: 1,
-  magicStroke: null, fadingStroke: null, kitchenThemeBlend: 0,
+  magicStroke: null, fadingStroke: null, kitchenThemeBlend: 0, splat: null, purrUntil: 0,
 };
 
 /** The special guest's theme while they are in the café (from walking in until they turn to leave), or null. */

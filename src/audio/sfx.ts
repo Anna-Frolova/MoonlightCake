@@ -1,7 +1,7 @@
 // Sound effects, built from tones and noise.
 import { pickRandom, randomInt, randomRange } from '../core/math';
 import type { ElementId, KitchenThemeId } from '../data/types';
-import { playMeow, playNoise, playTone } from './engine';
+import { playMeow, playNoise, playPurr, playTone } from './engine';
 
 /** Pentatonic steps — any combination sounds pleasant. */
 const PENTATONIC = [0, 2, 4, 7, 9];
@@ -100,4 +100,15 @@ export const sfx = {
   /** The kitchen turns into the special guest's place. */
   transform() { playNoise(0.9, 0.08, 400, { q: 0.7, sweepTo: 3600, reverb: 0.6 }); sfx.sparkle(); },
   meow(pitch = 1, mood: 'neutral' | 'happy' | 'sad' = 'neutral') { playMeow(pitch, mood); },
+  purr(pitch = 1, seconds = 2, delay = 0) { playPurr(pitch, seconds, delay); },
+  /** An angry hiss before the guest throws the cake. */
+  hiss() { playNoise(0.6, 0.12, 4500, { q: 0.8, sweepTo: 2500, reverb: 0.15, filter: 'highpass' }); },
+  /** The cake flying at the screen. */
+  throwCake() { playNoise(0.4, 0.08, 400, { q: 1.4, sweepTo: 3000, reverb: 0.2 }); },
+  /** …and hitting it. */
+  splat() {
+    playNoise(0.35, 0.3, 900, { q: 0.6, sweepTo: 180, reverb: 0.25, filter: 'lowpass' });
+    playTone(140, 0.3, { volume: 0.3, slideTo: 60, reverb: 0.2 });
+    for (let i = 0; i < 4; i++) playNoise(0.06, 0.05, randomRange(500, 1200), { delay: 0.25 + i * 0.12, q: 3, reverb: 0.1 }); // drips
+  },
 };

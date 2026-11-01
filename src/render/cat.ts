@@ -12,6 +12,7 @@ const INNER_EAR = '#ffb0cf';
 const GOTHIC_RED = '#d0213f';
 /** Bluish light coming from the café's magic, painted on the right edge of the body and head. */
 const RIM_LIGHT = 'rgba(150,210,255,0.45)';
+const ANGER_RED = '#ff5f8f';
 
 const BODY = { centerY: -46, radiusX: 82, radiusY: 88 };
 const HEAD = { centerY: -150, radiusX: 74, radiusY: 60 };
@@ -232,7 +233,7 @@ function drawFace(look: CatLook, outline: string, headY: number, time: number, m
     ctx.moveTo(-10, headY + 21); ctx.quadraticCurveTo(0, headY + 36, 10, headY + 21); ctx.closePath();
     ctx.fillStyle = '#e0507e'; ctx.fill(); ctx.stroke();
     ellipsePath(0, headY + 29, 5, 3); ctx.fillStyle = '#ff9cbc'; ctx.fill(); // tongue
-  } else if (mood === 'sad') {
+  } else if (mood === 'sad' || mood === 'angry') {
     ctx.moveTo(-7, headY + 28); ctx.quadraticCurveTo(0, headY + 21, 7, headY + 28); ctx.stroke();
   } else { // cat "w" mouth
     ctx.moveTo(-9, headY + 21); ctx.quadraticCurveTo(-4.5, headY + 27, 0, headY + 21); ctx.quadraticCurveTo(4.5, headY + 27, 9, headY + 21); ctx.stroke();
@@ -257,13 +258,14 @@ function drawEye(look: CatLook, outline: string, x: number, y: number, side: num
   ellipsePath(x - rx * 0.3, y - ry * 0.36, rx * 0.42, ry * 0.34); ctx.fillStyle = '#fff'; ctx.fill();
   ellipsePath(x + rx * 0.38, y + ry * 0.12, rx * 0.17, rx * 0.17); ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.fill();
 
-  if (mood === 'sad' || mood === 'thinking') { // eyelid drawn in fur colour over the top of the eye
+  if (mood === 'sad' || mood === 'thinking' || mood === 'angry') { // eyelid drawn in fur colour over the top of the eye
+    if (mood === 'angry') side = -side; // the lid slants the other way: inner corners down, a frown
     ctx.fillStyle = look.fur; ctx.beginPath();
-    if (mood === 'sad') { ctx.moveTo(x - 17, y - 20); ctx.lineTo(x + 17, y - 20); ctx.lineTo(x + 17, y - 8 + side * 6); ctx.lineTo(x - 17, y - 8 - side * 6); }
+    if (mood !== 'thinking') { ctx.moveTo(x - 17, y - 20); ctx.lineTo(x + 17, y - 20); ctx.lineTo(x + 17, y - 8 + side * 6); ctx.lineTo(x - 17, y - 8 - side * 6); }
     else ctx.rect(x - 17, y - 20, 34, 15);
     ctx.closePath(); ctx.fill();
     ctx.strokeStyle = outline; ctx.lineWidth = 2.5; ctx.beginPath();
-    if (mood === 'sad') { ctx.moveTo(x - 14, y - 8 - side * 5); ctx.lineTo(x + 14, y - 8 + side * 5); }
+    if (mood !== 'thinking') { ctx.moveTo(x - 14, y - 8 - side * 5); ctx.lineTo(x + 14, y - 8 + side * 5); }
     else { ctx.moveTo(x - 13, y - 5); ctx.lineTo(x + 13, y - 5); }
     ctx.stroke();
   }
@@ -621,6 +623,17 @@ function drawAccessory(look: CatLook, outline: string, headY: number): void {
     default:
       break;
   }
+}
+
+/** Pulsing comic anger mark (four bent strokes around a centre), drawn beside an angry cat's head. */
+export function drawAngerMark(x: number, y: number, scale: number, time: number): void {
+  const pulse = scale * (1 + 0.17 * Math.sin(time * 8));
+  ctx.save(); ctx.translate(x, y); ctx.scale(pulse, pulse);
+  ctx.strokeStyle = ANGER_RED; ctx.lineWidth = 3.5; ctx.lineCap = 'round';
+  for (const [dx, dy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
+    ctx.beginPath(); ctx.moveTo(dx * 3, dy * 9); ctx.quadraticCurveTo(dx * 3, dy * 3, dx * 9, dy * 3); ctx.stroke();
+  }
+  ctx.restore();
 }
 
 /** Two paws resting on the counter, drawn after the counter so they overlap it. */

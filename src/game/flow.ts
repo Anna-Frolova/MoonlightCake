@@ -5,6 +5,7 @@ import { sfx } from '../audio/sfx';
 import { language, loc, setLanguage, type Language } from '../core/language';
 import { pickRandom, randomInt } from '../core/math';
 import { burst } from '../core/particles';
+import { clock } from '../core/clock';
 import { pointer } from '../core/ui';
 import { catById, GUESTS, SPECIAL_GUESTS } from '../data/cats';
 import { guestsPerDay, STORY_DAYS } from '../data/schedule';
@@ -32,6 +33,9 @@ const SPECIAL_GUESTS_FROM_DAY = 2;
 const SPECIAL_GUESTS_PER_DAY = { story: 1, endless: 2 };
 /** Cream coverage below which serving asks "serve without cream?". */
 const CREAM_MISSING_COVERAGE = 0.3;
+/** A guest leaving with at least this many hearts meows goodbye; after 5 hearts they purr this long. */
+const GOODBYE_MEOW_HEARTS = 3;
+const PERFECT_PURR_SECONDS = 2.2;
 
 /** Today's guests in order: random regulars (never the same one twice in a row), plus scripted ones. */
 function buildGuestQueue(day: number): QueuedGuest[] {
@@ -184,6 +188,41 @@ export function sendGuestAway(): void {
   if (!customer || customer.state !== 'reacting') return;
   customer.state = 'leaving';
   customer.speech = null;
+  // a happy guest meows goodbye; after a perfect cake they also purr for a while
+  const hearts = customer.score?.hearts ?? 0;
+  if (hearts >= GOODBYE_MEOW_HEARTS) {
+    customer.mood = 'happy';
+    sfx.meow(customer.cat.voicePitch, 'happy');
+  }
+  if (hearts === 5) {
+    sfx.purr(customer.cat.voicePitch, PERFECT_PURR_SECONDS, 0.4);
+    runtime.purrUntil = clock.time + PERFECT_PURR_SECONDS;
+  }
+}
+
+/**
+ * The guest ran out of patience: back to the hall, where they throw the unfinished cake at the screen
+ * (or just leave if there is no cake yet). They don't pay, and the day moves on to the next guest.
+ */
+export function loseGuestPatience(): void {
+  const customer = runtime.customer, cake = runtime.cake;
+  if (!customer || customer.state !== 'waiting' || runtime.isServing) return;
+  runtime.isServing = true;
+  const hasCake = !!cake && countLayers(cake) > 0;
+  customer.servedCake = hasCake ? cake : null;
+  customer.state = 'storming';
+  customer.time = 0;
+  customer.mood = 'angry';
+  runtime.draggedTopping = null;
+  runtime.isPipingCream = false;
+  runtime.magicStroke = null;
+  runtime.modal = null;
+  sfx.meow(customer.cat.voicePitch, 'sad');
+  goToScene('hall', () => {
+    progress.guestIndex++; // gone for good, even if the page is reloaded now
+    saveProgress();
+    say(pickWithoutRepeat((hasCake ? 'stormWithCake:' : 'stormNoCake:') + language(), hasCake ? t().stormWithCake : t().stormNoCake));
+  });
 }
 
 export function isLastGuestOfDay(): boolean {
