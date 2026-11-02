@@ -9,6 +9,16 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   // same as the game's own background, so nothing flashes white while it starts
   backgroundColor: '#0c0824',
+  plugins: {
+    SystemBars: {
+      // no status bar (iOS); Android's immersive mode is in MainActivity.java
+      hidden: true,
+      // the game reads the cutout / home-bar insets from CSS env(safe-area-inset-*) (core/canvas.ts),
+      // so Capacitor's extra --safe-area-* variables aren't needed
+      insetsHandling: 'native',
+      initialViewportFitValueHint: 'cover',
+    },
+  },
 };
 
 export default config;

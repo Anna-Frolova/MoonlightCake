@@ -1,6 +1,13 @@
 import UIKit
 import Capacitor
 
+/// The game's screen (set as the view controller in Main.storyboard): Capacitor's web view plus protection from accidental swipes.
+class GameViewController: CAPBridgeViewController {
+    // A swipe from a screen edge (the home bar at the bottom, Control Center at the top) first only
+    // highlights the edge; a second swipe acts. The game doesn't get minimised by accident mid-cake.
+    override var preferredScreenEdgesDeferringSystemGestures: UIRectEdge { .all }
+}
+
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
 

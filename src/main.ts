@@ -1,4 +1,4 @@
-// Entry point: the game loop. Each frame: update() advances everything by `dt`, render() draws the current scene.
+// The game loop (started by boot.ts). Each frame: update() advances everything by `dt`, render() draws the current scene.
 import './fonts/generated/fonts.css'; // made by scripts/gameFonts.ts at dev start / build
 import { setAudioPaused, setBusEnabled } from './audio/engine';
 import { updateMusic } from './audio/music';
@@ -15,6 +15,7 @@ import { activeGuestTheme, progress, runtime } from './game/state';
 import { updatePatience } from './game/patience';
 import { loseGuestPatience } from './game/flow';
 import { setUpInput } from './input';
+import { setUpNativeApp } from './nativeApp';
 import { updateAutoCream } from './kitchen/stations/cream';
 import { updatePotions } from './kitchen/stations/glaze';
 import { drawMagicCircle } from './render/environment';
@@ -144,6 +145,7 @@ document.title = t().gameTitle;
 setUpInput();
 // While hidden no frames are drawn, so the game (and guests' patience) waits by itself; the sound must be stopped.
 document.addEventListener('visibilitychange', () => setAudioPaused(document.hidden));
+setUpNativeApp();
 if (import.meta.env.DEV) void import('./debug');
 requestAnimationFrame(frame);
 void document.fonts?.load('800 20px Nunito');

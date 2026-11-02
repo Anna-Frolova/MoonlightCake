@@ -39,6 +39,12 @@ npm.cmd run app:sync && (cd android && ./gradlew.bat assembleDebug)
 "$ADB" logcat -d | grep Capacitor/Console           # console.log и ошибки игры
 ```
 
+Подводные камни Android-проверки:
+- `__game` в APK нет (это сборка). Состояние страницы читаем через DevTools WebView: `adb forward tcp:9222 localabstract:webview_devtools_remote_<pid>` (pid — `adb shell pidof io.github.annafrolova.moonlightcake`, после перезапуска приложения он новый — пересоздать forward), затем `http://127.0.0.1:9222/json` → `webSocketDebuggerUrl` → `Runtime.evaluate` (в Node есть глобальный `WebSocket`). Сохранение: `Capacitor.Plugins.Preferences.get({ key: 'misiachnyi-korzh-v6' })`.
+- Координаты тапа — в пикселях экрана 2400×1080 (скриншот уменьшается при показе — пересчитывать). Без статус-бара игра крупнее, кнопки смещаются — брать координаты со свежего скриншота.
+- Каждую adb/node-команду оборачивать в `timeout`, иначе зависший вызов съедает весь лимит.
+- После обновления Vite дев-сервер нужно перезапустить (иначе в консоли `__WS_TOKEN__ is not defined`).
+
 ## Правила кода
 
 - TypeScript strict. После изменений `typecheck` должен проходить без ошибок.

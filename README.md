@@ -24,6 +24,9 @@ npx cap open ios       # открыть проект в Xcode (только Mac)
 
 **Android:** в Android Studio откройте папку `android/` (File → Open) и нажмите Run ▶ — приложение соберётся и запустится в эмуляторе. Перед этим `npm run app:sync`, иначе в приложении будет старая версия игры. Gradle — 9.4.1 (`android/gradle/wrapper/gradle-wrapper.properties`): шаблонный 8.14 не запускается на Java 25, встроенной в новые Android Studio.
 
+- Полный экран: на Android системные панели спрятаны (`MainActivity.java`, режим «погружения»: свайп от края показывает их ненадолго), на iOS спрятан статус-бар (`SystemBars.hidden` в `capacitor.config.ts`), а свайпы от краёв экрана срабатывают только со второго раза (`GameViewController` в `ios/App/App/AppDelegate.swift`, подключён в `Main.storyboard`). Игра рисуется и под вырезом камеры; кнопки обходят его по `env(safe-area-inset-*)`.
+- Только в приложении (`src/nativeApp.ts`): звук на паузе, пока приложение свёрнуто; кнопка «назад» на Android закрывает открытое окно-вопрос, а иначе сворачивает игру (не закрывает).
+- Хранилище в приложении — нативное (Capacitor Preferences, `core/storage.ts`). Оно асинхронное, поэтому `src/boot.ts` сначала читает его целиком в память и только потом запускает игру (`main.ts`).
 - Обе версии только горизонтальные: `UISupportedInterfaceOrientations` в `ios/App/App/Info.plist`, `screenOrientation` в `android/app/src/main/AndroidManifest.xml`.
 - Название на экране телефона: украинское — `appName` и `res/values/strings.xml`, японское — `android/app/src/main/res/values-ja/strings.xml`.
 - Скопированная игра (`android/app/src/main/assets/public`, `ios/App/App/public`) в git не попадает, её делает `app:sync`.
