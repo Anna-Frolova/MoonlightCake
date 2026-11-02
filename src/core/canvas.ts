@@ -73,7 +73,7 @@ export function fitCanvasToWindow(): void {
   }
   // One canvas pixel per screen pixel: the device ratio (3 on iPhones) times the page zoom, if zoomed in.
   // (The zoom used to be capped together with the device ratio, so a zoomed iPhone stayed at 3× and looked blurry.)
-  let pixelRatio = Math.min(window.devicePixelRatio || 1, MAX_DEVICE_PIXEL_RATIO) * Math.max(1, zoom);
+  let pixelRatio = forcedPixelRatio ?? Math.min(window.devicePixelRatio || 1, MAX_DEVICE_PIXEL_RATIO) * Math.max(1, zoom);
   const pixels = width * height * pixelRatio * pixelRatio;
   if (pixels > MAX_CANVAS_PIXELS) pixelRatio *= Math.sqrt(MAX_CANVAS_PIXELS / pixels);
   const insets = safeAreaInsets();
@@ -105,21 +105,30 @@ export function fitCanvasToWindow(): void {
   });
 }
 /**
- * iPhones sometimes show the canvas blurry although its buffer has exactly the screen's pixels (diagnostics on the
- * title screen: 3.0×, buffer = screen): the system's on-screen copy of the canvas gets stuck at a lower quality when
- * the buffer is made during the app's launch, until a restart. Remaking the buffer (and the layer showing it) once
- * things have settled is what a restart does, so it's done shortly after launch, after coming back to the game,
- * after a resize and on the first touch. The game redraws the whole frame right after, so nothing flickers.
+ * iPhones often show the canvas blurry although its buffer has exactly the screen's pixels (diagnostics on the
+ * title screen: 3.0×, buffer = screen, zoom 1.00): iOS's on-screen copy of the canvas looks like it's made at
+ * 1 pixel per point and stretched, until a restart. Remaking the drawing buffer and toggling the CSS transform
+ * didn't help, so now the canvas is taken out of the page and put back (iOS has to rebuild how it shows it)
+ * shortly after launch, after coming back to the game and after a resize. Never mid-touch (a drag would break).
+ * The game redraws the whole frame right after, so nothing flickers.
  */
 const REFRESH_DELAYS_MS = [300, 1000, 2500];
 let refreshDue = false;
-let layerFlipped = false;
+let pointersDown = 0;
+
+function reinsertCanvas(): void {
+  const parent = canvas.parentNode;
+  if (!parent) return;
+  const next = canvas.nextSibling;
+  parent.removeChild(canvas);
+  parent.insertBefore(canvas, next);
+}
 
 function refreshCanvas(): void {
+  if (pointersDown > 0) return; // stays due until the finger is lifted
   refreshDue = false;
+  reinsertCanvas();
   canvas.width = canvas.width; // a fresh drawing buffer of the same size
-  layerFlipped = !layerFlipped;
-  canvas.style.transform = layerFlipped ? 'translateZ(0)' : ''; // a fresh layer on screen
   viewport.refreshes++;
 }
 
@@ -127,11 +136,35 @@ function scheduleCanvasRefresh(): void {
   for (const delay of REFRESH_DELAYS_MS) setTimeout(() => { refreshDue = true; }, delay);
 }
 
+/** Diagnosis (tap the build stamp on the title screen): each tap tries the next way to un-blur, named in the stamp. */
+let forcedPixelRatio: number | null = null;
+const REPAIRS: { name: string; run: () => void }[] = [
+  { name: 'reinsert', run: reinsertCanvas },
+  { name: 'buffer', run: () => { canvas.width = canvas.width; } },
+  { name: 'hide-show', run: () => { canvas.style.display = 'none'; requestAnimationFrame(() => { canvas.style.display = 'block'; }); } },
+  { name: 'css-nudge', run: () => { canvas.style.width = viewport.width + 1 + 'px'; requestAnimationFrame(() => { canvas.style.width = viewport.width + 'px'; }); } },
+  { name: 'will-change', run: () => { canvas.style.willChange = canvas.style.willChange ? '' : 'transform'; } },
+  { name: 'opacity', run: () => { canvas.style.opacity = canvas.style.opacity ? '' : '0.999'; } },
+  { name: 'ratio-2x', run: () => { forcedPixelRatio = forcedPixelRatio ? null : 2; } },
+];
+export const repairLog = { tries: 0, last: '' };
+
+export function tryNextRepair(): void {
+  const repair = REPAIRS[repairLog.tries % REPAIRS.length];
+  repairLog.tries++;
+  repairLog.last = repair.name;
+  repair.run();
+}
+
 window.addEventListener('resize', () => { fitCanvasToWindow(); scheduleCanvasRefresh(); });
 window.visualViewport?.addEventListener('resize', fitCanvasToWindow);
-document.addEventListener('visibilitychange', () => { if (!document.hidden) scheduleCanvasRefresh(); });
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) pointersDown = 0; // a touch cut off by leaving the app never reports its end
+  else scheduleCanvasRefresh();
+});
 window.addEventListener('pageshow', scheduleCanvasRefresh);
-canvas.addEventListener('pointerdown', () => { refreshDue = true; }, { once: true });
+window.addEventListener('pointerdown', () => { pointersDown++; }, true);
+for (const type of ['pointerup', 'pointercancel']) window.addEventListener(type, () => { pointersDown = Math.max(0, pointersDown - 1); }, true);
 fitCanvasToWindow();
 scheduleCanvasRefresh();
 
