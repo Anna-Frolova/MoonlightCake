@@ -5,12 +5,8 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     var window: UIWindow?
 
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
-        guard let windowScene = scene as? UIWindowScene else { return }
-
-        window = UIWindow(windowScene: windowScene)
-        window?.rootViewController = CAPBridgeViewController()
-        window?.makeKeyAndVisible()
-
+        // The window and its GameViewController come from Main.storyboard (UISceneStoryboardFile in Info.plist);
+        // creating another one here would start a second web view without the edge-swipe protection.
         SceneDelegateProxy.shared.scene(scene, willConnectTo: session, options: connectionOptions)
     }
 
