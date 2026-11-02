@@ -55,7 +55,7 @@ const JUDGING_SECONDS = 1.5;
 const HEART_FIRST = 0.4;
 const HEART_INTERVAL = 0.22;
 
-const BUBBLE = { x: 770, w: 480, textWidth: 440, lineHeight: 30, textSize: 22, orderPictureHeight: 222, centerY: 255, minY: 70, maxY: 420 };
+const BUBBLE = { x: 770, w: 480, textWidth: 440, lineHeight: 30, textSize: 22, orderPictureHeight: 180, centerY: 255, minY: 70, maxY: 420 };
 const RESULT_CARD = { x: 36, y: 92, w: 380, h: 468 };
 /** The served cake stands on the counter left of the guest (between them and the result card), so it hides neither. */
 const SERVED_CAKE = { offsetX: -170, scale: 0.55 };
