@@ -24,7 +24,20 @@ npm.cmd run build        # typecheck + сборка в dist/index.html
 npm.cmd run app:sync     # build + копирование в нативные проекты ios/ и android/ (Capacitor)
 ```
 
-Нативные приложения (Capacitor 8) — раздел «Приложение» в README. Цели: играть на своём iPhone и раздавать тестерам через TestFlight; публикация в магазинах пока не планируется, но решения должны её не закрывать (никакой рекламы и трекинга). У пользователя есть Mac, но Xcode и сборку под iOS она ещё не делала — этот шаг объяснять подробно, по шагам. Android-устройства нет, Android проверяем в эмуляторе Android Studio на Windows.
+Нативные приложения (Capacitor 8) — раздел «Приложение» в README. Цели: играть на своём iPhone и раздавать тестерам через TestFlight; публикация в магазинах пока не планируется, но решения должны её не закрывать (никакой рекламы и трекинга). У пользователя есть Mac, но Xcode и сборку под iOS она ещё не делала — этот шаг объяснять подробно, по шагам. Android-устройства нет, Android проверяем в эмуляторе Android Studio на Windows (AVD `Pixel_6a`).
+
+Android из Git Bash (системная `java` — старая 1.8, нужна Java из Android Studio):
+
+```bash
+export JAVA_HOME="/c/Program Files/Android/Android Studio/jbr" ANDROID_HOME="$LOCALAPPDATA/Android/Sdk"
+ADB="$ANDROID_HOME/platform-tools/adb.exe"
+"$ANDROID_HOME/emulator/emulator.exe" -avd Pixel_6a -gpu host -no-boot-anim   # в фоне
+npm.cmd run app:sync && (cd android && ./gradlew.bat assembleDebug)
+"$ADB" install -r android/app/build/outputs/apk/debug/app-debug.apk
+"$ADB" shell am start -n io.github.annafrolova.moonlightcake/.MainActivity
+"$ADB" exec-out screencap -p > shot.png            # скриншот (2400×1080, тап: "$ADB" shell input tap X Y)
+"$ADB" logcat -d | grep Capacitor/Console           # console.log и ошибки игры
+```
 
 ## Правила кода
 
