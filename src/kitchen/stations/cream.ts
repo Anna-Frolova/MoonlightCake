@@ -15,7 +15,7 @@ import {
   cakeHeight, countLayers, CREAM_DONE_COVERAGE, CREAM_FULL_COVERAGE, createCreamDots, updateCreamCoverage,
 } from '../../game/cake';
 import { runtime, todaysMenu } from '../../game/state';
-import { drawCreamBowl } from '../../render/shelfItems';
+import { drawCreamOnShelf } from '../../render/shelfItems';
 import { showToast } from '../../scenes/sceneManager';
 import { currentCake, currentOrder, requireLayer } from '../kitchen';
 import { CAKE_BASE_Y, CAKE_CENTER_X, CREAM_BRUSH_RADIUS, CREAM_ZONE, STATION_CONTROLS } from '../layout';
@@ -111,9 +111,9 @@ export const creamStation: Station = {
   helper: 'cream',
   isDone: cake => cake.creamCoverage >= CREAM_DONE_COVERAGE,
 
-  /** Bowls of today's creams (and a special guest's own cream) on the shelf above the cake; the chosen one is lifted. */
+  /** Piping bags of today's creams (and a special guest's own cream) on the shelf above the cake; the chosen one is lifted. */
   drawScenery() {
-    drawIngredientShelf(shelfCreams(), cream => loc(CREAMS[cream].name), drawCreamBowl, {
+    drawIngredientShelf(shelfCreams(), cream => loc(CREAMS[cream].name), drawCreamOnShelf, {
       isHoverable: !runtime.isPipingCream, lifted: runtime.selectedCream, glowColor: cream => CREAMS[cream].color,
     });
   },

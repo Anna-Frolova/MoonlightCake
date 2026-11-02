@@ -12,9 +12,13 @@ import { getShapeGeometry } from '../game/cakeGeometry';
 import { drawPrism } from './cake';
 import { drawCat } from './cat';
 import { drawPieceHeap, isPieceBorder } from './creamPiping';
+import { drawCreamOnShelf } from './shelfItems';
 import { drawTopping } from './toppings';
 
 /** Saves the context, moves to (x, y), scales, sets the ink outline; restores after `draw`. */
+/** The shelf's piping bag shrunk to icon size, standing on the icon's bottom edge. */
+const CREAM_ICON_SCALE = 0.6, CREAM_ICON_BASE_Y = 32;
+
 function withIconTransform(x: number, y: number, scale: number, draw: () => void): void {
   ctx.save();
   ctx.translate(x, y); ctx.scale(scale, scale);
@@ -53,16 +57,13 @@ export function drawFillingIcon(filling: FillingId, x: number, y: number, scale:
   });
 }
 
-/** A bowl with a swirl of cream. */
+/** Piped creams as their piping bag over a sample of the pattern; hand-laid borders as a dish heaped with the pieces. */
 export function drawCreamIcon(cream: CreamId, x: number, y: number, scale: number): void {
   withIconTransform(x, y, scale, () => {
+    if (!isPieceBorder(CREAMS[cream].style)) { drawCreamOnShelf(cream, 0, CREAM_ICON_BASE_Y, CREAM_ICON_SCALE); return; }
     ctx.beginPath(); ctx.moveTo(-26, -6); ctx.lineTo(26, -6); ctx.lineTo(20, 22); ctx.lineTo(-20, 22); ctx.closePath();
     ctx.fillStyle = '#d8ccff'; ctx.fill(); ctx.stroke();
-    if (isPieceBorder(CREAMS[cream].style)) { ctx.save(); ctx.translate(0, -8); drawPieceHeap(CREAMS[cream].style, CREAMS[cream].color, 1); ctx.restore(); return; }
-    ctx.beginPath(); ctx.moveTo(-24, -6);
-    ctx.quadraticCurveTo(-26, -22, -8, -18); ctx.quadraticCurveTo(0, -32, 10, -18); ctx.quadraticCurveTo(26, -22, 24, -6);
-    ctx.closePath(); ctx.fillStyle = CREAMS[cream].color; ctx.fill(); ctx.stroke();
-    if (CREAMS[cream].glows) { ctx.fillStyle = 'rgba(255,255,255,0.8)'; starPath(6, -16, 5, 2, 4, 0); ctx.fill(); }
+    ctx.save(); ctx.translate(0, -8); drawPieceHeap(CREAMS[cream].style, CREAMS[cream].color, 1); ctx.restore();
   });
 }
 

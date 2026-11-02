@@ -32,10 +32,10 @@ export const FILLINGS: Record<FillingId, FillingDef> = {
 
 /** Creams and edge borders: each cream has its own nozzle shape; the last two are borders of berries / chocolate balls. */
 export const CREAMS: Record<CreamId, CreamDef> = {
-  butter:     { name: { uk: 'Вершковий',        ja: 'バター' },         color: '#fff1d6', style: 'shells' },
-  berry:      { name: { uk: 'Ягідний',          ja: 'ベリー' },         color: '#ffb0d0', style: 'rosettes' },
-  cloud:      { name: { uk: 'Хмаринковий',      ja: 'ふわ雲' },         color: '#cfe8ff', style: 'ruffles' },
-  moon:       { name: { uk: 'Місячний',         ja: '月光' },           color: '#e0d0ff', style: 'rope', glows: true },
+  butter:     { name: { uk: 'Вершковий',        ja: 'バター' },         color: '#ffd76a', style: 'shells' },
+  berry:      { name: { uk: 'Ягідний',          ja: 'ベリー' },         color: '#ff6fa8', style: 'rosettes' },
+  cloud:      { name: { uk: 'Хмаринковий',      ja: 'ふわ雲' },         color: '#6fb8ff', style: 'ruffles' },
+  moon:       { name: { uk: 'Місячний',         ja: '月光' },           color: '#b48cff', style: 'rope', glows: true },
   berryMix:   { name: { uk: 'Ягідне асорті',    ja: 'ベリーミックス' }, color: '#e8325a', style: 'berries' },
   chocoBalls: { name: { uk: 'Шоколадні кульки', ja: 'チョコボール' },   color: '#6a3a22', style: 'chocoBalls' },
 };
