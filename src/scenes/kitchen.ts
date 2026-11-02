@@ -33,6 +33,7 @@ import { kitchenTheme } from '../render/kitchenThemes';
 import { drawOrderCard } from '../render/orderCard';
 import { drawProgressBar } from '../kitchen/widgets';
 import { drawCoinCounter, drawSoundButtons } from './hud';
+import { drawTutorialVeil } from './tutorial';
 
 /** How fast the layout eases into / out of the glaze station arrangement. */
 const GLAZE_LAYOUT_SPEED = 7;
@@ -101,6 +102,7 @@ export function renderKitchen(): void {
   drawTicket();
   drawStationControls(cake);
   drawStationTabs(cake);
+  drawTutorialVeil(); // under the bottle or topping in hand, so it stays bright wherever it is carried
   drawMovingBottles();
   drawDraggedTopping();
 }

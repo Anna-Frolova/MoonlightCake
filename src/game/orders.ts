@@ -7,16 +7,13 @@ import { arrangeToppings, cakeHeight, createCake, createCreamDots, updateCreamCo
 import { glazeRgb } from './colorMixing';
 import { availableElements, availableGlazeColors, todaysMenu } from './state';
 
-/** Scripted orders for the first two guests of day 1 (they teach the basics). */
-const TUTORIAL_ORDERS: Record<1 | 2, Order> = {
-  1: {
-    palette: 'berry', shape: 'round', layerCount: 1, flavor: 'vanilla', filling: null, cream: 'butter',
-    glaze: 'red', toppings: { strawberry: 3 }, element: 'fire', isRoyal: false, isSpecial: false,
-  },
-  2: {
-    palette: 'chocolate', shape: 'square', layerCount: 2, flavor: 'chocolate', filling: 'caramel', cream: 'butter',
-    glaze: 'orange', toppings: { pearl: 3 }, element: 'ice', isRoyal: false, isSpecial: false,
-  },
+/**
+ * Scripted order of the first guest of day 1: the tutorial teaches every basic on it — a shape other than the
+ * default, two layers with a filling between them, a glaze mixed from two colours, toppings, a simple sign.
+ */
+const TUTORIAL_ORDER: Order = {
+  palette: 'chocolate', shape: 'square', layerCount: 2, flavor: 'chocolate', filling: 'caramel', cream: 'butter',
+  glaze: 'orange', toppings: { pearl: 3 }, element: 'fire', isRoyal: false, isSpecial: false,
 };
 
 /** Chance that a guest picks one of their favourite palettes / shapes when available. */
@@ -84,8 +81,8 @@ export function canTakeOrder(cat: CatDef): boolean {
   return !rule || ((!rule.glazes || options.glazes.length > 0) && (!rule.shapes || options.shapes.length > 0));
 }
 
-export function generateOrder(cat: CatDef, day: number, tutorial?: 1 | 2): Order {
-  if (tutorial) return structuredClone(TUTORIAL_ORDERS[tutorial]);
+export function generateOrder(cat: CatDef, day: number, isTutorial?: boolean): Order {
+  if (isTutorial) return structuredClone(TUTORIAL_ORDER);
   if (cat.special) return generateSpecialOrder(cat, cat.special, day);
   const storyDay = Math.min(day, STORY_DAYS);
   const menu = todaysMenu();

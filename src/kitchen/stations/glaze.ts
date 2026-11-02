@@ -37,6 +37,8 @@ const GLAZE_ARC_SECONDS = 1;
 const CAULDRON_LABEL_SIZE = 19;
 /** Bottle grab area around its resting point. */
 const BOTTLE_HIT = { halfWidth: 30, above: 62, below: 38 };
+/** The cauldron's outline around CAULDRON: half its width at the rim, the rim's height, the label below the legs. */
+const CAULDRON_BOUNDS = { halfWidth: 112, rimAbove: 30, labelBelow: 56 };
 /** The bottle's body rests this far above the shelf board. */
 const BOTTLE_REST_HEIGHT = 26.5 * ELIXIR_SHELF.bottleScale;
 
@@ -47,6 +49,18 @@ const bottleHome = (essence: EssenceId): Point => ({
 
 const isOverBottle = (point: Point, home: Point): boolean =>
   Math.abs(point.x - home.x) < BOTTLE_HIT.halfWidth && point.y > home.y - BOTTLE_HIT.above && point.y < home.y + BOTTLE_HIT.below;
+
+/** Where the bottle standing on the shelf can be grabbed (for the tutorial's highlight). */
+export function bottleRect(essence: EssenceId): { x: number; y: number; w: number; h: number } {
+  const home = bottleHome(essence);
+  return { x: home.x - BOTTLE_HIT.halfWidth, y: home.y - BOTTLE_HIT.above, w: BOTTLE_HIT.halfWidth * 2, h: BOTTLE_HIT.above + BOTTLE_HIT.below };
+}
+
+/** The cauldron from its rim to the colour label under it. */
+export function cauldronRect(): { x: number; y: number; w: number; h: number } {
+  const { halfWidth, rimAbove, labelBelow } = CAULDRON_BOUNDS;
+  return { x: CAULDRON.x - halfWidth, y: CAULDRON_MOUTH.y - rimAbove, w: halfWidth * 2, h: CAULDRON.y - CAULDRON_MOUTH.y + rimAbove + labelBelow };
+}
 
 /** Is the bottle held at (x, y) close enough to pour into the cauldron? */
 const isOverCauldron = (x: number, y: number): boolean =>

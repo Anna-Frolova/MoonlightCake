@@ -52,7 +52,7 @@ function shuffled<T>(items: readonly T[]): T[] {
 /**
  * Today's guests in order. Every regular comes at most once a day (only if there are too few of them for the
  * day does someone come again, never twice in a row); one special guest (two in endless mode) takes a random
- * place in the middle; on day 1 the two tutorial guests come first, on day 5 the Moon Queen comes last.
+ * place in the middle; on day 1 the tutorial guest comes first, on day 5 the Moon Queen comes last.
  */
 function buildGuestQueue(day: number): QueuedGuest[] {
   if (day >= SPECIALS_ONLY_FROM_DAY) { // testing aid
@@ -62,7 +62,7 @@ function buildGuestQueue(day: number): QueuedGuest[] {
   const regularCount = guestsPerDay(day) - specials.length - (hasQueen ? 1 : 0);
   // picky guests stay home on days when the menu can't make their kind of cake
   const pool = GUESTS.filter(cat => cat.firstDay <= storyDay && canTakeOrder(cat)).map(cat => cat.id);
-  const queue: QueuedGuest[] = day === 1 ? [{ cat: 'pushinka', tutorial: 1 }, { cat: 'barsyk', tutorial: 2 }] : [];
+  const queue: QueuedGuest[] = day === 1 ? [{ cat: 'pushinka', tutorial: true }] : [];
   let bag: CatId[] = [];
   while (queue.length < regularCount) {
     if (!bag.length) bag = shuffled(pool.filter(id => !queue.some(guest => guest.cat === id)));
@@ -71,9 +71,8 @@ function buildGuestQueue(day: number): QueuedGuest[] {
     if (bag[bag.length - 1] === previous && bag.length > 1) [bag[0], bag[bag.length - 1]] = [bag[bag.length - 1], bag[0]];
     queue.push({ cat: bag.pop()! });
   }
-  // special guests: after the tutorial guests and never the last of the regulars' places
-  const firstFree = day === 1 ? 2 : 1;
-  for (const id of specials) queue.splice(randomInt(firstFree, Math.max(firstFree, queue.length - 1)), 0, { cat: id });
+  // special guests: never first (on day 1 that is the tutorial guest) and never the last of the regulars' places
+  for (const id of specials) queue.splice(randomInt(1, Math.max(1, queue.length - 1)), 0, { cat: id });
   if (hasQueen) queue.push({ cat: 'queen' });
   return queue;
 }
@@ -138,13 +137,13 @@ export function openCafe(): void {
 export function spawnNextGuest(): void {
   const queue = progress.guestQueue!;
   if (progress.guestIndex >= queue.length) { endDay(); return; }
-  const next = queue[progress.guestIndex], cat = catById(next.cat), order = generateOrder(cat, progress.day, next.tutorial);
+  const next = queue[progress.guestIndex], cat = catById(next.cat), order = generateOrder(cat, progress.day, !!next.tutorial);
   runtime.customer = {
     cat, order, greeting: catLine(cat, 'hello'),
     state: 'entering', x: GUEST_ENTRY_X, time: 0, mood: 'neutral', speech: null,
     orderShownFor: 0, reactionTime: 0, score: null, servedCake: null, hasPaid: false, orderPicture: null,
-    // the tutorial guests are in no hurry
-    patience: next.tutorial ? null : patienceSeconds(order), waitTime: 0, moodChangedAt: 0,
+    // the tutorial guest is in no hurry
+    patience: next.tutorial ? null : patienceSeconds(order), waitTime: 0, moodChangedAt: 0, isTutorial: !!next.tutorial,
   };
   runtime.cake = null;
   runtime.isServing = false;

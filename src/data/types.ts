@@ -217,7 +217,8 @@ export interface DailyMenu {
 export interface MenuLists { shapes: ShapeId[]; flavors: FlavorId[]; fillings: FillingId[]; creams: CreamId[]; toppings: ToppingId[] }
 export type MenuCategory = keyof MenuLists;
 
-export interface QueuedGuest { cat: CatId; tutorial?: 1 | 2 }
+/** `tutorial` marks the first guest of day 1 (saves from older versions may hold 1 or 2 there: still truthy). */
+export interface QueuedGuest { cat: CatId; tutorial?: boolean }
 
 export type GamePhase = 'dayStart' | 'inDay' | 'dayEnd' | 'shop';
 

@@ -2,12 +2,14 @@
 import { initAudio } from './audio/engine';
 import { sfx } from './audio/sfx';
 import { canvas, toScreenPoint } from './core/canvas';
+import { clock } from './core/clock';
 import { shade } from './core/color';
 import type { Point } from './core/math';
 import { burst } from './core/particles';
 import { findButtonAt, pointer, ui } from './core/ui';
 import { runtime, type StationIndex } from './game/state';
 import { lookAt } from './game/guestReactions';
+import { isPressAllowed, tutorial, tutorialGate } from './game/tutorial';
 import { GLAZE_STATION_INDEX, STATIONS } from './kitchen/stations';
 import { handleHallEnterKey, skipSpeechTyping } from './scenes/hall';
 import { selectStation } from './scenes/kitchen';
@@ -29,6 +31,8 @@ function onPointerDown(event: PointerEvent): void {
   if (runtime.fade) return;
   if (activeStation()) lookAt(point.x, point.y);
   const hit = findButtonAt(point);
+  // the tutorial lets only the right choice work: anything else just makes its highlight flash
+  if (!runtime.modal && !isPressAllowed(point, hit?.id ?? null)) { tutorial.nudgedAt = clock.time; return; }
   if (hit) { ui.pressedId = hit.id; return; }
   if (runtime.modal) return;
   if (runtime.scene === 'hall' && skipSpeechTyping()) return;
@@ -80,14 +84,23 @@ function onPointerCancel(): void {
   clearGestures();
 }
 
+/** A key does what pressing this button would, so the tutorial holds it back just like the button. */
+function isKeyAllowed(buttonId: string): boolean {
+  if (runtime.modal || !tutorialGate.pressable) return true;
+  const target = ui.buttons.find(b => b.id === buttonId);
+  return !!target && isPressAllowed({ x: target.x + target.w / 2, y: target.y + target.h / 2 }, target.id);
+}
+
 function onKeyDown(event: KeyboardEvent): void {
   if (runtime.fade) return;
   if (runtime.modal) { if (event.key === 'Escape') runtime.modal = null; return; }
   if (runtime.scene === 'kitchen' && runtime.cake && event.key >= '1' && event.key <= String(STATIONS.length)) {
-    selectStation((Number(event.key) - 1) as StationIndex);
+    const index = (Number(event.key) - 1) as StationIndex;
+    if (!isKeyAllowed('tab' + index)) return;
+    selectStation(index);
     sfx.tab();
   }
-  if (runtime.scene === 'hall' && event.key === 'Enter') handleHallEnterKey();
+  if (runtime.scene === 'hall' && event.key === 'Enter' && isKeyAllowed(runtime.customer?.state === 'ordering' ? 'acceptOrder' : 'nextGuest')) handleHallEnterKey();
 }
 
 export function setUpInput(): void {

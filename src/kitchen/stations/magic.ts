@@ -14,6 +14,7 @@ import type { ElementId } from '../../data/types';
 import { cakeHeight, countLayers } from '../../game/cake';
 import { recognizeSign } from '../../game/signRecognition';
 import { progress, runtime } from '../../game/state';
+import { tutorialGate } from '../../game/tutorial';
 import { drawMagicCircle } from '../../render/environment';
 import { drawSign, signPointAt } from '../../render/signs';
 import { showToast } from '../../scenes/sceneManager';
@@ -63,7 +64,9 @@ function finishStroke(): void {
   const points = runtime.magicStroke!.points;
   runtime.magicStroke = null;
   const match = recognizeSign(points, shownElements());
-  const recognized = match && match.quality > 0 ? match : null;
+  // in the tutorial only the wanted sign counts: another one is treated as not recognised
+  const isAllowed = !tutorialGate.magicElement || match?.element === tutorialGate.magicElement;
+  const recognized = match && match.quality > 0 && isAllowed ? match : null;
   runtime.fadingStroke = { points, startTime: clock.time, color: recognized ? ELEMENTS[recognized.element].color : FAILED_STROKE_COLOR };
   if (points.length < 4) return; // just a tap
   if (!recognized) {

@@ -14,6 +14,7 @@ import { t } from './data/strings';
 import { activeGuestTheme, progress, runtime } from './game/state';
 import { updatePatience } from './game/patience';
 import { loseGuestPatience } from './game/flow';
+import { isPressAllowed } from './game/tutorial';
 import { setUpInput } from './input';
 import { setUpNativeApp } from './nativeApp';
 import { updateAutoCream } from './kitchen/stations/cream';
@@ -98,7 +99,7 @@ function render(): void {
 
   // hover uses last frame's buttons, then the scene registers this frame's
   const hovered = runtime.fade ? null : findButtonAt(pointer);
-  ui.hoveredId = hovered && !hovered.disabled ? hovered.id : null;
+  ui.hoveredId = hovered && !hovered.disabled && (runtime.modal || isPressAllowed(pointer, hovered.id)) ? hovered.id : null;
   if (ui.hoveredId && ui.hoveredId !== runtime.lastHoveredButton && clock.time - runtime.lastHoverSoundTime > HOVER_SOUND_INTERVAL) {
     sfx.hover();
     runtime.lastHoverSoundTime = clock.time;

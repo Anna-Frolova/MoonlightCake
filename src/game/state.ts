@@ -88,6 +88,8 @@ export interface Customer {
   waitTime: number;
   /** When the guest last got grumpier (makes the portrait wobble). */
   moodChangedAt: number;
+  /** The tutorial guest (first of day 1): the tutorial leads the player through their cake. */
+  isTutorial: boolean;
 }
 
 export interface RuntimeState {

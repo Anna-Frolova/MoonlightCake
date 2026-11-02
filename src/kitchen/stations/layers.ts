@@ -89,12 +89,12 @@ function removeTopItem(): void {
  * on their own small shelf left of the cake. Today's menu, plus a special guest's sponge and filling when the menu
  * doesn't have them (put first).
  */
-function shelfFlavors(): FlavorId[] {
+export function shelfFlavors(): FlavorId[] {
   const menu = todaysMenu().flavors, wanted = currentOrder().flavor;
   return menu.includes(wanted) ? menu : [wanted, ...menu];
 }
 
-function shelfFillings(): FillingId[] {
+export function shelfFillings(): FillingId[] {
   const menu = todaysMenu().fillings, wanted = currentOrder().filling;
   return !wanted || menu.includes(wanted) ? menu : [wanted, ...menu];
 }

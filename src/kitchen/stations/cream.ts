@@ -101,7 +101,7 @@ export function updateAutoCream(dt: number): void {
 }
 
 /** Today's creams, plus a special guest's cream first when the menu doesn't have it yet. */
-function shelfCreams(): CreamId[] {
+export function shelfCreams(): CreamId[] {
   const menu = todaysMenu().creams, wanted = currentOrder().cream;
   return menu.includes(wanted) ? menu : [wanted, ...menu];
 }

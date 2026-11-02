@@ -18,6 +18,13 @@ export const BUTTON_COLOR = {
   reset: '#c25aa8',
 } as const;
 
+/** The tutorial: the veil over everything that can't be used yet, and the guides (dashed sign, drag arrows). */
+export const TUTORIAL_COLOR = {
+  veil: 'rgba(8,4,28,0.62)',
+  guide: '#ffe27a',
+  guideUnderlay: 'rgba(20,10,50,0.75)',
+} as const;
+
 /** Dark violet outline used for small drawn objects (toppings, coins, icons). */
 export const INK = '#2e1f55';
 

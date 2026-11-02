@@ -82,5 +82,11 @@ export const FILLING_SHELF: ShelfLayout = {
 
 /** Layers station: shape switches in a row above the shelf. */
 export const SHAPE_SWITCHES = { y: 120, size: 64, gap: 12 };
+/**
+ * Tutorial guides: the sign to draw, big and dashed over the cake (centred `aboveCakeTop` over its top face);
+ * the hand that shows a drag, lifted `arcLift` over the straight line between the shelf and the cake.
+ */
+export const TUTORIAL_GUIDE = { signSize: 230, aboveCakeTop: 20, arcLift: 90, padding: 8 };
+
 /** Magic station: a row of the elements (sign + name) above the cake. */
 export const ELEMENT_ROW = { y: 132, w: 104, signSize: 46, gap: 6 };

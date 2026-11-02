@@ -1,8 +1,13 @@
 // Progress through the day-1 tutorial. Whether it was finished or skipped is stored apart from
 // the save (like the language), so it survives reloads and doesn't change the save format.
 import { readStored, removeStored, writeStored } from '../core/storage';
+import type { ElementId } from '../data/types';
 
 const TUTORIAL_KEY = 'misiachnyi-korzh-tutorial';
+/** The tutorial's own buttons ("Got it", "Skip") work at every step. */
+const TUTORIAL_BUTTON_PREFIX = 'tutorial';
+
+export interface Rect { x: number; y: number; w: number; h: number }
 
 export const tutorial = {
   isDone: readStored(TUTORIAL_KEY) === 'done',
@@ -12,15 +17,46 @@ export const tutorial = {
   confirmed: false,
   /** When the current step's hint appeared (for the pop-in animation), or null while it is hidden. */
   shownAt: null as number | null,
+  /** When the player last pressed something the tutorial holds back (the highlight flashes). */
+  nudgedAt: null as number | null,
 };
+
+/**
+ * What the current step lets the player do, set every frame by the tutorial scene. While `pressable` is set,
+ * a press anywhere else is ignored (only the right choice works); `null` = no restriction.
+ */
+export const tutorialGate = {
+  pressable: null as Rect[] | null,
+  /** Only buttons are held back (in the hall a tap still skips the guest's typing). */
+  buttonsOnly: false,
+  /** On the magic step only this element's sign works (any other counts as not recognised). */
+  magicElement: null as ElementId | null,
+};
+
+const isInside = (point: { x: number; y: number }, rect: Rect): boolean =>
+  point.x >= rect.x && point.x <= rect.x + rect.w && point.y >= rect.y && point.y <= rect.y + rect.h;
+
+/** May a press start here? `buttonId` is the button under the point, if any. */
+export function isPressAllowed(point: { x: number; y: number }, buttonId: string | null): boolean {
+  const areas = tutorialGate.pressable;
+  if (!areas || buttonId?.startsWith(TUTORIAL_BUTTON_PREFIX)) return true;
+  if (tutorialGate.buttonsOnly && !buttonId) return true;
+  return areas.some(rect => isInside(point, rect));
+}
+
+export function clearTutorialGate(): void {
+  Object.assign(tutorialGate, { pressable: null, buttonsOnly: false, magicElement: null });
+}
 
 export function finishTutorial(): void {
   tutorial.isDone = true;
+  clearTutorialGate();
   writeStored(TUTORIAL_KEY, 'done');
 }
 
 /** A new game teaches again from the first step. */
 export function resetTutorial(): void {
-  Object.assign(tutorial, { isDone: false, step: 0, confirmed: false, shownAt: null });
+  Object.assign(tutorial, { isDone: false, step: 0, confirmed: false, shownAt: null, nudgedAt: null });
+  clearTutorialGate();
   removeStored(TUTORIAL_KEY);
 }
