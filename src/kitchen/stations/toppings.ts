@@ -74,7 +74,9 @@ function dropTopping(point: Point): void {
   }
   if (cake.toppings.length >= MAX_TOPPINGS) { showToast(t().noRoomForToppings); sfx.fail(); return; }
   cake.toppings.push({ topping: dragged.topping, x, y: y + height, popProgress: 0 });
-  if (!dragged.fromCake) judgeChoice(!!currentOrder().toppings[dragged.topping], 'worried');
+  // right while it's an ordered kind and there are not more of it than wanted
+  const wanted = currentOrder().toppings[dragged.topping] ?? 0;
+  if (!dragged.fromCake) judgeChoice(cake.toppings.filter(item => item.topping === dragged.topping).length <= wanted, 'worried');
   sfx.place();
   burst(CAKE_CENTER_X + x, CAKE_BASE_Y + y, 6, ['#fff', '#ffe27a'], { kind: 'star', gravity: 100, maxSpeed: 120 });
 }

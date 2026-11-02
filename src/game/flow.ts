@@ -21,6 +21,7 @@ import { patienceLeft, patienceSeconds } from './patience';
 import { scoreCake } from './scoring';
 import { resetTutorial } from './tutorial';
 import { resetGuestReactions } from './guestReactions';
+import { changesOrderToday } from './orderChange';
 import { decorTipBonus, isOwned, progress, resetProgress, runtime, saveProgress } from './state';
 import { setUpKitchen } from '../kitchen/kitchen';
 
@@ -144,6 +145,7 @@ export function spawnNextGuest(): void {
     orderShownFor: 0, reactionTime: 0, score: null, servedCake: null, hasPaid: false, orderPicture: null,
     // the tutorial guest is in no hurry
     patience: next.tutorial ? null : patienceSeconds(order), waitTime: 0, moodChangedAt: 0, isTutorial: !!next.tutorial,
+    changesOrder: changesOrderToday(queue, progress.guestIndex), changeCountdown: 0, orderChange: null,
   };
   runtime.cake = null;
   runtime.isServing = false;
@@ -183,7 +185,7 @@ function handOverCake(): void {
   const customer = runtime.customer, cake = runtime.cake;
   if (runtime.isServing || !customer || !cake) return;
   runtime.isServing = true;
-  customer.score = scoreCake(cake, customer.order, customer.cat, decorTipBonus(), customer.patience === null ? null : patienceLeft(customer));
+  customer.score = scoreCake(cake, customer.order, customer.cat, decorTipBonus(), customer.patience === null ? null : patienceLeft(customer), customer.orderChange?.kind ?? null);
   customer.servedCake = cake;
   customer.state = 'judging';
   customer.time = 0;
@@ -217,7 +219,7 @@ export function sendGuestAway(): void {
   const hearts = customer.score?.hearts ?? 0;
   if (hearts >= GOODBYE_MEOW_HEARTS) {
     customer.mood = 'happy';
-    sfx.meow(customer.cat.voicePitch, 'happy');
+    sfx.meow(customer.cat.voicePitch, 'happy', customer.cat.voice);
   }
   if (hearts === 5) {
     sfx.purr(customer.cat.voicePitch, PERFECT_PURR_SECONDS, 0.4);
@@ -242,7 +244,7 @@ export function loseGuestPatience(): void {
   runtime.isPipingCream = false;
   runtime.magicStroke = null;
   runtime.modal = null;
-  sfx.meow(customer.cat.voicePitch, 'sad');
+  sfx.meow(customer.cat.voicePitch, 'sad', customer.cat.voice);
   goToScene('hall', () => {
     progress.guestIndex++; // gone for good, even if the page is reloaded now
     saveProgress();

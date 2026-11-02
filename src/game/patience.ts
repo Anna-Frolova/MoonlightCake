@@ -8,7 +8,8 @@ import { totalToppingCount } from './orders';
 import { runtime, type Customer } from './state';
 
 /** Seconds a guest waits for an order: bigger cakes get more time. The first `calmShare` of it patience stays full. */
-const PATIENCE = { baseSeconds: 70, perLayerSeconds: 12, perToppingSeconds: 3, calmShare: 0.45 };
+// generous on purpose: new players should never feel rushed (a typical cake gives ~4–5 minutes)
+const PATIENCE = { baseSeconds: 200, perLayerSeconds: 30, perToppingSeconds: 8, calmShare: 0.6 };
 /** An angry guest's meow is a little lower, a growl. */
 const ANGRY_VOICE = 0.8;
 /** Below these levels the guest looks impatient, then upset. */
@@ -56,7 +57,7 @@ export function updatePatience(dt: number): boolean {
   if (after !== before) {
     customer.moodChangedAt = clock.time;
     if (after === 'angry') sfx.hiss();
-    sfx.meow(customer.cat.voicePitch * (after === 'angry' ? ANGRY_VOICE : 1), 'sad');
+    sfx.meow(customer.cat.voicePitch * (after === 'angry' ? ANGRY_VOICE : 1), 'sad', customer.cat.voice);
   }
   return customer.patience !== null && customer.waitTime >= customer.patience;
 }

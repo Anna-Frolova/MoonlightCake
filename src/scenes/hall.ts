@@ -85,7 +85,7 @@ export function updateHall(dt: number): void {
         customer.state = 'ordering';
         customer.orderShownFor = 0;
         say(t().orderSpeech(customer.greeting, catLine(customer.cat, 'ask')));
-        sfx.meow(customer.cat.voicePitch);
+        sfx.meow(customer.cat.voicePitch, 'neutral', customer.cat.voice);
         if (customer.cat.special) { // a special guest arrives in a shower of their sparks
           burst(GUEST_COUNTER_X, SPECIAL_ARRIVAL_SPARKS_Y, 36, kitchenTheme(customer.cat.special.theme).sparkColors, { kind: 'star', gravity: 80, maxSpeed: 360 });
         }
@@ -160,8 +160,8 @@ function startReaction(customer: Customer): void {
   const waitedTooLong = customer.patience !== null && patienceLeft(customer) < PATIENCE_LEVELS.impatient;
   if (waitedTooLong) line = t().lateSpeech(pickWithoutRepeat(`late:${isAngryType}:${language()}`, isAngryType ? t().lateAngry : t().lateSad), line);
   say(line);
-  if (customer.mood === 'angry') { sfx.hiss(); sfx.meow(cat.voicePitch * ANGRY_VOICE, 'sad'); }
-  else sfx.meow(cat.voicePitch, customer.mood === 'happy' ? 'happy' : customer.mood === 'sad' ? 'sad' : 'neutral');
+  if (customer.mood === 'angry') { sfx.hiss(); sfx.meow(cat.voicePitch * ANGRY_VOICE, 'sad', cat.voice); }
+  else sfx.meow(cat.voicePitch, customer.mood === 'happy' ? 'happy' : customer.mood === 'sad' ? 'sad' : 'neutral', cat.voice);
   collectPayment();
 }
 
@@ -398,7 +398,7 @@ function drawResultCard(customer: Customer): void {
       ctx.strokeStyle = 'rgba(159,234,255,0.25)'; ctx.lineWidth = 2;
       ctx.beginPath(); ctx.moveTo(x + 24, rowY - 14); ctx.lineTo(x + w - 24, rowY - 14); ctx.stroke();
       const rows: [string, string][] = score.verdict === 'paid'
-        ? [[t().payment, '+' + score.payment], [t().tips, '+' + score.tips], [t().ingredients, '−' + score.ingredientCost]]
+        ? [[t().payment, '+' + score.payment], [t().tips, '+' + score.tips], ...(score.changeBonus ? [[t().changeBonus, '+' + score.changeBonus] as [string, string]] : []), [t().ingredients, '−' + score.ingredientCost]]
         : score.verdict === 'refused' ? [[t().guestRefusedToPay, '0']] : [[t().ruinedCakeFine, '−' + score.penalty]];
       for (const [label, value] of rows) {
         drawText(label, x + 26, rowY, 19, TEXT.muted, 'left', 700);

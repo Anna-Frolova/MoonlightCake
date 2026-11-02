@@ -12,6 +12,7 @@ import type {
 import { buildDailyMenu } from './dailyMenu';
 import { createNewSave, loadSave, writeSave } from './save';
 import type { CakeScore } from './scoring';
+import type { OrderChange } from './orderChange';
 
 // ---------------- saved progress ----------------
 
@@ -90,6 +91,12 @@ export interface Customer {
   moodChangedAt: number;
   /** The tutorial guest (first of day 1): the tutorial leads the player through their cake. */
   isTutorial: boolean;
+  /** Today's guest who will change their order halfway (game/orderChange.ts), until they do. */
+  changesOrder: boolean;
+  /** Seconds since the moment the guest could ask for the change. */
+  changeCountdown: number;
+  /** The change the guest asked for (pays a bonus when done right). */
+  orderChange: OrderChange | null;
 }
 
 export interface RuntimeState {
@@ -97,7 +104,8 @@ export interface RuntimeState {
   sceneStartTime: number;
   fade: { alpha: number; direction: 1 | -1; onMidpoint: () => void } | null;
   toast: { text: string; remaining: number; startTime: number } | null;
-  modal: { text: string; confirmLabel: string; cancelLabel: string; danger?: boolean; onConfirm: () => void; startTime: number } | null;
+  /** A question with two buttons, or (no `cancelLabel`) a message with one; with `speaker` it is the guest talking from the order ticket. */
+  modal: { text: string; confirmLabel: string; cancelLabel: string | null; danger?: boolean; onConfirm: () => void; startTime: number; speaker?: string } | null;
   shake: number;
   displayedCoins: number;
   coinBump: number;

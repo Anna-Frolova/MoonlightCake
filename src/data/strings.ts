@@ -68,6 +68,16 @@ const uk = {
   payment: 'Оплата',
   tips: 'Чайові',
   ingredients: 'Інгредієнти',
+  changeBonus: 'Бонус за зміну',
+
+  // a guest changing their order halfway (game/orderChange.ts); `isShe` picks the verb form
+  orderChangeCream: (cream: string, isShe: boolean) =>
+    `Ой, вибачте, я ${isShe ? 'помилилася' : 'помилився'}! Можна крем «${cream}» замість того? Я щедро віддячу!`,
+  orderChangeTopping: (topping: string, count: number, isShe: boolean) =>
+    `Ой, я ще ${isShe ? 'забула' : 'забув'} сказати! Додайте, будь ласка, ${topping} × ${count}. Я щедро віддячу!`,
+  orderChangeMagic: (element: string, isShe: boolean) =>
+    `Ой, я ${isShe ? 'переплутала' : 'переплутав'} чари! Хочу «${element}» замість тих. Я щедро віддячу!`,
+  orderChangeOk: 'Добре!',
   total: 'Разом',
   guestRefusedToPay: 'Гість не заплатив',
   ruinedCakeFine: 'Штраф за зіпсований торт',
@@ -232,6 +242,12 @@ const ja: UiStrings = {
   payment: 'お代',
   tips: 'チップ',
   ingredients: '材料費',
+  changeBonus: '変更ボーナス',
+
+  orderChangeCream: (cream: string) => `あっ、ごめんなさい！クリームは「${cream}」にしてもらえる？お礼ははずむよ！`,
+  orderChangeTopping: (topping: string, count: number) => `あっ、言い忘れてた！${topping}を${count}こ追加してくれる？お礼ははずむよ！`,
+  orderChangeMagic: (element: string) => `あっ、魔法をまちがえちゃった！「${element}」にしてほしいな。お礼ははずむよ！`,
+  orderChangeOk: 'わかった！',
   total: '合計',
   guestRefusedToPay: 'お代はもらえなかった',
   ruinedCakeFine: 'だめにしたケーキの罰金',

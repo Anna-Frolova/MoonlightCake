@@ -26,6 +26,7 @@ export function showToast(text: string): void {
   runtime.toast = { text, remaining: TOAST_SECONDS, startTime: clock.time };
 }
 
-export function showModal(text: string, confirmLabel: string, cancelLabel: string, onConfirm: () => void, danger = false): void {
-  runtime.modal = { text, confirmLabel, cancelLabel, onConfirm, danger, startTime: clock.time };
+/** A dialog; without `cancelLabel` it only has the confirm button; `speaker` makes it a guest's speech from the order ticket. */
+export function showModal(text: string, confirmLabel: string, cancelLabel: string | null, onConfirm: () => void, danger = false, speaker?: string): void {
+  runtime.modal = { text, confirmLabel, cancelLabel, onConfirm, danger, startTime: clock.time, speaker };
 }

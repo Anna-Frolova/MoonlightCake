@@ -141,32 +141,73 @@ export function playNoise(duration: number, volume: number, filterFrequency: num
   source.stop(start + duration + 0.05);
 }
 
-/** A synthesised "meow": a sawtooth glide through a moving band-pass filter. */
-export function playMeow(pitch: number, mood: 'neutral' | 'happy' | 'sad'): void {
+/**
+ * Cat sounds: `neutral` / `happy` / `sad` meows; `chirp` — a short bright "mrrp!" rising twice (the guest
+ * likes what the player just did); `grumble` — a low "mrrm…" sliding down with a growl (they don't).
+ */
+export type MeowMood = 'neutral' | 'happy' | 'sad' | 'chirp' | 'grumble';
+export type MeowVoice = 'female' | 'male';
+
+/**
+ * Pitch glide of each sound as [seconds, share of the base pitch] points, its length,
+ * and how deep its "rrr" trill is (loudness wobbling GROWL_HZ times a second).
+ */
+const MEOW_SHAPES: Record<MeowMood, { glide: [number, number][]; duration: number; trill: number }> = {
+  neutral: { glide: [[0, 1], [0.13, 1.45], [0.45, 0.85]], duration: 0.55, trill: 0 },
+  happy: { glide: [[0, 1], [0.13, 1.7], [0.45, 0.85]], duration: 0.55, trill: 0 },
+  sad: { glide: [[0, 1.2], [0.55, 0.7]], duration: 0.55, trill: 0 },
+  chirp: { glide: [[0, 0.95], [0.07, 1.45], [0.11, 1.15], [0.2, 1.85]], duration: 0.26, trill: 0.35 },
+  grumble: { glide: [[0, 0.72], [0.1, 0.8], [0.5, 0.5]], duration: 0.6, trill: 0.7 },
+};
+const GROWL_HZ = 26;
+/**
+ * A she-cat's voice sits higher with a brighter "mouth" (the band-pass filter) and a light vibrato;
+ * a tom's is lower and darker. Without a voice (the helper kitten) the pitch is used as is.
+ */
+const VOICE_COLOR: Record<MeowVoice, { pitch: number; formant: number; vibratoCents: number }> = {
+  female: { pitch: 1.12, formant: 1.25, vibratoCents: 35 },
+  male: { pitch: 0.8, formant: 0.75, vibratoCents: 0 },
+};
+const NO_VOICE_COLOR = { pitch: 1, formant: 1, vibratoCents: 0 };
+const VIBRATO_HZ = 7;
+
+/** A synthesised cat sound: a sawtooth glide through a moving band-pass filter (the "mouth"). */
+export function playMeow(pitch: number, mood: MeowMood, voice?: MeowVoice): void {
   if (!graph) return;
   const { context } = graph;
-  const start = context.currentTime;
+  const start = context.currentTime, shape = MEOW_SHAPES[mood], color = voice ? VOICE_COLOR[voice] : NO_VOICE_COLOR;
+  const end = start + shape.duration;
   const oscillator = context.createOscillator(), filter = context.createBiquadFilter(), envelope = context.createGain();
   oscillator.type = 'sawtooth'; filter.type = 'bandpass'; filter.Q.value = 3;
-  const base = 480 * pitch;
-  if (mood === 'sad') {
-    oscillator.frequency.setValueAtTime(base * 1.2, start);
-    oscillator.frequency.linearRampToValueAtTime(base * 0.7, start + 0.55);
-  } else {
-    oscillator.frequency.setValueAtTime(base, start);
-    oscillator.frequency.linearRampToValueAtTime(base * (mood === 'happy' ? 1.7 : 1.45), start + 0.13);
-    oscillator.frequency.linearRampToValueAtTime(base * 0.85, start + 0.45);
-  }
-  filter.frequency.setValueAtTime(900, start);
-  filter.frequency.linearRampToValueAtTime(1800, start + 0.15);
-  filter.frequency.linearRampToValueAtTime(800, start + 0.5);
+  const base = 480 * pitch * color.pitch;
+  shape.glide.forEach(([time, share], i) => {
+    if (i === 0) oscillator.frequency.setValueAtTime(base * share, start);
+    else oscillator.frequency.linearRampToValueAtTime(base * share, start + time);
+  });
+  const formant = color.formant * (mood === 'grumble' ? 0.7 : 1);
+  filter.frequency.setValueAtTime(900 * formant, start);
+  filter.frequency.linearRampToValueAtTime(1800 * formant, start + shape.duration * 0.28);
+  filter.frequency.linearRampToValueAtTime(800 * formant, end - 0.05);
   envelope.gain.setValueAtTime(0.0001, start);
-  envelope.gain.exponentialRampToValueAtTime(0.16, start + 0.04);
-  envelope.gain.exponentialRampToValueAtTime(0.0001, start + 0.55);
+  envelope.gain.exponentialRampToValueAtTime(0.16, start + 0.03);
+  envelope.gain.exponentialRampToValueAtTime(0.0001, end);
+  let output: AudioNode = envelope;
+  const extras: OscillatorNode[] = [];
+  if (shape.trill > 0) { // the "rrr": loudness wobbling fast
+    const trill = context.createGain(), lfo = context.createOscillator(), depth = context.createGain();
+    trill.gain.value = 1 - shape.trill / 2; lfo.frequency.value = GROWL_HZ; depth.gain.value = shape.trill / 2;
+    lfo.connect(depth); depth.connect(trill.gain); envelope.connect(trill);
+    output = trill; extras.push(lfo);
+  }
+  if (color.vibratoCents > 0) {
+    const lfo = context.createOscillator(), depth = context.createGain();
+    lfo.frequency.value = VIBRATO_HZ; depth.gain.value = color.vibratoCents;
+    lfo.connect(depth); depth.connect(oscillator.detune); extras.push(lfo);
+  }
   const send = context.createGain(); send.gain.value = 0.2;
   oscillator.connect(filter); filter.connect(envelope);
-  envelope.connect(graph.sfxDry); envelope.connect(send); send.connect(graph.sfxWet);
-  oscillator.start(start); oscillator.stop(start + 0.6);
+  output.connect(graph.sfxDry); output.connect(send); send.connect(graph.sfxWet);
+  for (const node of [oscillator, ...extras]) { node.start(start); node.stop(end + 0.05); }
 }
 
 /**

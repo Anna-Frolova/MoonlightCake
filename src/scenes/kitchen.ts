@@ -16,6 +16,7 @@ import type { Cake } from '../data/types';
 import { isCakeReady, serveCake } from '../game/flow';
 import { patienceBarValue, patienceLeft, patienceMood, PATIENCE_CALM_MARK, PATIENCE_LEVELS } from '../game/patience';
 import { currentReaction, reactionMood, updateGaze } from '../game/guestReactions';
+import { orderChangeGlow } from '../game/orderChange';
 import { activeGuestTheme, isOwned, progress, runtime, type Customer, type StationIndex } from '../game/state';
 import { currentCake, resetCake } from '../kitchen/kitchen';
 import {
@@ -48,6 +49,8 @@ const HINT_MAX_WIDTH = 480;
 /** The guest's window: cat scale, where the head sits (share of the height), where sweat / anger marks go (from the head). */
 const PORTRAIT = { catScale: 1, headAt: 0.6, markOffset: { x: 82, y: -62 } };
 const PATIENCE_BAR_HEIGHT = 16;
+/** How fast the changed order's frame pulses. */
+const CHANGED_ORDER_PULSE_SPEED = 6;
 
 /** Moves the cake aside while the glaze station is open (called every frame). */
 export function updateKitchenLayout(dt: number): void {
@@ -135,6 +138,18 @@ function drawTicket(): void {
   if (customer.patience !== null) drawPatienceBar(x + 20, y + patienceY, w - 40, customer);
   // on the toppings station the wanted cake is shown without its magic, so its toppings are easy to see
   drawOrderCard(customer, x + 10, y + cardY, w - 20, h - cardY - 10, runtime.station === TOPPINGS_STATION_INDEX);
+  drawChangedOrderGlow(customer, x + 10, y + cardY, w - 20, h - cardY - 10);
+}
+
+/** A pulsing golden frame around the order card for a while after the guest changed the order. */
+function drawChangedOrderGlow(customer: Customer, x: number, y: number, w: number, h: number): void {
+  const glow = orderChangeGlow(customer);
+  if (glow <= 0) return;
+  ctx.save();
+  ctx.globalAlpha = glow * (0.55 + 0.45 * Math.sin(clock.time * CHANGED_ORDER_PULSE_SPEED));
+  ctx.shadowColor = TEXT.gold; ctx.shadowBlur = 18;
+  ctx.strokeStyle = TEXT.gold; ctx.lineWidth = 4; roundRectPath(x, y, w, h, 14); ctx.stroke();
+  ctx.restore();
 }
 
 /**

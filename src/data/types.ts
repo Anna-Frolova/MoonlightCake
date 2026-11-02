@@ -106,12 +106,16 @@ export interface CatLook {
   extraAccessory?: CatAccessory;
 }
 
+export type CatVoice = 'female' | 'male';
+
 export interface CatDef extends CatLook {
   id: CatId;
   name: Localized;
   /** First day this guest visits the café. */
   firstDay: number;
   voicePitch: number;
+  /** Whose voice the meows are: a she-cat sounds higher and softer, a tom lower and rougher. Also picks gendered line forms. */
+  voice: CatVoice;
   /** Always orders three layers (from day 2). */
   ordersBigCakes?: boolean;
   /** Tips 30% more. */

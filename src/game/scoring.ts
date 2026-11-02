@@ -4,6 +4,7 @@ import { clamp } from '../core/math';
 import type { Cake, CatDef, Order, ToppingId } from '../data/types';
 import { fillingsBetweenLayers } from './cake';
 import { glazeRgb } from './colorMixing';
+import type { OrderChangeKind } from './orderChange';
 import { totalToppingCount } from './orders';
 
 export interface ScorePart {
@@ -31,8 +32,10 @@ export interface CakeScore {
   hearts: number;
   payment: number;
   tips: number;
+  /** Extra pay for doing the guest's mid-order change right (game/orderChange.ts). */
+  changeBonus: number;
   ingredientCost: number;
-  /** payment + tips − ingredientCost − penalty (can be negative). */
+  /** payment + tips + changeBonus − ingredientCost − penalty (can be negative). */
   net: number;
 }
 
@@ -62,9 +65,15 @@ const PRICE = { base: 14, perLayer: 4, filling: 3, magic: 4, royal: 20, special:
 /** Tips start from this score. */
 const TIPS_MIN_SCORE = 0.7;
 const GENEROUS_TIP_MULTIPLIER = 1.3;
+/** A changed part of the order counts as done from this score; the bonus is this share of the cake's price (paid on top). */
+const CHANGE_DONE_SCORE = 0.85;
+const CHANGE_BONUS_SHARE = 1;
 
-/** `patienceLeft` is 1..0 when the guest was timed, null when they were in no hurry (no speed part then). */
-export function scoreCake(cake: Cake, order: Order, cat: CatDef, decorTipBonus: number, patienceLeft: number | null): CakeScore {
+/**
+ * `patienceLeft` is 1..0 when the guest was timed, null when they were in no hurry (no speed part then).
+ * `changed` is the part the guest changed mid-order: done right, it earns CHANGE_BONUS_SHARE of the price on top.
+ */
+export function scoreCake(cake: Cake, order: Order, cat: CatDef, decorTipBonus: number, patienceLeft: number | null, changed: OrderChangeKind | null = null): CakeScore {
   const layers = cake.stack.filter(item => item.kind === 'layer');
   const parts: ScorePart[] = [];
 
@@ -134,7 +143,9 @@ export function scoreCake(cake: Cake, order: Order, cat: CatDef, decorTipBonus: 
   const verdict: PayVerdict = rightParts <= RUINED_CAKE_MAX_RIGHT_PARTS ? 'penalty' : rightParts < cakeParts.length / 2 ? 'refused' : 'paid';
   if (verdict !== 'paid') {
     const penalty = verdict === 'penalty' ? RUINED_CAKE_FINE : 0;
-    return { parts, verdict, penalty, score, hearts: Math.min(hearts, MAX_HEARTS[verdict]), payment: 0, tips: 0, ingredientCost: 0, net: -penalty };
+    return { parts, verdict, penalty, score, hearts: Math.min(hearts, MAX_HEARTS[verdict]), payment: 0, tips: 0, changeBonus: 0, ingredientCost: 0, net: -penalty };
   }
-  return { parts, verdict, penalty: 0, score, hearts, payment, tips, ingredientCost, net: payment + tips - ingredientCost };
+  const changedPart = changed && parts.find(part => part.kind === changed);
+  const changeBonus = changedPart && changedPart.score >= CHANGE_DONE_SCORE ? Math.round(price * CHANGE_BONUS_SHARE) : 0;
+  return { parts, verdict, penalty: 0, score, hearts, payment, tips, changeBonus, ingredientCost, net: payment + tips + changeBonus - ingredientCost };
 }

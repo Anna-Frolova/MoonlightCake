@@ -14,6 +14,7 @@ import { t } from './data/strings';
 import { activeGuestTheme, progress, runtime } from './game/state';
 import { updatePatience } from './game/patience';
 import { loseGuestPatience } from './game/flow';
+import { updateOrderChange } from './game/orderChange';
 import { isPressAllowed } from './game/tutorial';
 import { setUpInput } from './input';
 import { setUpNativeApp } from './nativeApp';
@@ -73,6 +74,7 @@ function update(dt: number): void {
   updateMusic(progress.musicOn, activeGuestTheme() ?? 'cafe');
   updateHall(dt);
   if (updatePatience(dt)) loseGuestPatience();
+  updateOrderChange(dt);
   updateTutorial();
   updateCakeAnimations(dt);
 }

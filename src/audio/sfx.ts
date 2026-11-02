@@ -1,7 +1,7 @@
 // Sound effects, built from tones and noise.
 import { pickRandom, randomInt, randomRange } from '../core/math';
 import type { ElementId, KitchenThemeId } from '../data/types';
-import { playMeow, playNoise, playPurr, playTone } from './engine';
+import { playMeow, playNoise, playPurr, playTone, type MeowMood, type MeowVoice } from './engine';
 
 /** Pentatonic steps — any combination sounds pleasant. */
 const PENTATONIC = [0, 2, 4, 7, 9];
@@ -116,7 +116,7 @@ export const sfx = {
   },
   /** The kitchen turns into the special guest's place. */
   transform() { playNoise(0.9, 0.08, 400, { q: 0.7, sweepTo: 3600, reverb: 0.6 }); sfx.sparkle(); },
-  meow(pitch = 1, mood: 'neutral' | 'happy' | 'sad' = 'neutral') { playMeow(pitch, mood); },
+  meow(pitch = 1, mood: MeowMood = 'neutral', voice?: MeowVoice) { playMeow(pitch, mood, voice); },
   purr(pitch = 1, seconds = 2, delay = 0) { playPurr(pitch, seconds, delay); },
   /** An angry hiss before the guest throws the cake. */
   hiss() { playNoise(0.6, 0.12, 4500, { q: 0.8, sweepTo: 2500, reverb: 0.15, filter: 'highpass' }); },
