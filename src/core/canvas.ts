@@ -15,10 +15,10 @@ export const canvas = document.getElementById('game') as HTMLCanvasElement;
 
 /**
  * How the logical 1280×720 screen maps onto the real window (`width`/`height` = window size in CSS pixels).
- * `zoom` is the browser's page zoom (1 normally); `resizes` counts how often the drawing buffer was reallocated.
- * Both are shown next to the build stamp to diagnose blurriness.
+ * `zoom` is the browser's page zoom (1 normally); `resizes` / `refreshes` count how often the drawing buffer was
+ * reallocated for a new size / remade on purpose. Shown next to the build stamp to diagnose blurriness.
  */
-export const viewport = { scale: 1, offsetX: 0, offsetY: 0, pixelRatio: 1, zoom: 1, width: 1, height: 1, resizes: 0 };
+export const viewport = { scale: 1, offsetX: 0, offsetY: 0, pixelRatio: 1, zoom: 1, width: 1, height: 1, resizes: 0, refreshes: 0 };
 
 /** The part of the logical plane that is on screen (includes the area under a notch). */
 export const view = { left: 0, top: 0, right: SCREEN_W, bottom: SCREEN_H };
@@ -60,6 +60,7 @@ function undoPageZoom(zoom: number): void {
  * on iPhones `resize` can fire before the new size is known (rotation, Safari's bars sliding away).
  */
 export function fitCanvasToWindow(): void {
+  if (refreshDue) refreshCanvas();
   const zoom = window.visualViewport?.scale ?? 1;
   if (Math.abs(zoom - 1) > ZOOM_TOLERANCE) undoPageZoom(zoom);
   else zoomResetFor = null;
@@ -103,15 +104,38 @@ export function fitCanvasToWindow(): void {
     top: -viewport.offsetY / scale, bottom: (height - viewport.offsetY) / scale,
   });
 }
-window.addEventListener('resize', fitCanvasToWindow);
-window.visualViewport?.addEventListener('resize', fitCanvasToWindow);
-fitCanvasToWindow();
-
 /**
- * Created only after the canvas got its real size. WebKit decides how to draw a canvas (on the GPU or in a slower,
- * lower-quality software mode) when the context's buffer is first made; at the default 300×150 it is too small
- * for the GPU. Suspected cause of the random blurry launches on iPhones (with rectangular glows behind text).
+ * iPhones sometimes show the canvas blurry although its buffer has exactly the screen's pixels (diagnostics on the
+ * title screen: 3.0×, buffer = screen): the system's on-screen copy of the canvas gets stuck at a lower quality when
+ * the buffer is made during the app's launch, until a restart. Remaking the buffer (and the layer showing it) once
+ * things have settled is what a restart does, so it's done shortly after launch, after coming back to the game,
+ * after a resize and on the first touch. The game redraws the whole frame right after, so nothing flickers.
  */
+const REFRESH_DELAYS_MS = [300, 1000, 2500];
+let refreshDue = false;
+let layerFlipped = false;
+
+function refreshCanvas(): void {
+  refreshDue = false;
+  canvas.width = canvas.width; // a fresh drawing buffer of the same size
+  layerFlipped = !layerFlipped;
+  canvas.style.transform = layerFlipped ? 'translateZ(0)' : ''; // a fresh layer on screen
+  viewport.refreshes++;
+}
+
+function scheduleCanvasRefresh(): void {
+  for (const delay of REFRESH_DELAYS_MS) setTimeout(() => { refreshDue = true; }, delay);
+}
+
+window.addEventListener('resize', () => { fitCanvasToWindow(); scheduleCanvasRefresh(); });
+window.visualViewport?.addEventListener('resize', fitCanvasToWindow);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) scheduleCanvasRefresh(); });
+window.addEventListener('pageshow', scheduleCanvasRefresh);
+canvas.addEventListener('pointerdown', () => { refreshDue = true; }, { once: true });
+fitCanvasToWindow();
+scheduleCanvasRefresh();
+
+/** Created only after the canvas got its real size, so its buffer is never first made at the default 300×150. */
 export const ctx = canvas.getContext('2d')!;
 
 /** Converts a mouse/touch position in the window into logical screen coordinates. */
