@@ -21,7 +21,10 @@ npm.cmd install          # один раз
 npm.cmd run dev          # дев-сервер http://localhost:8765 (конфиг .claude/launch.json → "game")
 npm.cmd run typecheck    # tsc --noEmit
 npm.cmd run build        # typecheck + сборка в dist/index.html
+npm.cmd run app:sync     # build + копирование в нативные проекты ios/ и android/ (Capacitor)
 ```
+
+Нативные приложения (Capacitor 8) — раздел «Приложение» в README. Цели: играть на своём iPhone и раздавать тестерам через TestFlight; публикация в магазинах пока не планируется, но решения должны её не закрывать (никакой рекламы и трекинга). У пользователя есть Mac, но Xcode и сборку под iOS она ещё не делала — этот шаг объяснять подробно, по шагам. Android-устройства нет, Android проверяем в эмуляторе Android Studio на Windows.
 
 ## Правила кода
 
