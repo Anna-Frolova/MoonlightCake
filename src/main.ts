@@ -1,5 +1,6 @@
 // Entry point: the game loop. Each frame: update() advances everything by `dt`, render() draws the current scene.
-import { setBusEnabled } from './audio/engine';
+import './fonts/generated/fonts.css'; // made by scripts/gameFonts.ts at dev start / build
+import { setAudioPaused, setBusEnabled } from './audio/engine';
 import { updateMusic } from './audio/music';
 import { sfx } from './audio/sfx';
 import { canvas, ctx, fillView, fitCanvasToWindow, SCREEN_H, SCREEN_W, view, viewport } from './core/canvas';
@@ -141,6 +142,8 @@ setBusEnabled('sfx', progress.soundOn);
 applyLanguage();
 document.title = t().gameTitle;
 setUpInput();
+// While hidden no frames are drawn, so the game (and guests' patience) waits by itself; the sound must be stopped.
+document.addEventListener('visibilitychange', () => setAudioPaused(document.hidden));
 if (import.meta.env.DEV) void import('./debug');
 requestAnimationFrame(frame);
 void document.fonts?.load('800 20px Nunito');

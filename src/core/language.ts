@@ -1,5 +1,6 @@
 // Current interface language. Stored apart from the save, so switching it never touches progress
 // and a new game keeps the chosen language.
+import { readStored, writeStored } from './storage';
 import { JAPANESE_FONT_FAMILY } from './theme';
 
 export type Language = 'uk' | 'ja';
@@ -15,10 +16,8 @@ export const LANGUAGES: { id: Language; label: string }[] = [
 const LANGUAGE_KEY = 'misiachnyi-korzh-language';
 
 function detectLanguage(): Language {
-  try {
-    const stored = localStorage.getItem(LANGUAGE_KEY);
-    if (stored === 'uk' || stored === 'ja') return stored;
-  } catch { /* storage blocked: fall through to the browser language */ }
+  const stored = readStored(LANGUAGE_KEY);
+  if (stored === 'uk' || stored === 'ja') return stored;
   const preferred = typeof navigator !== 'undefined' ? navigator.languages ?? [navigator.language] : [];
   return preferred.some(lang => lang?.toLowerCase().startsWith('ja')) ? 'ja' : 'uk';
 }
@@ -30,7 +29,7 @@ export const language = (): Language => current;
 /** Picks the current language's variant. */
 export const loc = <T>(value: Localized<T>): T => value[current];
 
-/** Starts downloading the Japanese glyphs; canvas text only picks a web font up once it is loaded. */
+/** Starts loading the Japanese glyphs; canvas text only picks a web font up once it is loaded. */
 function preloadFonts(lang: Language): void {
   if (lang === 'ja') void document.fonts?.load(`800 20px ${JAPANESE_FONT_FAMILY}`, 'あア月');
 }
@@ -44,6 +43,6 @@ export function applyLanguage(): void {
 export function setLanguage(lang: Language): void {
   if (lang === current) return;
   current = lang;
-  try { localStorage.setItem(LANGUAGE_KEY, lang); } catch { /* storage unavailable (private mode) */ }
+  writeStored(LANGUAGE_KEY, lang);
   applyLanguage();
 }

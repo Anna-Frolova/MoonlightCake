@@ -15,7 +15,8 @@ const enabled = { sfx: true, music: true };
 
 /** Browsers only allow audio after a user gesture, so this is called on the first click/tap. */
 export function initAudio(): void {
-  if (graph) { if (graph.context.state === 'suspended') void graph.context.resume(); return; }
+  // iOS leaves the context 'interrupted' after a call or a trip to the home screen; a tap revives it
+  if (graph) { if (graph.context.state !== 'running' && !document.hidden) void graph.context.resume(); return; }
   try {
     const AudioCtor = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     const context = new AudioCtor();
@@ -60,6 +61,13 @@ function applyVolumes(): void {
 export function setBusEnabled(bus: Bus, on: boolean): void {
   enabled[bus] = on;
   applyVolumes();
+}
+
+/** Silences everything while the game is hidden (app minimised, screen locked, another tab). */
+export function setAudioPaused(paused: boolean): void {
+  if (!graph) return;
+  if (paused) void graph.context.suspend();
+  else void graph.context.resume().catch(() => { /* not allowed without a gesture: the next tap resumes it */ });
 }
 
 export function audioTime(): number | null {

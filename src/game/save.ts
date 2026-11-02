@@ -1,4 +1,5 @@
-// Saving progress in the browser's localStorage (similar to PlayerPrefs in Unity).
+// Saving progress (similar to PlayerPrefs in Unity); the storage itself is core/storage.ts.
+import { readStored, writeStored } from '../core/storage';
 import type { SaveData } from '../data/types';
 
 const SAVE_KEY = 'misiachnyi-korzh-v6';
@@ -17,7 +18,7 @@ export function createNewSave(): SaveData {
 
 export function loadSave(): SaveData | null {
   try {
-    const stored = JSON.parse(localStorage.getItem(SAVE_KEY) ?? 'null') as Partial<SaveData> | null;
+    const stored = JSON.parse(readStored(SAVE_KEY) ?? 'null') as Partial<SaveData> | null;
     if (!stored || stored.version !== SAVE_VERSION) return null;
     const defaults = createNewSave();
     return {
@@ -26,14 +27,14 @@ export function loadSave(): SaveData | null {
       totals: { ...defaults.totals, ...stored.totals },
     };
   } catch {
-    return null; // storage blocked or corrupted: start fresh
+    return null; // corrupted: start fresh
   }
 }
 
 export function writeSave(data: SaveData): void {
-  try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); } catch { /* storage unavailable (private mode) */ }
+  writeStored(SAVE_KEY, JSON.stringify(data));
 }
 
 export function hasSave(): boolean {
-  try { return !!localStorage.getItem(SAVE_KEY); } catch { return false; }
+  return !!readStored(SAVE_KEY);
 }
