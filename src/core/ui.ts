@@ -31,6 +31,8 @@ export const pointer = { x: -99, y: -99, isDown: false };
 const springs = new Map<string, { scale: number; velocity: number }>();
 const SPRING_STIFFNESS = 300;
 const SPRING_DAMPING = 17;
+/** A press released this far outside the pressed button still counts: a fingertip drifts a little as it lifts. */
+const RELEASE_TOLERANCE = 18;
 /** Button captions shrink to stay this far inside the button. */
 const BUTTON_TEXT_PADDING = 18;
 
@@ -53,6 +55,15 @@ export function findButtonAt(point: { x: number; y: number }): ButtonHitArea | n
     if (b.layer === topLayer && point.x >= b.x && point.x <= b.x + b.w && point.y >= b.y && point.y <= b.y + b.h) return b;
   }
   return null;
+}
+
+/** The pressed button, if the press is released on it or close around it (only within its layer's reach). */
+export function pressedButtonAt(point: { x: number; y: number }): ButtonHitArea | null {
+  const hit = findButtonAt(point);
+  if (hit) return hit.id === ui.pressedId ? hit : null; // released on another button
+  const pressed = ui.buttons.find(b => b.id === ui.pressedId), m = RELEASE_TOLERANCE;
+  return pressed && point.x >= pressed.x - m && point.x <= pressed.x + pressed.w + m && point.y >= pressed.y - m && point.y <= pressed.y + pressed.h + m
+    ? pressed : null;
 }
 
 /** Called at the start of each frame, before scenes register this frame's buttons. */

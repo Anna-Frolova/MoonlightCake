@@ -16,6 +16,8 @@ export const BUTTON_COLOR = {
   gold: '#f7b733',
   danger: '#ff5f8f',
   reset: '#c25aa8',
+  /** The round "undo" button beside the cake: a clear sky blue, so it stands out on the violet kitchen. */
+  undo: '#3f9be6',
 } as const;
 
 /** The tutorial: the veil over everything that can't be used yet, and the guides (dashed sign, drag arrows). */

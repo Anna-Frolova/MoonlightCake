@@ -6,7 +6,7 @@ import { clock } from './core/clock';
 import { shade } from './core/color';
 import type { Point } from './core/math';
 import { burst } from './core/particles';
-import { findButtonAt, pointer, ui } from './core/ui';
+import { findButtonAt, pointer, pressedButtonAt, ui } from './core/ui';
 import { runtime, type StationIndex } from './game/state';
 import { lookAt } from './game/guestReactions';
 import { isPressAllowed, tutorial, tutorialGate } from './game/tutorial';
@@ -48,10 +48,10 @@ function onPointerMove(event: PointerEvent): void {
 function onPointerUp(event: PointerEvent): void {
   const point = updatePointer(event);
   pointer.isDown = false;
-  // a button fires only if the pointer is released over the same button it was pressed on
+  // a button fires only if the pointer is released over (or just beside) the same button it was pressed on
   if (ui.pressedId) {
-    const hit = findButtonAt(point);
-    if (hit && hit.id === ui.pressedId && !hit.disabled && !runtime.fade) {
+    const hit = pressedButtonAt(point);
+    if (hit && !hit.disabled && !runtime.fade) {
       if (!hit.silent) (hit.sound === 'tab' ? sfx.tab : sfx.click)();
       burst(point.x, point.y, 7, ['#ffffff', '#9feaff', shade(hit.color, 0.4)], { kind: 'star', gravity: 40, minSpeed: 40, maxSpeed: 150, minSize: 2, maxSize: 4 });
       hit.onClick?.();

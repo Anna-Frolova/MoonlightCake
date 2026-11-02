@@ -1,6 +1,7 @@
 // Station 1: switch the cake's shape and tap layers and fillings on the shelf above the cake to stack them.
 import { sfx } from '../../audio/sfx';
 import { ctx } from '../../core/canvas';
+import { shade, withAlpha } from '../../core/color';
 import { ellipsePath } from '../../core/draw';
 import { loc } from '../../core/language';
 import { burst } from '../../core/particles';
@@ -25,6 +26,8 @@ import { judgeChoice } from '../../game/guestReactions';
 const LAND_SOUND_DELAY_MS = 160;
 /** Helper stacks one item every this many ms. */
 const AUTO_STACK_INTERVAL_MS = 150;
+/** The undo button: dimmed while there is nothing to undo; the arrow's size and thickness (shares of the radius). */
+const UNDO_LOOK = { disabledAlpha: 0.45, arrowRadius: 0.4, arrowWidth: 0.15, arrowHead: 0.32, ring: 3 };
 /** Where the helper's sparkle appears (its spot on the shelf). */
 const HELPER_SHELF_SPOT = { x: HELPER_SHELF.slotXs[0], y: HELPER_SHELF.y - 24 };
 
@@ -105,6 +108,29 @@ function itemAt<T>(items: T[], shelf: ShelfLayout, point: Point): T | undefined 
   return items.find((_, i) => isOverShelfItem(point, xs[i], items.length, shelf));
 }
 
+/** A glossy sky-blue disc with a white ring and a bold white "back" arrow (↶ drawn, so it's thick on a phone). */
+function drawUndoButton(centerX: number, centerY: number, radius: number, isDisabled: boolean, hovered: boolean): void {
+  const color = BUTTON_COLOR.undo;
+  ctx.save();
+  ctx.globalAlpha = isDisabled ? UNDO_LOOK.disabledAlpha : 1;
+  if (!isDisabled) { ctx.shadowColor = withAlpha(color, hovered ? 0.95 : 0.7); ctx.shadowBlur = hovered ? 30 : 20; ctx.shadowOffsetY = 4; }
+  const fill = ctx.createLinearGradient(0, centerY - radius, 0, centerY + radius);
+  fill.addColorStop(0, shade(color, 0.35)); fill.addColorStop(0.55, color); fill.addColorStop(1, shade(color, -0.25));
+  ellipsePath(centerX, centerY, radius, radius); ctx.fillStyle = fill; ctx.fill();
+  ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+  ellipsePath(centerX, centerY - radius * 0.45, radius * 0.62, radius * 0.3); ctx.fillStyle = 'rgba(255,255,255,0.28)'; ctx.fill(); // gloss
+  ellipsePath(centerX, centerY, radius - UNDO_LOOK.ring / 2, radius - UNDO_LOOK.ring / 2);
+  ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = UNDO_LOOK.ring; ctx.stroke();
+  // the arrow: half a circle over the top from right to left, its head pointing down on the left
+  const arcRadius = radius * UNDO_LOOK.arrowRadius, arcY = centerY + radius * 0.12, head = radius * UNDO_LOOK.arrowHead;
+  ctx.shadowColor = 'rgba(20,40,90,0.6)'; ctx.shadowBlur = 4; ctx.shadowOffsetY = 1.5;
+  ctx.strokeStyle = '#fff'; ctx.fillStyle = '#fff'; ctx.lineWidth = radius * UNDO_LOOK.arrowWidth; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.arc(centerX, arcY, arcRadius, 0, Math.PI, true); ctx.stroke();
+  const tipX = centerX - arcRadius, tipY = arcY + head * 0.9;
+  ctx.beginPath(); ctx.moveTo(tipX, tipY); ctx.lineTo(tipX - head * 0.75, arcY - head * 0.1); ctx.lineTo(tipX + head * 0.75, arcY - head * 0.1); ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+
 /** Round switches above the shelf; the chosen shape is lit and every layer on the shelf takes it. */
 function drawShapeSwitches(cake: Cake): void {
   const shapes = todaysMenu().shapes, { y, size, gap } = SHAPE_SWITCHES;
@@ -135,9 +161,10 @@ export const layersStation: Station = {
 
   drawControls(_rightEdge, _y, cake) {
     // undo sits right of the cake, under the right thumb (the layers are added by tapping the shelf above the cake)
-    const side = CAKE_SIDE_BUTTON, size = side.h;
-    button('undo', side.x + (side.w - size) / 2, side.y, size, size, '↶', {
-      color: BUTTON_COLOR.secondary, fontSize: 40, radius: size / 2, disabled: isStackLocked(cake) || !cake.stack.length, onClick: removeTopItem,
+    const side = CAKE_SIDE_BUTTON, size = side.h, isDisabled = isStackLocked(cake) || !cake.stack.length;
+    button('undo', side.x + (side.w - size) / 2, side.y, size, size, '', {
+      disabled: isDisabled, onClick: removeTopItem,
+      draw: (x, y, w, h, hovered) => drawUndoButton(x + w / 2, y + h / 2, w / 2, isDisabled, hovered),
     });
   },
 

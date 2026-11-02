@@ -37,7 +37,7 @@ export const POUR_POSITION = { x: CAULDRON.x - 62, y: 418 };
 export const POUR_REACH = 140;
 
 /** Station buttons ("Auto", undo, pour…) line up right-aligned in the top right corner of the work area. */
-export const STATION_CONTROLS = { right: 1264, y: 72, h: 46, gap: 8 };
+export const STATION_CONTROLS = { right: 1264, y: 76, h: 46, gap: 8 };
 /** Centre of short messages (toasts, "already decorated" hint). */
 export const KITCHEN_MESSAGE_X = CAKE_CENTER_X;
 /** Decorative shelf with the bought helpers, on the wall at the top right. */
@@ -46,6 +46,13 @@ export const HELPER_SHELF = { x: 1010, y: 172, w: 250, slotXs: [1045, 1105, 1165
 export const TABS = { y: 652, h: 58, gap: 10, sideMargin: 16 };
 /** Top bar with day, coins, reset and serve. */
 export const TOP_BAR_HEIGHT = 62;
+/** "Reset" in the top bar. */
+export const RESET_BUTTON = { x: 850, y: 8, w: 160, h: 46 };
+/**
+ * "Serve": the main button of the kitchen, bigger than the rest and hanging a little below the top bar, so on a
+ * phone it is easy to hit and not right at the screen's edge (where the system may hold a touch back).
+ */
+export const SERVE_BUTTON = { x: 1024, y: 10, w: 240, h: 58 };
 
 /** Area around the cake where pressing starts piping cream. */
 export const CREAM_ZONE = { halfWidth: 175, above: 75, below: 55 };

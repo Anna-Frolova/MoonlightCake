@@ -19,7 +19,7 @@ import { currentReaction, reactionMood, updateGaze } from '../game/guestReaction
 import { activeGuestTheme, isOwned, progress, runtime, type Customer, type StationIndex } from '../game/state';
 import { currentCake, resetCake } from '../kitchen/kitchen';
 import {
-  AUTO_BUTTON, CAKE_BASE_Y, CAKE_CENTER_X, GLAZE_STATION_CAKE_SCALE, GLAZE_STATION_CAKE_X, HELPER_KITTEN_SPOT, KITCHEN_MESSAGE_X, STATION_CONTROLS, TABS,
+  AUTO_BUTTON, RESET_BUTTON, SERVE_BUTTON, CAKE_BASE_Y, CAKE_CENTER_X, GLAZE_STATION_CAKE_SCALE, GLAZE_STATION_CAKE_X, HELPER_KITTEN_SPOT, KITCHEN_MESSAGE_X, STATION_CONTROLS, TABS,
   TICKET, TOP_BAR_HEIGHT,
 } from '../kitchen/layout';
 import { drawGlazeArc, drawGlazeStationScenery, drawMovingBottles } from '../kitchen/stations/glaze';
@@ -121,8 +121,9 @@ function drawTopBar(): void {
   drawText(t().dayAndGuest(progress.day, progress.guestIndex + 1, progress.guestQueue!.length), 24, 31, 21, TEXT.main, 'left', 800);
   drawCoinCounter(250, 8);
   drawSoundButtons(420, 8);
-  button('resetCake', SCREEN_W - 400, 8, 160, 46, t().reset, { color: BUTTON_COLOR.reset, fontSize: 21, onClick: resetCake });
-  button('serveCake', SCREEN_W - 228, 8, 212, 46, t().serveCake, { color: BUTTON_COLOR.confirm, fontSize: 22, glow: isCakeReady(), onClick: serveCake });
+  const reset = RESET_BUTTON, serve = SERVE_BUTTON;
+  button('resetCake', reset.x, reset.y, reset.w, reset.h, t().reset, { color: BUTTON_COLOR.reset, fontSize: 21, onClick: resetCake });
+  button('serveCake', serve.x, serve.y, serve.w, serve.h, t().serveCake, { color: BUTTON_COLOR.confirm, fontSize: 25, glow: isCakeReady(), onClick: serveCake });
 }
 
 /** The order: the guest in a big window, name and patience under it, the wanted cake below. */
