@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<title>Місячний Корж — app icon &amp; splash</title>
+<style>
+  body { margin: 0; padding: 16px; background: #1b1b22; color: #ddd; font: 14px system-ui, sans-serif; }
+  #game { display: none; }
+  .row { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-start; }
+  figure { margin: 0; }
+  figure img { display: block; width: 256px; height: 256px; background: repeating-conic-gradient(#333 0 25%, #2a2a2a 0 50%) 0 0 / 16px 16px; }
+  figure.round img { border-radius: 50%; }
+  figure.squircle img { border-radius: 22%; }
+  button { font: inherit; padding: 8px 16px; margin: 12px 0; }
+</style>
+</head>
+<body>
+<!-- dev-only page (npm run dev → /tools/art.html): draws the app icon and splash with the game's own renderers -->
+<canvas id="game"></canvas>
+<button id="save">Save to assets/</button> <span id="status"></span>
+<div class="row" id="previews"></div>
+<script type="module" src="./art.ts"></script>
+</body>
+</html>

@@ -9,9 +9,11 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "app:sync": "npm run build && cap sync"
+    "app:sync": "npm run build && cap sync",
+    "app:assets": "capacitor-assets generate --ios --android --iconBackgroundColor \"#0c0824\" --splashBackgroundColor \"#0c0824\" --splashBackgroundColorDark \"#0c0824\""
   },
   "devDependencies": {
+    "@capacitor/assets": "4.0.0",
     "@capacitor/cli": "8.6.0",
     "@fontsource/comfortaa": "^5.3.0",
     "@fontsource/m-plus-rounded-1c": "^5.3.0",

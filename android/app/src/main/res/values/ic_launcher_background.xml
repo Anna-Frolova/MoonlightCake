@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ic_launcher_background">#FFFFFF</color>
+    <color name="ic_launcher_background">#0C0824</color>
+    <!-- the game's night background (index.html), shown behind the icon on the Android 12+ launch screen -->
+    <color name="splash_background">#0C0824</color>
 </resources>
