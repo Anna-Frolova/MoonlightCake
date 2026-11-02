@@ -1,5 +1,5 @@
 // Title screen: the chef cat behind the counter, the game title and continue / new game.
-import { canvas, ctx, repairLog, SCREEN_H, SCREEN_W, tryNextRepair, viewport } from '../core/canvas';
+import { canvas, ctx, SCREEN_W, viewport } from '../core/canvas';
 import { clock } from '../core/clock';
 import { drawText, starPath } from '../core/draw';
 import { BUTTON_COLOR, TEXT, TITLE_FONT_FAMILY } from '../core/theme';
@@ -16,9 +16,6 @@ import { drawLanguageSwitch, drawSoundButtons, LANGUAGE_SWITCH_W } from './hud';
 
 const TITLE_Y = 100;
 const BUTTONS_Y = 590;
-/** Tap area of the build stamp in the bottom-right corner (a diagnosis tool, see `tryNextRepair`). */
-const STAMP_TAP_W = 460;
-const STAMP_TAP_H = 34;
 
 export function renderTitle(): void {
   const time = clock.time;
@@ -55,15 +52,9 @@ export function renderTitle(): void {
   } else {
     button('newGame', 490, BUTTONS_Y, 300, 66, t().openCafe, { color: BUTTON_COLOR.confirm, fontSize: 24, glow: true, onClick: startNewGame });
   }
-  // which build is running (phones cache old ones), plus render diagnostics for the blurry-iPhone bug;
-  // tapping it tries the next un-blur method (core/canvas.ts) and names it at the end
+  // which build is running (phones cache old ones), plus render diagnostics in case the blurry-iPhone bug returns
   const renderInfo = `${viewport.pixelRatio.toFixed(1)}× · ${viewport.zoom.toFixed(2)} · ${canvas.width}×${canvas.height} · ${viewport.width}×${viewport.height} · r${viewport.resizes} · f${viewport.refreshes}`;
-  const repairInfo = repairLog.tries ? ` · #${repairLog.tries} ${repairLog.last}` : '';
-  const stamp = `${__BUILD_ID__} · ${renderInfo}${repairInfo}`;
-  button('buildStamp', SCREEN_W - STAMP_TAP_W, SCREEN_H - STAMP_TAP_H, STAMP_TAP_W, STAMP_TAP_H, stamp, {
-    silent: true, hoverScale: 1, onClick: tryNextRepair,
-    draw: () => drawText(stamp, SCREEN_W - 16, 706, 11, repairLog.tries ? 'rgba(255,220,150,0.8)' : 'rgba(220,210,255,0.35)', 'right', 700),
-  });
+  drawText(`${__BUILD_ID__} · ${renderInfo}`, SCREEN_W - 16, 706, 11, 'rgba(220,210,255,0.35)', 'right', 700);
   drawSoundButtons(SCREEN_W - 124, 16);
   drawLanguageSwitch(SCREEN_W - 124 - LANGUAGE_SWITCH_W - 8, 16);
 }

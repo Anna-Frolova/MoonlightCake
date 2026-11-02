@@ -73,7 +73,7 @@ export function fitCanvasToWindow(): void {
   }
   // One canvas pixel per screen pixel: the device ratio (3 on iPhones) times the page zoom, if zoomed in.
   // (The zoom used to be capped together with the device ratio, so a zoomed iPhone stayed at 3× and looked blurry.)
-  let pixelRatio = forcedPixelRatio ?? Math.min(window.devicePixelRatio || 1, MAX_DEVICE_PIXEL_RATIO) * Math.max(1, zoom);
+  let pixelRatio = Math.min(window.devicePixelRatio || 1, MAX_DEVICE_PIXEL_RATIO) * Math.max(1, zoom);
   const pixels = width * height * pixelRatio * pixelRatio;
   if (pixels > MAX_CANVAS_PIXELS) pixelRatio *= Math.sqrt(MAX_CANVAS_PIXELS / pixels);
   const insets = safeAreaInsets();
@@ -104,16 +104,26 @@ export function fitCanvasToWindow(): void {
     top: -viewport.offsetY / scale, bottom: (height - viewport.offsetY) / scale,
   });
 }
+
 /**
- * iPhones often show the canvas blurry although its buffer has exactly the screen's pixels (diagnostics on the
- * title screen: 3.0×, buffer = screen, zoom 1.00): iOS's on-screen copy of the canvas looks like it's made at
- * 1 pixel per point and stretched, until a restart. Remaking the drawing buffer and toggling the CSS transform
- * didn't help, so now the canvas is taken out of the page and put back (iOS has to rebuild how it shows it)
+ * iPhones often show the canvas blurry at launch although its buffer has exactly the screen's pixels (diagnostics on
+ * the title screen: 3.0×, buffer = screen, zoom 1.00): iOS's on-screen copy of the canvas looks like it's made at
+ * 1 pixel per point and stretched, until a restart. Remaking the drawing buffer or toggling the CSS transform didn't
+ * help; taking the canvas out of the page and putting it back (iOS then rebuilds how it shows it) does. So that's done
  * shortly after launch, after coming back to the game and after a resize. Never mid-touch (a drag would break).
  * The game redraws the whole frame right after, so nothing flickers.
  */
-const REFRESH_DELAYS_MS = [300, 1000, 2500];
+const REFRESH_DELAYS_MS = [100, 300, 1000, 2500];
+/**
+ * At launch the canvas stays invisible (the page's night background shows) until the refresh at this time,
+ * then fades in, so the blurry first moment isn't seen.
+ */
+const REVEAL_AT_MS = 300;
+/** Shown anyway by then, should no frame run the refresh (e.g. a finger held down). */
+const REVEAL_FALLBACK_MS = 1500;
+const REVEAL_FADE = 'opacity 0.25s ease-out';
 let refreshDue = false;
+let revealDue = false;
 let pointersDown = 0;
 
 function reinsertCanvas(): void {
@@ -124,36 +134,22 @@ function reinsertCanvas(): void {
   parent.insertBefore(canvas, next);
 }
 
+function revealCanvas(): void {
+  revealDue = false;
+  canvas.style.opacity = '';
+}
+
 function refreshCanvas(): void {
   if (pointersDown > 0) return; // stays due until the finger is lifted
   refreshDue = false;
   reinsertCanvas();
   canvas.width = canvas.width; // a fresh drawing buffer of the same size
   viewport.refreshes++;
+  if (revealDue) revealCanvas();
 }
 
 function scheduleCanvasRefresh(): void {
   for (const delay of REFRESH_DELAYS_MS) setTimeout(() => { refreshDue = true; }, delay);
-}
-
-/** Diagnosis (tap the build stamp on the title screen): each tap tries the next way to un-blur, named in the stamp. */
-let forcedPixelRatio: number | null = null;
-const REPAIRS: { name: string; run: () => void }[] = [
-  { name: 'reinsert', run: reinsertCanvas },
-  { name: 'buffer', run: () => { canvas.width = canvas.width; } },
-  { name: 'hide-show', run: () => { canvas.style.display = 'none'; requestAnimationFrame(() => { canvas.style.display = 'block'; }); } },
-  { name: 'css-nudge', run: () => { canvas.style.width = viewport.width + 1 + 'px'; requestAnimationFrame(() => { canvas.style.width = viewport.width + 'px'; }); } },
-  { name: 'will-change', run: () => { canvas.style.willChange = canvas.style.willChange ? '' : 'transform'; } },
-  { name: 'opacity', run: () => { canvas.style.opacity = canvas.style.opacity ? '' : '0.999'; } },
-  { name: 'ratio-2x', run: () => { forcedPixelRatio = forcedPixelRatio ? null : 2; } },
-];
-export const repairLog = { tries: 0, last: '' };
-
-export function tryNextRepair(): void {
-  const repair = REPAIRS[repairLog.tries % REPAIRS.length];
-  repairLog.tries++;
-  repairLog.last = repair.name;
-  repair.run();
 }
 
 window.addEventListener('resize', () => { fitCanvasToWindow(); scheduleCanvasRefresh(); });
@@ -166,7 +162,11 @@ window.addEventListener('pageshow', scheduleCanvasRefresh);
 window.addEventListener('pointerdown', () => { pointersDown++; }, true);
 for (const type of ['pointerup', 'pointercancel']) window.addEventListener(type, () => { pointersDown = Math.max(0, pointersDown - 1); }, true);
 fitCanvasToWindow();
+canvas.style.opacity = '0';
+canvas.style.transition = REVEAL_FADE;
 scheduleCanvasRefresh();
+setTimeout(() => { revealDue = true; }, REVEAL_AT_MS);
+setTimeout(revealCanvas, REVEAL_FALLBACK_MS);
 
 /** Created only after the canvas got its real size, so its buffer is never first made at the default 300×150. */
 export const ctx = canvas.getContext('2d')!;
