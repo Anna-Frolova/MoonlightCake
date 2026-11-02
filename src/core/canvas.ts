@@ -4,14 +4,21 @@
 
 export const SCREEN_W = 1280;
 export const SCREEN_H = 720;
-/** Backing-store pixels per CSS pixel are capped here (iPhone screens are 3×). */
-const MAX_PIXEL_RATIO = 3;
+/** Device pixels per CSS pixel are capped here (iPhone screens are 3×); page zoom comes on top. */
+const MAX_DEVICE_PIXEL_RATIO = 3;
+/** Browsers refuse bigger canvases (iOS: ~16.7 million pixels), so the backing store stays below this. */
+const MAX_CANVAS_PIXELS = 16_000_000;
+/** Page zoom this close to 1 counts as not zoomed. */
+const ZOOM_TOLERANCE = 0.01;
 
 export const canvas = document.getElementById('game') as HTMLCanvasElement;
 export const ctx = canvas.getContext('2d')!;
 
-/** How the logical 1280×720 screen maps onto the real window (`width`/`height` = window size in CSS pixels). */
-export const viewport = { scale: 1, offsetX: 0, offsetY: 0, pixelRatio: 1, width: 1, height: 1 };
+/**
+ * How the logical 1280×720 screen maps onto the real window (`width`/`height` = window size in CSS pixels).
+ * `zoom` is the browser's page zoom (1 normally), shown with `pixelRatio` next to the build stamp for diagnosis.
+ */
+export const viewport = { scale: 1, offsetX: 0, offsetY: 0, pixelRatio: 1, zoom: 1, width: 1, height: 1 };
 
 /** The part of the logical plane that is on screen (includes the area under a notch). */
 export const view = { left: 0, top: 0, right: SCREEN_W, bottom: SCREEN_H };
@@ -32,17 +39,38 @@ function safeAreaInsets(): { top: number; right: number; bottom: number; left: n
 
 let lastSizeKey = '';
 
+const viewportMeta = document.querySelector<HTMLMetaElement>('meta[name="viewport"]');
+let zoomResetFor: number | null = null;
+
+/**
+ * iOS sometimes leaves the page zoomed in after the rotation at launch. The game still fits the (zoomed) window,
+ * but each canvas pixel then covers several screen pixels and everything looks blurry until a restart.
+ * Re-applying the viewport tag brings iOS back to scale 1 (tried once per stuck zoom value).
+ */
+function undoPageZoom(zoom: number): void {
+  if (!viewportMeta || zoom === zoomResetFor) return;
+  zoomResetFor = zoom;
+  const content = viewportMeta.content;
+  viewportMeta.content = '';
+  viewportMeta.content = content;
+}
+
 /**
  * Sizes the canvas to the visible window. Cheap when nothing changed, so it runs every frame:
  * on iPhones `resize` can fire before the new size is known (rotation, Safari's bars sliding away).
  */
 export function fitCanvasToWindow(): void {
-  // iPhones have 3 device pixels per CSS pixel; if Safari zoomed the page in, render sharper still
-  const zoom = Math.max(1, window.visualViewport?.scale ?? 1);
-  const pixelRatio = Math.min((window.devicePixelRatio || 1) * zoom, MAX_PIXEL_RATIO);
+  const zoom = window.visualViewport?.scale ?? 1;
+  if (Math.abs(zoom - 1) > ZOOM_TOLERANCE) undoPageZoom(zoom);
+  else zoomResetFor = null;
   const width = window.innerWidth, height = window.innerHeight;
+  // One canvas pixel per screen pixel: the device ratio (3 on iPhones) times the page zoom, if zoomed in.
+  // (The zoom used to be capped together with the device ratio, so a zoomed iPhone stayed at 3× and looked blurry.)
+  let pixelRatio = Math.min(window.devicePixelRatio || 1, MAX_DEVICE_PIXEL_RATIO) * Math.max(1, zoom);
+  const pixels = width * height * pixelRatio * pixelRatio;
+  if (pixels > MAX_CANVAS_PIXELS) pixelRatio *= Math.sqrt(MAX_CANVAS_PIXELS / pixels);
   const insets = safeAreaInsets();
-  const sizeKey = [width, height, pixelRatio, insets.top, insets.right, insets.bottom, insets.left].join();
+  const sizeKey = [width, height, pixelRatio, zoom.toFixed(2), insets.top, insets.right, insets.bottom, insets.left].join();
   if (sizeKey === lastSizeKey) return;
   lastSizeKey = sizeKey;
 
@@ -55,7 +83,7 @@ export function fitCanvasToWindow(): void {
   const safeWidth = width - insets.left - insets.right, safeHeight = height - insets.top - insets.bottom;
   const scale = Math.min(safeWidth / SCREEN_W, safeHeight / SCREEN_H);
   Object.assign(viewport, {
-    scale, pixelRatio, width, height,
+    scale, pixelRatio, zoom, width, height,
     offsetX: insets.left + (safeWidth - SCREEN_W * scale) / 2,
     offsetY: insets.top + (safeHeight - SCREEN_H * scale) / 2,
   });

@@ -1,5 +1,5 @@
 // Title screen: the chef cat behind the counter, the game title and continue / new game.
-import { ctx, SCREEN_W } from '../core/canvas';
+import { ctx, SCREEN_W, viewport } from '../core/canvas';
 import { clock } from '../core/clock';
 import { drawText, starPath } from '../core/draw';
 import { BUTTON_COLOR, TEXT, TITLE_FONT_FAMILY } from '../core/theme';
@@ -48,7 +48,9 @@ export function renderTitle(): void {
   } else {
     button('newGame', 490, BUTTONS_Y, 300, 66, t().openCafe, { color: BUTTON_COLOR.confirm, fontSize: 24, glow: true, onClick: startNewGame });
   }
-  drawText(__BUILD_ID__, SCREEN_W - 16, 706, 11, 'rgba(220,210,255,0.35)', 'right', 700); // which build is running (phones cache old ones)
+  // which build is running (phones cache old ones), plus the render resolution and page zoom to diagnose blurriness
+  const renderInfo = `${viewport.pixelRatio.toFixed(1)}× · ${viewport.zoom.toFixed(2)}`;
+  drawText(`${__BUILD_ID__} · ${renderInfo}`, SCREEN_W - 16, 706, 11, 'rgba(220,210,255,0.35)', 'right', 700);
   drawSoundButtons(SCREEN_W - 124, 16);
   drawLanguageSwitch(SCREEN_W - 124 - LANGUAGE_SWITCH_W - 8, 16);
 }
