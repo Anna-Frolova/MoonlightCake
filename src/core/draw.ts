@@ -85,11 +85,16 @@ export function drawTitle(text: string, x: number, y: number, size: number, colo
   ctx.font = `700 ${size}px ${TITLE_FONT_FAMILY}`;
   ctx.textAlign = align;
   ctx.textBaseline = 'middle';
+  const bottomColor = color === TEXT.main ? '#c9b6ff' : color;
+  // the glow comes from a solid-colour pass: WebKit (iPhone) may draw a gradient-filled text's shadow as a rectangle
   ctx.shadowColor = 'rgba(140,220,255,0.7)';
   ctx.shadowBlur = 18;
+  ctx.fillStyle = bottomColor;
+  ctx.fillText(text, x, y);
+  ctx.shadowColor = 'transparent';
   const gradient = ctx.createLinearGradient(0, y - size / 2, 0, y + size / 2);
   gradient.addColorStop(0, '#ffffff');
-  gradient.addColorStop(1, color === TEXT.main ? '#c9b6ff' : color);
+  gradient.addColorStop(1, bottomColor);
   ctx.fillStyle = gradient;
   ctx.fillText(text, x, y);
   ctx.restore();

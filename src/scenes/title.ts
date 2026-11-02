@@ -1,5 +1,5 @@
 // Title screen: the chef cat behind the counter, the game title and continue / new game.
-import { ctx, SCREEN_W, viewport } from '../core/canvas';
+import { canvas, ctx, SCREEN_W, viewport } from '../core/canvas';
 import { clock } from '../core/clock';
 import { drawText, starPath } from '../core/draw';
 import { BUTTON_COLOR, TEXT, TITLE_FONT_FAMILY } from '../core/theme';
@@ -31,6 +31,10 @@ export function renderTitle(): void {
   ctx.shadowColor = 'rgba(140,220,255,0.9)'; ctx.shadowBlur = 34;
   ctx.font = `700 76px ${TITLE_FONT_FAMILY}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.lineWidth = 10; ctx.strokeStyle = '#1a0d3d'; ctx.strokeText(title, 640, TITLE_Y + bob);
+  // the glow under the letters is a solid-colour pass: WebKit (iPhone) may draw a gradient-filled text's
+  // shadow as a rectangle; the gradient itself goes on top without a shadow
+  ctx.fillStyle = '#c9a6ff'; ctx.fillText(title, 640, TITLE_Y + bob);
+  ctx.shadowColor = 'transparent';
   const fill = ctx.createLinearGradient(0, 70, 0, 130);
   fill.addColorStop(0, '#e6fbff'); fill.addColorStop(1, '#c9a6ff');
   ctx.fillStyle = fill; ctx.fillText(title, 640, TITLE_Y + bob);
@@ -49,7 +53,7 @@ export function renderTitle(): void {
     button('newGame', 490, BUTTONS_Y, 300, 66, t().openCafe, { color: BUTTON_COLOR.confirm, fontSize: 24, glow: true, onClick: startNewGame });
   }
   // which build is running (phones cache old ones), plus the render resolution and page zoom to diagnose blurriness
-  const renderInfo = `${viewport.pixelRatio.toFixed(1)}× · ${viewport.zoom.toFixed(2)}`;
+  const renderInfo = `${viewport.pixelRatio.toFixed(1)}× · ${viewport.zoom.toFixed(2)} · ${canvas.width}×${canvas.height} · ${viewport.width}×${viewport.height} · r${viewport.resizes}`;
   drawText(`${__BUILD_ID__} · ${renderInfo}`, SCREEN_W - 16, 706, 11, 'rgba(220,210,255,0.35)', 'right', 700);
   drawSoundButtons(SCREEN_W - 124, 16);
   drawLanguageSwitch(SCREEN_W - 124 - LANGUAGE_SWITCH_W - 8, 16);

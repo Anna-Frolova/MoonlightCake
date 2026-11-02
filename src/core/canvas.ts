@@ -12,13 +12,13 @@ const MAX_CANVAS_PIXELS = 16_000_000;
 const ZOOM_TOLERANCE = 0.01;
 
 export const canvas = document.getElementById('game') as HTMLCanvasElement;
-export const ctx = canvas.getContext('2d')!;
 
 /**
  * How the logical 1280×720 screen maps onto the real window (`width`/`height` = window size in CSS pixels).
- * `zoom` is the browser's page zoom (1 normally), shown with `pixelRatio` next to the build stamp for diagnosis.
+ * `zoom` is the browser's page zoom (1 normally); `resizes` counts how often the drawing buffer was reallocated.
+ * Both are shown next to the build stamp to diagnose blurriness.
  */
-export const viewport = { scale: 1, offsetX: 0, offsetY: 0, pixelRatio: 1, zoom: 1, width: 1, height: 1 };
+export const viewport = { scale: 1, offsetX: 0, offsetY: 0, pixelRatio: 1, zoom: 1, width: 1, height: 1, resizes: 0 };
 
 /** The part of the logical plane that is on screen (includes the area under a notch). */
 export const view = { left: 0, top: 0, right: SCREEN_W, bottom: SCREEN_H };
@@ -63,7 +63,13 @@ export function fitCanvasToWindow(): void {
   const zoom = window.visualViewport?.scale ?? 1;
   if (Math.abs(zoom - 1) > ZOOM_TOLERANCE) undoPageZoom(zoom);
   else zoomResetFor = null;
-  const width = window.innerWidth, height = window.innerHeight;
+  let width = window.innerWidth, height = window.innerHeight;
+  if (width < 1 || height < 1) { // the app is still launching and the page has no size yet
+    if (lastSizeKey) return; // keep the last real size
+    // first sizing: take the (landscape) screen, so the drawing buffer is never created tiny
+    width = Math.max(screen.width, screen.height);
+    height = Math.min(screen.width, screen.height);
+  }
   // One canvas pixel per screen pixel: the device ratio (3 on iPhones) times the page zoom, if zoomed in.
   // (The zoom used to be capped together with the device ratio, so a zoomed iPhone stayed at 3× and looked blurry.)
   let pixelRatio = Math.min(window.devicePixelRatio || 1, MAX_DEVICE_PIXEL_RATIO) * Math.max(1, zoom);
@@ -77,8 +83,13 @@ export function fitCanvasToWindow(): void {
   // the CSS size is set in pixels too: `100vh` on iOS is taller than the visible area
   canvas.style.width = width + 'px';
   canvas.style.height = height + 'px';
-  canvas.width = Math.round(width * pixelRatio);
-  canvas.height = Math.round(height * pixelRatio);
+  // assigning width/height reallocates the drawing buffer even when unchanged (e.g. only the insets moved)
+  const bufferWidth = Math.round(width * pixelRatio), bufferHeight = Math.round(height * pixelRatio);
+  if (canvas.width !== bufferWidth || canvas.height !== bufferHeight) {
+    canvas.width = bufferWidth;
+    canvas.height = bufferHeight;
+    viewport.resizes++;
+  }
 
   const safeWidth = width - insets.left - insets.right, safeHeight = height - insets.top - insets.bottom;
   const scale = Math.min(safeWidth / SCREEN_W, safeHeight / SCREEN_H);
@@ -95,6 +106,13 @@ export function fitCanvasToWindow(): void {
 window.addEventListener('resize', fitCanvasToWindow);
 window.visualViewport?.addEventListener('resize', fitCanvasToWindow);
 fitCanvasToWindow();
+
+/**
+ * Created only after the canvas got its real size. WebKit decides how to draw a canvas (on the GPU or in a slower,
+ * lower-quality software mode) when the context's buffer is first made; at the default 300×150 it is too small
+ * for the GPU. Suspected cause of the random blurry launches on iPhones (with rectangular glows behind text).
+ */
+export const ctx = canvas.getContext('2d')!;
 
 /** Converts a mouse/touch position in the window into logical screen coordinates. */
 export function toScreenPoint(clientX: number, clientY: number): { x: number; y: number } {
