@@ -211,6 +211,46 @@ export function playMeow(pitch: number, mood: MeowMood, voice?: MeowVoice): void
 }
 
 /**
+ * Closed-mouth cat sounds, softer than a meow: `hm` — a pleased little hum going up; `mhm` — "m-hm", two hums,
+ * the second higher (agreement); `doubt` — "hmm?" dipping and rising at the end; `disagree` — "m-m", two hums
+ * going down (no, not that).
+ */
+export type HumKind = 'hm' | 'mhm' | 'doubt' | 'disagree';
+
+/** Each hum as syllables: start (s), length (s) and pitch glide as [share of the syllable, share of the base pitch]. */
+const HUM_SHAPES: Record<HumKind, { start: number; duration: number; glide: [number, number][] }[]> = {
+  hm: [{ start: 0, duration: 0.24, glide: [[0, 0.95], [0.6, 1.18], [1, 1.1]] }],
+  mhm: [{ start: 0, duration: 0.13, glide: [[0, 1], [1, 0.97]] }, { start: 0.18, duration: 0.22, glide: [[0, 1.12], [0.5, 1.3], [1, 1.22]] }],
+  doubt: [{ start: 0, duration: 0.42, glide: [[0, 1.05], [0.45, 0.88], [1, 1.35]] }],
+  disagree: [{ start: 0, duration: 0.15, glide: [[0, 1.1], [1, 1.02]] }, { start: 0.21, duration: 0.24, glide: [[0, 0.95], [1, 0.78]] }],
+};
+/** A hum sits lower than a meow and is muffled (the mouth is closed): a low-pass "mouth" and a quieter level. */
+const HUM = { baseHz: 230, mouthHz: 650, volume: 0.13, attack: 0.025 };
+
+export function playHum(pitch: number, kind: HumKind, voice?: MeowVoice): void {
+  if (!graph) return;
+  const { context } = graph;
+  const now = context.currentTime, color = voice ? VOICE_COLOR[voice] : NO_VOICE_COLOR, base = HUM.baseHz * pitch * color.pitch;
+  for (const syllable of HUM_SHAPES[kind]) {
+    const start = now + syllable.start, end = start + syllable.duration;
+    const oscillator = context.createOscillator(), filter = context.createBiquadFilter(), envelope = context.createGain();
+    oscillator.type = 'sawtooth'; filter.type = 'lowpass'; filter.frequency.value = HUM.mouthHz * color.formant; filter.Q.value = 1.5;
+    syllable.glide.forEach(([at, share], i) => {
+      if (i === 0) oscillator.frequency.setValueAtTime(base * share, start);
+      else oscillator.frequency.linearRampToValueAtTime(base * share, start + at * syllable.duration);
+    });
+    envelope.gain.setValueAtTime(0.0001, start);
+    envelope.gain.exponentialRampToValueAtTime(HUM.volume, start + HUM.attack);
+    envelope.gain.setValueAtTime(HUM.volume, end - 0.06);
+    envelope.gain.exponentialRampToValueAtTime(0.0001, end);
+    const send = context.createGain(); send.gain.value = 0.15;
+    oscillator.connect(filter); filter.connect(envelope);
+    envelope.connect(graph.sfxDry); envelope.connect(send); send.connect(graph.sfxWet);
+    oscillator.start(start); oscillator.stop(end + 0.05);
+  }
+}
+
+/**
  * A cat's purr: a low buzzing tone through a low-pass filter, its loudness throbbing ~25 times a second,
  * in slow "breaths" (louder on the inhale). `pitch` follows the cat's voice.
  */

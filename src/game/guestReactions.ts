@@ -1,9 +1,10 @@
 // The guest in the kitchen window follows the player: looks where they work and reacts to their choices
 // (surprised by the wrong cream or magic, worried by other wrong ingredients, pleased by the right ones).
-// Every choice is also heard: a bright "mrrp!" for a right one, a low grumble for a wrong one, in the guest's own voice.
+// Choices are also heard now and then, in the guest's own voice: a contented "hm", "m-hm", "mrrp!" or a short purr for
+// a right one; "hmm?", "m-m" or a grumble for a wrong one (more often — that's the useful hint).
 import { sfx } from '../audio/sfx';
 import { clock } from '../core/clock';
-import { clamp } from '../core/math';
+import { clamp, pickWeighted } from '../core/math';
 import type { Mood } from '../data/types';
 import { runtime } from './state';
 
@@ -24,11 +25,22 @@ const REACTION_MOOD: Record<Exclude<GuestReaction, 'pleased'>, Mood> = { surpris
 const PLEASED_MOODS: Mood[] = ['content', 'delighted'];
 /** A right choice pleases the guest only now and then, so it stays a nice surprise. */
 const PLEASED_CHANCE = 0.4;
-/** Several quick choices (toppings dropped one after another) get one sound per this many seconds. */
-const VOICE_INTERVAL = 0.3;
-/** A surprised grumble is a little higher than a worried one. */
+/** What the guest may say about a choice, with how often each comes up. */
+type ChoiceSound = 'chirp' | 'hm' | 'mhm' | 'purr' | 'grumble' | 'doubt' | 'disagree';
+const RIGHT_SOUNDS: [ChoiceSound, number][] = [['hm', 3], ['mhm', 3], ['chirp', 2], ['purr', 1]];
+const WRONG_SOUNDS: [ChoiceSound, number][] = [['doubt', 3], ['disagree', 3], ['grumble', 2]];
+/**
+ * Not every choice is voiced: a right one only now and then (a perfect cake shouldn't be a stream of sounds),
+ * a wrong one mostly. A surprising mistake (wrong cream or magic) and a pleased face always come with a sound.
+ */
+const VOICE_CHANCE = { right: 0.3, wrong: 0.75 };
+/** After any sound the guest stays quiet at least this long before the next one (shorter before a complaint). */
+const VOICE_QUIET_SECONDS = { right: 2.5, wrong: 0.8 };
+/** A surprised sound is a little higher than a worried one. */
 const SURPRISED_VOICE = 1.1;
+const SHORT_PURR_SECONDS = 0.8;
 let lastVoiceTime = -Infinity;
+let lastSound: ChoiceSound | null = null;
 
 const gaze = { targetX: 0, targetY: 0, since: -Infinity, x: GAZE_REST.x, y: GAZE_REST.y };
 let reaction: { kind: GuestReaction; startTime: number; mood: Mood } | null = null;
@@ -49,22 +61,32 @@ export function react(kind: GuestReaction): void {
   if (kind !== 'pleased') customer.moodChangedAt = clock.time;
 }
 
-/** The guest's chirp or grumble over a choice (at most one per VOICE_INTERVAL). */
-function voiceChoice(isRight: boolean, whenWrong: Exclude<GuestReaction, 'pleased'>): void {
+/** The guest's sound over a choice: by chance (or always with `isSure`), never right after another one, never the same twice running. */
+function voiceChoice(isRight: boolean, whenWrong: Exclude<GuestReaction, 'pleased'>, isSure: boolean): void {
   const cat = runtime.customer?.cat;
-  if (!cat || !isWaitingGuest() || clock.time - lastVoiceTime < VOICE_INTERVAL) return;
-  lastVoiceTime = clock.time;
-  sfx.meow(cat.voicePitch * (!isRight && whenWrong === 'surprised' ? SURPRISED_VOICE : 1), isRight ? 'chirp' : 'grumble', cat.voice);
+  if (!cat || !isWaitingGuest() || clock.time - lastVoiceTime < VOICE_QUIET_SECONDS[isRight ? 'right' : 'wrong']) return;
+  if (!isSure && Math.random() >= VOICE_CHANCE[isRight ? 'right' : 'wrong']) return;
+  const options = (isRight ? RIGHT_SOUNDS : WRONG_SOUNDS).filter(([sound]) => sound !== lastSound);
+  const sound = pickWeighted(options.map(([option]) => option), options.map(([, weight]) => weight));
+  lastVoiceTime = clock.time; lastSound = sound;
+  const pitch = cat.voicePitch * (!isRight && whenWrong === 'surprised' ? SURPRISED_VOICE : 1);
+  switch (sound) {
+    case 'chirp': case 'grumble': sfx.meow(pitch, sound, cat.voice); break;
+    case 'purr': sfx.purr(pitch * (cat.voice === 'male' ? 0.85 : 1.1), SHORT_PURR_SECONDS); break;
+    default: sfx.hum(pitch, sound, cat.voice);
+  }
 }
 
 /**
  * Wrong → the given worried / surprised face. Right → sometimes (PLEASED_CHANCE) a pleased face, and only
- * when `praise` is set (not for every small step). Either way the guest makes a sound, so the player can tell by ear.
+ * when `praise` is set (not for every small step). Sounds come by chance (see VOICE_CHANCE), so the player can
+ * often tell by ear without it getting noisy.
  */
 export function judgeChoice(isRight: boolean, whenWrong: Exclude<GuestReaction, 'pleased'>, praise = false): void {
-  voiceChoice(isRight, whenWrong);
-  if (!isRight) react(whenWrong);
-  else if (praise && Math.random() < PLEASED_CHANCE) react('pleased');
+  if (!isRight) { react(whenWrong); voiceChoice(false, whenWrong, whenWrong === 'surprised'); return; }
+  const isPleased = praise && Math.random() < PLEASED_CHANCE;
+  if (isPleased) react('pleased');
+  voiceChoice(true, whenWrong, isPleased);
 }
 
 /** The current reaction, or null once it has passed. */
