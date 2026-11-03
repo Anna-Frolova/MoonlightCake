@@ -15,8 +15,8 @@ import { HELPER_KITTEN } from '../data/cats';
 import { helperItemId } from '../data/shop';
 import type { Cake } from '../data/types';
 import { isCakeReady, serveCake } from '../game/flow';
-import { patienceBarValue, patienceLeft, patienceMood, PATIENCE_CALM_MARK, PATIENCE_LEVELS } from '../game/patience';
-import { currentReaction, reactionMood, updateGaze } from '../game/guestReactions';
+import { patienceBarValue, patienceLeft, PATIENCE_CALM_MARK, PATIENCE_LEVELS } from '../game/patience';
+import { currentReaction, guestMood, headPose, reactionMood, updateGaze } from '../game/guestReactions';
 import { orderChangeGlow } from '../game/orderChange';
 import { activeGuestTheme, isOwned, progress, runtime, type Customer, type StationIndex } from '../game/state';
 import { currentCake, resetCake } from '../kitchen/kitchen';
@@ -255,12 +255,13 @@ function drawChangedOrderGlow(customer: Customer): void {
 
 /**
  * The guest from the hat to the chest in their window. They look where the player works and react to their
- * choices for a moment (game/guestReactions.ts), otherwise their face follows their patience; the frame turns
+ * choices for a moment, nod or shake their head (game/guestReactions.ts), otherwise their face follows their
+ * patience and the player's mistakes; the frame turns
  * gold, then red as patience runs out.
  */
 function drawGuestWindow(customer: Customer): void {
   const reaction = currentReaction(), left = patienceLeft(customer), time = clock.time;
-  const mood = reaction ? reactionMood() : patienceMood(customer);
+  const mood = reaction ? reactionMood() : guestMood(customer);
   const { x, y, w, h, headAt, catScale, markOffset } = GUEST_WINDOW;
   const frameColor = left < PATIENCE_LEVELS.upset ? BUTTON_COLOR.danger : left < PATIENCE_LEVELS.impatient ? BUTTON_COLOR.gold : TEXT.label;
   const backdrop = ctx.createLinearGradient(0, y, 0, y + h);
@@ -271,7 +272,7 @@ function drawGuestWindow(customer: Customer): void {
   drawGlow(headX, headY, h * 0.8, '#c9b6ff', 0.25);
   // the head is ~150 px above the cat's origin at scale 1 (a bit lower for kittens)
   const headLift = 150 * catScale * (customer.cat.isKitten ? 0.9 : 1);
-  drawCat(customer.cat, headX, headY + headLift, catScale, time, mood, updateGaze(headX, headY, clock.delta));
+  drawCat(customer.cat, headX, headY + headLift, catScale, time, mood, updateGaze(headX, headY, clock.delta), headPose());
   ctx.restore();
   ctx.strokeStyle = frameColor; ctx.lineWidth = 3; roundRectPath(x + 1.5, y + 1.5, w - 3, h - 3, 15); ctx.stroke();
   const sideX = headX + markOffset.x, sideY = headY + markOffset.y;

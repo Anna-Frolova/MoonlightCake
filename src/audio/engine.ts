@@ -215,7 +215,8 @@ export function playMeow(pitch: number, mood: MeowMood, voice?: MeowVoice): void
  * the second higher (agreement); `doubt` — "hmm?" dipping and rising at the end; `disagree` — "m-m", two hums
  * going down (no, not that).
  */
-export type HumKind = 'hm' | 'mhm' | 'doubt' | 'disagree';
+/** `sigh`: a long falling "hmmm…" (unimpressed); `huff`: a short sharp "hmph" (annoyed). */
+export type HumKind = 'hm' | 'mhm' | 'doubt' | 'disagree' | 'sigh' | 'huff';
 
 /** Each hum as syllables: start (s), length (s) and pitch glide as [share of the syllable, share of the base pitch]. */
 const HUM_SHAPES: Record<HumKind, { start: number; duration: number; glide: [number, number][] }[]> = {
@@ -223,6 +224,8 @@ const HUM_SHAPES: Record<HumKind, { start: number; duration: number; glide: [num
   mhm: [{ start: 0, duration: 0.13, glide: [[0, 1], [1, 0.97]] }, { start: 0.18, duration: 0.22, glide: [[0, 1.12], [0.5, 1.3], [1, 1.22]] }],
   doubt: [{ start: 0, duration: 0.42, glide: [[0, 1.05], [0.45, 0.88], [1, 1.35]] }],
   disagree: [{ start: 0, duration: 0.15, glide: [[0, 1.1], [1, 1.02]] }, { start: 0.21, duration: 0.24, glide: [[0, 0.95], [1, 0.78]] }],
+  sigh: [{ start: 0, duration: 0.8, glide: [[0, 1.08], [0.3, 1.02], [1, 0.7]] }],
+  huff: [{ start: 0, duration: 0.2, glide: [[0, 1.3], [1, 0.82]] }],
 };
 /** A hum sits lower than a meow and is muffled (the mouth is closed): a low-pass "mouth" and a quieter level. */
 const HUM = { baseHz: 230, mouthHz: 650, volume: 0.13, attack: 0.025 };

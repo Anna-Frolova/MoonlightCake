@@ -89,6 +89,8 @@ export interface Customer {
   waitTime: number;
   /** When the guest last got grumpier (makes the portrait wobble). */
   moodChangedAt: number;
+  /** Grows with the player's mistakes on this cake, shrinks with right choices; sets the guest's face (game/guestReactions.ts). */
+  displeasure: number;
   /** The tutorial guest (first of day 1): the tutorial leads the player through their cake. */
   isTutorial: boolean;
   /** Today's guest who will change their order halfway (game/orderChange.ts), until they do. */

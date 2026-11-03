@@ -144,7 +144,7 @@ export function spawnNextGuest(): void {
     state: 'entering', x: GUEST_ENTRY_X, time: 0, mood: 'neutral', speech: null,
     orderShownFor: 0, reactionTime: 0, score: null, servedCake: null, hasPaid: false, orderPicture: null,
     // the tutorial guest is in no hurry
-    patience: next.tutorial ? null : patienceSeconds(order), waitTime: 0, moodChangedAt: 0, isTutorial: !!next.tutorial,
+    patience: next.tutorial ? null : patienceSeconds(order), waitTime: 0, moodChangedAt: 0, displeasure: 0, isTutorial: !!next.tutorial,
     changesOrder: changesOrderToday(queue, progress.guestIndex), changeCountdown: 0, orderChange: null,
   };
   runtime.cake = null;

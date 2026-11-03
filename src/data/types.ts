@@ -78,9 +78,10 @@ export type CatAccessory = 'none' | 'monocle' | 'glasses' | 'bow' | 'fangs' | 'b
 export type CatBack = 'none' | 'batWings' | 'featherWings' | 'cape' | 'fairyWings' | 'katana';
 /**
  * `content`: eyes softly closed, mouth as usual; `delighted`: eyes open, mouth a little open in joy (no smile).
- * Both are the quiet "pleased" faces; `happy` is the big beaming one.
+ * Both are the quiet "pleased" faces; `happy` is the big beaming one. `flat`: unimpressed, lids half down and
+ * a straight mouth (a guest after a few mistakes).
  */
-export type Mood = 'neutral' | 'happy' | 'sad' | 'thinking' | 'angry' | 'surprised' | 'content' | 'delighted';
+export type Mood = 'neutral' | 'happy' | 'sad' | 'thinking' | 'angry' | 'surprised' | 'content' | 'delighted' | 'flat';
 
 /** How a cat looks (also used for the chef mascot and the helper kitten). */
 export interface CatLook {

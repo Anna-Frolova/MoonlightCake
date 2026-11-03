@@ -33,6 +33,9 @@ const PLEASED_BLUSH_SCALE = 1.25;
 
 export interface Gaze { x: number; y: number }
 const NO_GAZE: Gaze = { x: 0, y: 0 };
+/** The head moved on the body (a nod, a head shake): shift in px and a tilt in radians round the head's centre. */
+export interface HeadPose { x: number; y: number; tilt: number }
+const STILL_HEAD: HeadPose = { x: 0, y: 0, tilt: 0 };
 
 /** Soft outline: the fur colour mixed towards dark violet (no harsh black lines). */
 export function catOutlineColor(look: CatLook): string {
@@ -52,8 +55,9 @@ export function softGradient(x: number, y: number, radiusX: number, radiusY: num
  * Draws a whole cat standing behind the counter.
  * @param time   seconds, drives breathing, tail sway and blinking
  * @param gaze   where the cat looks, -1..1 on each axis (0,0 = straight at the player)
+ * @param pose   the head (ears, face, hat, accessories) moved on the body, for a nod or a head shake
  */
-export function drawCat(look: CatLook, x: number, y: number, scale: number, time: number, mood: Mood = 'neutral', gaze: Gaze = NO_GAZE): void {
+export function drawCat(look: CatLook, x: number, y: number, scale: number, time: number, mood: Mood = 'neutral', gaze: Gaze = NO_GAZE, pose: HeadPose = STILL_HEAD): void {
   const outline = catOutlineColor(look);
   const bodyScale = look.isKitten ? KITTEN_BODY_SCALE : 1;
   const breathe = Math.sin(time * 2.2) * 2.2;
@@ -67,6 +71,7 @@ export function drawCat(look: CatLook, x: number, y: number, scale: number, time
   drawBack(look, outline, time);
   drawTail(look, outline, time);
   drawBody(look, outline, bodyScale, breathe);
+  ctx.save(); ctx.translate(pose.x, headY + pose.y); ctx.rotate(pose.tilt); ctx.translate(0, -headY);
   drawEars(look, outline, headY);
   drawHead(look, outline, headY);
   // the face shifts a little towards where the cat looks, so the head seems to turn
@@ -79,6 +84,7 @@ export function drawCat(look: CatLook, x: number, y: number, scale: number, time
   drawAccessory(look.accessory, look, outline, headY);
   drawAccessory(look.extraAccessory, look, outline, headY);
   ctx.restore();
+  ctx.restore(); // the head
   ctx.restore();
 }
 
@@ -298,6 +304,8 @@ function drawFace(look: CatLook, outline: string, headY: number, time: number, m
   } else if (mood === 'delighted') { // the mouth a little open in joy: a soft round opening with a tongue
     ellipsePath(0, headY + 25, 6.5, 4.5); ctx.fillStyle = '#c0406a'; ctx.fill(); ctx.stroke();
     ellipsePath(0, headY + 27, 3.5, 1.8); ctx.fillStyle = '#ff9cbc'; ctx.fill();
+  } else if (mood === 'flat') { // a short straight line
+    ctx.moveTo(-8, headY + 25); ctx.lineTo(8, headY + 25); ctx.stroke();
   } else if (mood === 'surprised') { // a little round "o"
     ellipsePath(0, headY + 27, 5, 6.5); ctx.fillStyle = '#c0406a'; ctx.fill(); ctx.stroke();
   } else { // cat "w" mouth
@@ -332,14 +340,16 @@ function drawEye(look: CatLook, outline: string, x: number, y: number, side: num
   ellipsePath(lookX + rx * 0.38, lookY + ry * 0.12, rx * 0.17, rx * 0.17); ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.fill();
   ctx.restore();
 
-  if (mood === 'sad' || mood === 'thinking' || mood === 'angry') { // eyelid drawn in fur colour over the top of the eye
+  if (mood === 'sad' || mood === 'thinking' || mood === 'angry' || mood === 'flat') { // eyelid drawn in fur colour over the top of the eye
     if (mood === 'angry') side = -side; // the lid slants the other way: inner corners down, a frown
     ctx.fillStyle = look.fur; ctx.beginPath();
-    if (mood !== 'thinking') { ctx.moveTo(x - 17, y - 20); ctx.lineTo(x + 17, y - 20); ctx.lineTo(x + 17, y - 8 + side * 6); ctx.lineTo(x - 17, y - 8 - side * 6); }
+    if (mood === 'flat') ctx.rect(x - 17, y - 20, 34, 18); // half down, level: unimpressed
+    else if (mood !== 'thinking') { ctx.moveTo(x - 17, y - 20); ctx.lineTo(x + 17, y - 20); ctx.lineTo(x + 17, y - 8 + side * 6); ctx.lineTo(x - 17, y - 8 - side * 6); }
     else ctx.rect(x - 17, y - 20, 34, 15);
     ctx.closePath(); ctx.fill();
     ctx.strokeStyle = outline; ctx.lineWidth = 2.5; ctx.beginPath();
-    if (mood !== 'thinking') { ctx.moveTo(x - 14, y - 8 - side * 5); ctx.lineTo(x + 14, y - 8 + side * 5); }
+    if (mood === 'flat') { ctx.moveTo(x - 13, y - 2); ctx.lineTo(x + 13, y - 2); }
+    else if (mood !== 'thinking') { ctx.moveTo(x - 14, y - 8 - side * 5); ctx.lineTo(x + 14, y - 8 + side * 5); }
     else { ctx.moveTo(x - 13, y - 5); ctx.lineTo(x + 13, y - 5); }
     ctx.stroke();
   }
