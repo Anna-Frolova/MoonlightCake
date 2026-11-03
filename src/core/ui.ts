@@ -25,7 +25,8 @@ export const ui = {
   pressedId: null as string | null,
 };
 
-export const pointer = { x: -99, y: -99, isDown: false };
+/** `isTouch`: the last press came from a finger or a pen (not a mouse). */
+export const pointer = { x: -99, y: -99, isDown: false, isTouch: false };
 
 // ---------------- springy scale animation per element ----------------
 const springs = new Map<string, { scale: number; velocity: number }>();

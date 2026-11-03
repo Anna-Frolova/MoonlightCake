@@ -71,6 +71,11 @@ export const MAGIC_DRAW_AREA = { left: 392, top: 64, bottom: 644 };
  * space left of the cake, under the shelf.
  */
 export const TOPPING_CHECKLIST = { x: 400, y: 352, w: 236, titleH: 34, rowH: 60, iconScale: 2.2 };
+/**
+ * A topping carried by a finger is held this far up and to the left of it, so the finger doesn't hide where it
+ * goes; it slides there over `easeSeconds` after the pickup. With a mouse it stays right at the cursor.
+ */
+export const TOPPING_HOLD_OFFSET = { x: -62, y: -40, easeSeconds: 0.15 };
 /** Kitten helper sits on the table, right of the cake. */
 export const HELPER_KITTEN_SPOT = { x: 1060, y: 548, scale: 0.42 };
 

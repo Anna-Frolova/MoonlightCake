@@ -126,7 +126,8 @@ export interface RuntimeState {
   lastSquishTime: number;
   /** Helper piping the cream automatically: seconds since it started. */
   autoCreamTime: number | null;
-  draggedTopping: { topping: ToppingId; x: number; y: number; fromCake: boolean } | null;
+  /** A topping being carried: `x`, `y` is the finger; it is held a little beside it (see `heldToppingPosition`). */
+  draggedTopping: { topping: ToppingId; x: number; y: number; fromCake: boolean; grabTime: number; isTouch: boolean } | null;
   /** Tray slots this frame (the toppings station registers them while drawing). */
   toppingTray: { x: number; y: number; w: number; h: number; topping: ToppingId }[];
   helperKittenJump: number;

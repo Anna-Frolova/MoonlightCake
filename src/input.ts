@@ -20,6 +20,7 @@ function updatePointer(event: PointerEvent): Point {
   const point = toScreenPoint(event.clientX, event.clientY);
   pointer.x = point.x;
   pointer.y = point.y;
+  pointer.isTouch = event.pointerType !== 'mouse';
   return point;
 }
 

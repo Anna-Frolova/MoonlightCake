@@ -6,7 +6,7 @@ import { loc } from '../../core/language';
 import { lerp, type Point } from '../../core/math';
 import { burst } from '../../core/particles';
 import { BUTTON_COLOR, TEXT } from '../../core/theme';
-import { button } from '../../core/ui';
+import { button, pointer } from '../../core/ui';
 import { TOPPINGS } from '../../data/ingredients';
 import { t } from '../../data/strings';
 import type { Cake, ToppingId } from '../../data/types';
@@ -17,7 +17,7 @@ import { drawToppingDish } from '../../render/shelfItems';
 import { drawTopping } from '../../render/toppings';
 import { showToast } from '../../scenes/sceneManager';
 import { cakeTopY, currentCake, currentOrder, requireLayer } from '../kitchen';
-import { CAKE_BASE_Y, CAKE_CENTER_X, INGREDIENT_SHELF, STATION_CONTROLS, TOPPING_CHECKLIST } from '../layout';
+import { CAKE_BASE_Y, CAKE_CENTER_X, INGREDIENT_SHELF, STATION_CONTROLS, TOPPING_CHECKLIST, TOPPING_HOLD_OFFSET } from '../layout';
 import { drawIngredientShelf, shelfItemHalfWidth, shelfItemXs } from '../widgets';
 import type { Station } from './station';
 import { judgeChoice } from '../../game/guestReactions';
@@ -50,8 +50,17 @@ function toppingIndexAt(point: Point, cake: Cake): number {
 }
 
 /** Drops the dragged topping: anywhere on the visible cake — the top face or the front sides. */
-function dropTopping(point: Point): void {
+/** Where the carried topping is (and lands): beside the finger on a touch screen, at the cursor with a mouse. */
+export function heldToppingPosition(dragged: NonNullable<typeof runtime.draggedTopping>): Point {
+  if (!dragged.isTouch) return { x: dragged.x, y: dragged.y };
+  const k = Math.min(1, (clock.time - dragged.grabTime) / TOPPING_HOLD_OFFSET.easeSeconds);
+  return { x: dragged.x + TOPPING_HOLD_OFFSET.x * k, y: dragged.y + TOPPING_HOLD_OFFSET.y * k };
+}
+
+function dropTopping(finger: Point): void {
   const cake = currentCake(), dragged = runtime.draggedTopping!;
+  dragged.x = finger.x; dragged.y = finger.y;
+  const point = heldToppingPosition(dragged);
   runtime.draggedTopping = null;
   if (!countLayers(cake)) { if (!dragged.fromCake) showToast(t().needLayerFirst); return; }
   const geometry = getShapeGeometry(cake.shape), height = cakeHeight(cake);
@@ -149,7 +158,7 @@ export const toppingsStation: Station = {
   onPointerDown(point, cake) {
     for (const slot of runtime.toppingTray) {
       if (point.x >= slot.x && point.x <= slot.x + slot.w && point.y >= slot.y && point.y <= slot.y + slot.h) {
-        runtime.draggedTopping = { topping: slot.topping, x: point.x, y: point.y, fromCake: false };
+        runtime.draggedTopping = { topping: slot.topping, x: point.x, y: point.y, fromCake: false, grabTime: clock.time, isTouch: pointer.isTouch };
         sfx.pickup();
         return true;
       }
@@ -158,7 +167,7 @@ export const toppingsStation: Station = {
     const index = toppingIndexAt(point, cake);
     if (index < 0) return false;
     const [picked] = cake.toppings.splice(index, 1);
-    runtime.draggedTopping = { topping: picked.topping, x: point.x, y: point.y, fromCake: true };
+    runtime.draggedTopping = { topping: picked.topping, x: point.x, y: point.y, fromCake: true, grabTime: clock.time, isTouch: pointer.isTouch };
     sfx.pickup();
     return true;
   },
@@ -171,11 +180,12 @@ export const toppingsStation: Station = {
   },
 };
 
-/** The topping in hand follows the pointer (drawn on top of everything). */
+/** The topping in hand follows the finger, held beside it (drawn on top of everything). */
 export function drawDraggedTopping(): void {
   const dragged = runtime.draggedTopping;
   if (!dragged) return;
-  drawGlow(dragged.x, dragged.y, 34, '#ffffff', 0.35);
-  drawTopping(dragged.topping, dragged.x, dragged.y + 10, 1.4 + 0.06 * Math.sin(clock.time * 10));
+  const { x, y } = heldToppingPosition(dragged);
+  drawGlow(x, y, 34, '#ffffff', 0.35);
+  drawTopping(dragged.topping, x, y + 10, 1.4 + 0.06 * Math.sin(clock.time * 10));
 }
 
