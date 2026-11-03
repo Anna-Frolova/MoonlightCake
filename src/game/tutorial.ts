@@ -19,6 +19,8 @@ export const tutorial = {
   shownAt: null as number | null,
   /** When the player last pressed something the tutorial holds back (the highlight flashes). */
   nudgedAt: null as number | null,
+  /** Kitchen stations whose part of the tutorial the player skipped (runtime only, like `step`). */
+  skippedStations: [] as number[],
 };
 
 /**
@@ -48,6 +50,11 @@ export function clearTutorialGate(): void {
   Object.assign(tutorialGate, { pressable: null, buttonsOnly: false, magicElement: null });
 }
 
+/** Skips just one station's part: its steps count as done, the rest of the tutorial goes on. */
+export function skipTutorialStation(station: number): void {
+  if (!tutorial.skippedStations.includes(station)) tutorial.skippedStations.push(station);
+}
+
 export function finishTutorial(): void {
   tutorial.isDone = true;
   clearTutorialGate();
@@ -56,7 +63,7 @@ export function finishTutorial(): void {
 
 /** A new game teaches again from the first step. */
 export function resetTutorial(): void {
-  Object.assign(tutorial, { isDone: false, step: 0, confirmed: false, shownAt: null, nudgedAt: null });
+  Object.assign(tutorial, { isDone: false, step: 0, confirmed: false, shownAt: null, nudgedAt: null, skippedStations: [] });
   clearTutorialGate();
   removeStored(TUTORIAL_KEY);
 }

@@ -159,6 +159,7 @@ const uk = {
   tutorial: {
     title: 'Навчання',
     skip: 'Пропустити навчання',
+    skipPart: (station: string) => `Пропустити «${station}»`,
     gotIt: 'Зрозуміло!',
     openTab: (station: string) => `Відкрий вкладку «${station}» унизу.`,
     order: 'Гість показує картинку торта — це замовлення. Натисни «Прийняти замовлення».',
@@ -321,6 +322,7 @@ const ja: UiStrings = {
   tutorial: {
     title: 'チュートリアル',
     skip: 'チュートリアルをとばす',
+    skipPart: station => `「${station}」をとばす`,
     gotIt: 'わかった！',
     openTab: station => `下の「${station}」タブを開いてね。`,
     order: 'お客さんが見せている絵が注文だよ。「注文を受ける」を押そう。',

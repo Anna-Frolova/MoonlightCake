@@ -1,6 +1,8 @@
 // Day-1 tutorial: a hint panel walks the player through the first guest's cake step by step. While it runs,
 // only the right choice works: the kitchen is veiled except for it (and the order), other presses are ignored.
-// Each step completes by itself once the player has done it; the panel can always be skipped.
+// The station tabs always work: the tutorial teaches the open station when it can, and leaves the player free on
+// a station it has nothing to teach on. Each step completes by itself once the player has done it; in the kitchen
+// the panel skips just the open part (layers, cream…), elsewhere the whole tutorial.
 import { ctx, SCREEN_W, view } from '../core/canvas';
 import { clock } from '../core/clock';
 import { withAlpha } from '../core/color';
@@ -16,7 +18,7 @@ import type { ElementId, EssenceId, ToppingId } from '../data/types';
 import { cakeHeight, countLayers, createCreamDots } from '../game/cake';
 import { recipeToDrops } from '../game/colorMixing';
 import { progress, runtime, type StationIndex } from '../game/state';
-import { clearTutorialGate, finishTutorial, tutorial, tutorialGate, type Rect } from '../game/tutorial';
+import { clearTutorialGate, finishTutorial, skipTutorialStation, tutorial, tutorialGate, type Rect } from '../game/tutorial';
 import { cakeTopY } from '../kitchen/kitchen';
 import {
   CAKE_BASE_Y, CAKE_CENTER_X, CREAM_ZONE, FILLING_SHELF, FLAVOR_SHELF, INGREDIENT_SHELF, MAGIC_DRAW_AREA, TABS, ORDER_AREA, TOPPING_CHECKLIST, TUTORIAL_GUIDE,
@@ -30,6 +32,10 @@ import { signPointAt } from '../render/signs';
 import { shelfItemHalfWidth, shelfItemXs } from '../kitchen/widgets';
 
 interface TutorialStep {
+  /** A kitchen station's step: skipped with the rest of that station's part. */
+  station?: StationIndex;
+  /** False while the player is on another station: no veil, every press works, the hint only points at the tab. */
+  isGated?(): boolean;
   /** The hint is shown (and the gate closed) only here, e.g. not while the guest is still walking in. */
   isRelevant(): boolean;
   isDone(): boolean;
@@ -138,18 +144,25 @@ function toppingDishRect(kind: ToppingId): Rect[] {
   return slot ? [slot] : [];
 }
 
-/** A step on a kitchen station: first "open this tab" (only the tab works), then the station's own step. */
+/**
+ * A step on a kitchen station: elsewhere the hint asks to open this tab (the player stays free there), here the
+ * station's own step. Every station but the layers needs a layer first (the layers part may have been skipped),
+ * so until there is one the hint sends the player to the layers instead.
+ */
 function atStation(index: StationIndex, step: Omit<TutorialStep, 'isRelevant'>): TutorialStep {
-  const isHere = (): boolean => runtime.station === index, tab = (): Rect[] => buttonRect('tab' + index);
+  const goTo = (): StationIndex => (index === 0 || countLayers(cake()) > 0 ? index : 0);
+  const isHere = (): boolean => runtime.station === index && goTo() === index, tab = (): Rect[] => buttonRect('tab' + goTo());
   return {
     isRelevant: inKitchen,
     isDone: () => inKitchen() && step.isDone(),
-    text: () => (isHere() ? step.text() : t().tutorial.openTab(STATIONS[index].name)),
+    text: () => (isHere() ? step.text() : t().tutorial.openTab(STATIONS[goTo()].name)),
     targets: () => (isHere() ? step.targets?.() ?? [] : tab()),
     pressArea: () => (isHere() ? (step.pressArea ?? step.targets)?.() ?? [] : tab()),
     shows: () => (isHere() ? step.shows?.() ?? [] : []),
     drawGuide: () => { if (isHere()) step.drawGuide?.(); },
     magicElement: step.magicElement,
+    station: index,
+    isGated: isHere,
   };
 }
 
@@ -242,6 +255,18 @@ const STEPS: TutorialStep[] = [
   },
 ];
 
+/** Done, or part of a station the player chose to skip. */
+const isPassed = (step: TutorialStep): boolean =>
+  step.isDone() || (step.station !== undefined && tutorial.skippedStations.includes(step.station));
+
+/** The station tabs, which always work in the kitchen (as one strip, for the veil and the gate). */
+function tabStrip(): Rect[] {
+  const tabs = STATIONS.flatMap((_, i) => buttonRect('tab' + i));
+  if (!tabs.length) return [];
+  const left = Math.min(...tabs.map(tab => tab.x)), right = Math.max(...tabs.map(tab => tab.x + tab.w));
+  return [{ x: left, y: tabs[0].y, w: right - left, h: tabs[0].h }];
+}
+
 /** Moves past finished steps and sets what the player may press (called every frame). */
 export function updateTutorial(): void {
   if (tutorial.isDone || runtime.scene === 'title') { clearTutorialGate(); return; }
@@ -249,23 +274,32 @@ export function updateTutorial(): void {
   // a later guest is here (e.g. the page was reloaded after the tutorial guest left): nothing more to teach
   const isGuestScene = runtime.scene === 'hall' || runtime.scene === 'kitchen';
   if (isGuestScene && runtime.customer && !runtime.customer.isTutorial) { finishTutorial(); return; }
-  while (tutorial.step < STEPS.length && STEPS[tutorial.step].isDone()) {
+  while (tutorial.step < STEPS.length && isPassed(STEPS[tutorial.step])) {
     tutorial.step++;
     tutorial.confirmed = false;
     tutorial.shownAt = null;
   }
   if (tutorial.step >= STEPS.length) { finishTutorial(); return; }
-  const step = STEPS[tutorial.step];
-  if (!step.isRelevant()) { clearTutorialGate(); return; }
-  tutorialGate.pressable = (step.pressArea ?? step.targets)?.() ?? [];
+  const step = currentStep();
+  if (!step || step.isGated?.() === false) { clearTutorialGate(); return; }
+  tutorialGate.pressable = [...(step.pressArea ?? step.targets)?.() ?? [], ...(runtime.scene === 'kitchen' ? tabStrip() : [])];
   tutorialGate.buttonsOnly = !!step.buttonsOnly;
   tutorialGate.magicElement = step.magicElement?.() ?? null;
 }
 
-const currentStep = (): TutorialStep | null => {
+/** The step last shown, so the hint pops in again when it changes. */
+let shownStep: TutorialStep | null = null;
+
+/**
+ * The step to show now. In the kitchen it follows the player: on the open station, its first step still to do
+ * (once the cake has a layer — every station but the layers needs one), otherwise the next step in order.
+ */
+function currentStep(): TutorialStep | null {
   const step = tutorial.isDone || runtime.scene === 'title' ? null : STEPS[tutorial.step];
-  return step?.isRelevant() ? step : null;
-};
+  if (!step?.isRelevant()) return null;
+  if (step.station === undefined || (runtime.station !== 0 && !countLayers(cake()))) return step;
+  return STEPS.slice(tutorial.step).find(later => later.station === runtime.station && !isPassed(later)) ?? step;
+}
 
 // ---------------- drawing ----------------
 
@@ -275,8 +309,8 @@ const currentStep = (): TutorialStep | null => {
  */
 export function drawTutorialVeil(): void {
   const step = currentStep();
-  if (!step) return;
-  const pad = TUTORIAL_GUIDE.padding, holes = [...(step.targets?.() ?? []), ...(step.shows?.() ?? []), ORDER_AREA];
+  if (!step || step.isGated?.() === false) return;
+  const pad = TUTORIAL_GUIDE.padding, holes = [...(step.targets?.() ?? []), ...(step.shows?.() ?? []), ORDER_AREA, ...tabStrip()];
   ctx.save();
   for (const hole of holes) {
     roundRectPath(hole.x - pad, hole.y - pad, hole.w + pad * 2, hole.h + pad * 2, HOLE_RADIUS);
@@ -399,6 +433,7 @@ export function drawTutorial(): void {
   if (runtime.fade) return;
   const step = currentStep();
   if (!step || step.isHintShown?.() === false) { tutorial.shownAt = null; return; }
+  if (step !== shownStep) { shownStep = step; tutorial.shownAt = null; }
   tutorial.shownAt ??= clock.time;
 
   step.drawGuide?.();
@@ -419,8 +454,10 @@ export function drawTutorial(): void {
         color: BUTTON_COLOR.confirm, fontSize: 19, onClick: () => { tutorial.confirmed = true; },
       });
     }
-    button('tutorialSkip', x + 16, buttonY, 196, 38, t().tutorial.skip, {
-      color: BUTTON_COLOR.secondary, fontSize: 17, onClick: finishTutorial,
+    // in the kitchen only this station's part is skipped (the player may already know how to make layers)
+    const station = step.station;
+    button('tutorialSkip', x + 16, buttonY, 196, 38, station === undefined ? t().tutorial.skip : t().tutorial.skipPart(STATIONS[station].name), {
+      color: BUTTON_COLOR.secondary, fontSize: 17, onClick: () => { if (station === undefined) finishTutorial(); else skipTutorialStation(station); },
     });
   });
 }
