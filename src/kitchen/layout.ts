@@ -21,6 +21,8 @@ export const GLAZE_STATION_CAKE_SCALE = 0.72;
  * sits right of the cake, low on the screen, where the right thumb rests on a phone.
  */
 export const CAKE_SIDE_BUTTON = { x: 1136, y: 430, w: 128, h: 92 };
+/** Toppings station: "Remove all" in the side button's place right of the cake, far from "Serve" up in the top bar. */
+export const CLEAR_TOPPINGS_BUTTON = { x: CAKE_SIDE_BUTTON.x, y: CAKE_SIDE_BUTTON.y + 16, w: CAKE_SIDE_BUTTON.w, h: 60 };
 /** The helper's "Auto" button: under the side button, away from "Serve" in the top bar. */
 export const AUTO_BUTTON = { x: CAKE_SIDE_BUTTON.x, y: CAKE_SIDE_BUTTON.y + CAKE_SIDE_BUTTON.h + 14, w: CAKE_SIDE_BUTTON.w, h: 56 };
 

@@ -17,12 +17,11 @@ import { drawToppingDish } from '../../render/shelfItems';
 import { drawTopping } from '../../render/toppings';
 import { showToast } from '../../scenes/sceneManager';
 import { cakeTopY, currentCake, currentOrder, requireLayer } from '../kitchen';
-import { CAKE_BASE_Y, CAKE_CENTER_X, INGREDIENT_SHELF, STATION_CONTROLS, TOPPING_CHECKLIST, TOPPING_HOLD_OFFSET } from '../layout';
+import { CAKE_BASE_Y, CAKE_CENTER_X, CLEAR_TOPPINGS_BUTTON, INGREDIENT_SHELF, TOPPING_CHECKLIST, TOPPING_HOLD_OFFSET } from '../layout';
 import { drawIngredientShelf, shelfItemHalfWidth, shelfItemXs } from '../widgets';
 import type { Station } from './station';
 import { judgeChoice } from '../../game/guestReactions';
 
-const CLEAR_BUTTON_WIDTH = 180;
 /** Pick-up radius of a topping already on the cake. */
 const PICK_RADIUS = 18;
 /** When dropped just off the cake, the topping is nudged towards the centre in this many steps. */
@@ -136,8 +135,9 @@ export const toppingsStation: Station = {
     drawToppingChecklist(cake);
   },
 
-  drawControls(rightEdge, y, cake) {
-    button('clearToppings', rightEdge - CLEAR_BUTTON_WIDTH, y, CLEAR_BUTTON_WIDTH, STATION_CONTROLS.h, t().removeAll, {
+  drawControls(_rightEdge, _y, cake) {
+    const clear = CLEAR_TOPPINGS_BUTTON;
+    button('clearToppings', clear.x, clear.y, clear.w, clear.h, t().removeAll, {
       color: BUTTON_COLOR.secondary, fontSize: 19, disabled: !cake.toppings.length,
       onClick: () => { cake.toppings = []; sfx.poof(); },
     });
