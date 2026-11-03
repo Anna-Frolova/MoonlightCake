@@ -21,12 +21,17 @@ export function drawOrderCard(customer: Customer, x: number, y: number, w: numbe
   ctx.restore();
 }
 
-/** Just the wanted cake, fitted into the box (no card behind it). `hideMagic`: without its magic effects (they can hide the toppings). */
-export function drawOrderCake(customer: Customer, x: number, y: number, w: number, h: number, hideMagic = false): void {
+/**
+ * Just the wanted cake, fitted into the box (no card behind it), standing at its bottom or (`centered`) in its
+ * middle. `hideMagic`: without its magic effects (they can hide the toppings).
+ */
+export function drawOrderCake(customer: Customer, x: number, y: number, w: number, h: number, hideMagic = false, centered = false): void {
   const picture = customer.orderPicture ??= buildOrderPicture(customer.order);
   const magic = picture.magicQuality;
   if (hideMagic) picture.magicQuality = null;
   const scale = Math.min(MAX_PICTURE_SCALE, (h - 20) / (cakeHeight(picture) + 110), (w - 20) / 270);
-  drawCake(picture, x + w / 2, y + h - 10 - 40 * scale, scale);
+  // the picture reaches ~40 px under the cake's base (the plate) and ~55 px over its top (toppings, magic)
+  const baseY = centered ? y + h / 2 + (cakeHeight(picture) + 55 - 40) * scale / 2 : y + h - 10 - 40 * scale;
+  drawCake(picture, x + w / 2, baseY, scale);
   picture.magicQuality = magic;
 }

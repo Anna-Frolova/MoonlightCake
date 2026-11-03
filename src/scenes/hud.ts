@@ -11,14 +11,15 @@ import { button, ui } from '../core/ui';
 import { t } from '../data/strings';
 import { setMusicOn, setSoundOn, switchLanguage } from '../game/flow';
 import { progress, runtime } from '../game/state';
-import { GUEST_SPOT, KITCHEN_MESSAGE_X, ORDER_AREA } from '../kitchen/layout';
+import { GUEST_WINDOW, KITCHEN_MESSAGE_X, ORDER_AREA } from '../kitchen/layout';
 
 const DISABLED_ICON_COLOR = '#6e6488';
 const TOAST_SIZE = 22;
 const MODAL_TEXT_SIZE = 24;
 /** A guest's speech dialog: right of the order ticket, its tail at the guest's head (`tailY` from the panel top). */
-/** A guest's speech: right of the order column, low, its tail pointing at the guest's head over their name tag (the cloud stays visible). */
-const SPEECH_MODAL = { x: ORDER_AREA.x + ORDER_AREA.w + 30, bottom: 690, tailY: GUEST_SPOT.headY - 64, tailLength: 64 };
+/** A guest's speech: right of the order column, low, its tail reaching the guest's window at head height (the cloud stays visible). */
+const SPEECH_X = ORDER_AREA.x + ORDER_AREA.w + 30;
+const SPEECH_MODAL = { x: SPEECH_X, bottom: 690, tailY: GUEST_WINDOW.y + GUEST_WINDOW.h * GUEST_WINDOW.headAt, tailLength: SPEECH_X - GUEST_WINDOW.x - GUEST_WINDOW.w };
 const SPEECH_TAIL_COLOR = 'rgba(60,44,130,0.96)';
 const SPEAKER_TAG_COLOR = '#e060a8';
 const SPEAKER_TAG_SIZE = 20;
@@ -196,7 +197,7 @@ export function drawModal(): void {
   ui.layer = 0;
 }
 
-/** The speech bubble's tail, pointing left at the guest's head. */
+/** The speech bubble's tail, pointing left at the guest's window. */
 function drawSpeechTail(edgeX: number, y: number): void {
   ctx.beginPath(); ctx.moveTo(edgeX + 4, y - 18); ctx.lineTo(edgeX - SPEECH_MODAL.tailLength, y + 4); ctx.lineTo(edgeX + 4, y + 18); ctx.closePath();
   ctx.fillStyle = SPEECH_TAIL_COLOR; ctx.fill();

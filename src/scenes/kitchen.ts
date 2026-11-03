@@ -22,7 +22,7 @@ import { activeGuestTheme, isOwned, progress, runtime, type Customer, type Stati
 import { currentCake, resetCake } from '../kitchen/kitchen';
 import {
   AUTO_BUTTON, KITCHEN_TOP, RESET_BUTTON, SERVE_BUTTON, SETTINGS_PANEL, CAKE_BASE_Y, CAKE_CENTER_X, GLAZE_STATION_CAKE_SCALE, GLAZE_STATION_CAKE_X, HELPER_KITTEN_SPOT, KITCHEN_MESSAGE_X, STATION_CONTROLS, TABS,
-  GUEST_SPOT, THOUGHT_CLOUD, TOP_BAR_HEIGHT,
+  GUEST_WINDOW, THOUGHT_CLOUD, TOP_BAR_HEIGHT,
 } from '../kitchen/layout';
 import { drawGlazeArc, drawGlazeStationScenery, drawMovingBottles } from '../kitchen/stations/glaze';
 import { GLAZE_STATION_INDEX, STATIONS, TOPPINGS_STATION_INDEX } from '../kitchen/stations';
@@ -49,7 +49,7 @@ const HINT_TEXT_SIZE = 18;
 const HINT_CENTER_X = KITCHEN_MESSAGE_X;
 /** The hint must not reach the station buttons in the top right. */
 const HINT_MAX_WIDTH = 480;
-const PATIENCE_BAR_HEIGHT = GUEST_SPOT.patienceBar.h;
+const PATIENCE_BAR_HEIGHT = GUEST_WINDOW.patienceHeight;
 /** The thought cloud: a pale lilac gradient with a white rim and a soft violet glow under it. */
 const CLOUD_LOOK = { top: '#f3edff', bottom: '#c9b8f4', rim: 'rgba(255,255,255,0.9)', rimWidth: 4, shadow: 'rgba(120,90,230,0.55)', shadowBlur: 26 };
 /** The dark backing under the patience bar, so it reads over any kitchen. */
@@ -185,22 +185,22 @@ function drawResetButton(centerX: number, centerY: number, radius: number, hover
 }
 
 /**
- * The order without a frame: the guest peeks up from the bottom edge with their name and patience beside them,
- * and thinks of the wanted cake in a cloud above their head. The cloud bobs gently; it shakes with the guest when
- * they get upset.
+ * The order: the guest in a window at the bottom (name tag inside, patience under it) thinks of the wanted cake
+ * in a cloud above. The cloud bobs gently; it shakes with the window when the guest gets upset.
  */
 function drawTicket(): void {
   const customer = runtime.customer!, time = clock.time;
   const wobble = Math.max(0, 1 - (time - customer.moodChangedAt) * 2.5) * Math.sin(time * 40) * 5;
   const bob = Math.sin(time * THOUGHT_CLOUD.bobSpeed) * THOUGHT_CLOUD.bobPixels;
   ctx.save(); ctx.translate(wobble, 0);
-  drawGuest(customer);
+  drawGuestWindow(customer);
   ctx.save(); ctx.translate(0, bob);
   drawThoughtCloud(customer);
   ctx.restore();
   ctx.restore();
-  drawNameTag(loc(customer.cat.name), GUEST_SPOT.nameTag.x, GUEST_SPOT.nameTag.y);
-  if (customer.patience !== null) drawPatienceBar(GUEST_SPOT.patienceBar.x, GUEST_SPOT.patienceBar.y, GUEST_SPOT.patienceBar.w, customer);
+  const { x, y, w, h, nameTag, patienceGap } = GUEST_WINDOW;
+  drawNameTag(loc(customer.cat.name), x + nameTag.x, y + nameTag.y);
+  if (customer.patience !== null) drawPatienceBar(x, y + h + patienceGap, w, customer);
 }
 
 /** The cloud's outline: `bumps` circles around an ellipse that fills the box, plus the ellipse itself (all one fill). */
@@ -233,7 +233,7 @@ function drawThoughtCloud(customer: Customer): void {
   ctx.restore();
   drawChangedOrderGlow(customer);
   // on the toppings station the wanted cake is shown without its magic, so its toppings are easy to see
-  drawOrderCake(customer, x + pad.x, y + pad.top, w - pad.x * 2, h - pad.top - pad.bottom, runtime.station === TOPPINGS_STATION_INDEX);
+  drawOrderCake(customer, x + pad.x, y + pad.y, w - pad.x * 2, h - pad.y * 2, runtime.station === TOPPINGS_STATION_INDEX, true);
 }
 
 /** A pulsing golden halo round the cloud for a while after the guest changed the order. */
@@ -254,17 +254,26 @@ function drawChangedOrderGlow(customer: Customer): void {
 }
 
 /**
- * The guest from the hat to the chest, peeking up from the bottom edge. They look where the player works and
- * react to their choices for a moment (game/guestReactions.ts), otherwise their face follows their patience.
+ * The guest from the hat to the chest in their window. They look where the player works and react to their
+ * choices for a moment (game/guestReactions.ts), otherwise their face follows their patience; the frame turns
+ * gold, then red as patience runs out.
  */
-function drawGuest(customer: Customer): void {
-  const reaction = currentReaction(), time = clock.time;
+function drawGuestWindow(customer: Customer): void {
+  const reaction = currentReaction(), left = patienceLeft(customer), time = clock.time;
   const mood = reaction ? reactionMood() : patienceMood(customer);
-  const { headX, headY, catScale, markOffset } = GUEST_SPOT;
-  drawGlow(headX, headY, 170, '#c9b6ff', 0.22);
+  const { x, y, w, h, headAt, catScale, markOffset } = GUEST_WINDOW;
+  const frameColor = left < PATIENCE_LEVELS.upset ? BUTTON_COLOR.danger : left < PATIENCE_LEVELS.impatient ? BUTTON_COLOR.gold : TEXT.label;
+  const backdrop = ctx.createLinearGradient(0, y, 0, y + h);
+  backdrop.addColorStop(0, '#2c1a62'); backdrop.addColorStop(1, '#4a2f8e');
+  ctx.fillStyle = backdrop; roundRectPath(x, y, w, h, 16); ctx.fill();
+  const headX = x + w / 2, headY = y + h * headAt;
+  ctx.save(); roundRectPath(x, y, w, h, 16); ctx.clip();
+  drawGlow(headX, headY, h * 0.8, '#c9b6ff', 0.25);
   // the head is ~150 px above the cat's origin at scale 1 (a bit lower for kittens)
   const headLift = 150 * catScale * (customer.cat.isKitten ? 0.9 : 1);
   drawCat(customer.cat, headX, headY + headLift, catScale, time, mood, updateGaze(headX, headY, clock.delta));
+  ctx.restore();
+  ctx.strokeStyle = frameColor; ctx.lineWidth = 3; roundRectPath(x + 1.5, y + 1.5, w - 3, h - 3, 15); ctx.stroke();
   const sideX = headX + markOffset.x, sideY = headY + markOffset.y;
   if (reaction === 'surprised' || reaction === 'worried') drawReactionMark(reaction, sideX, sideY, time);
   else if (mood === 'thinking') { // a drop of sweat
