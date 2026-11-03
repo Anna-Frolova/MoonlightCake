@@ -11,13 +11,14 @@ import { button, ui } from '../core/ui';
 import { t } from '../data/strings';
 import { setMusicOn, setSoundOn, switchLanguage } from '../game/flow';
 import { progress, runtime } from '../game/state';
-import { KITCHEN_MESSAGE_X, TICKET } from '../kitchen/layout';
+import { GUEST_SPOT, KITCHEN_MESSAGE_X, ORDER_AREA } from '../kitchen/layout';
 
 const DISABLED_ICON_COLOR = '#6e6488';
 const TOAST_SIZE = 22;
 const MODAL_TEXT_SIZE = 24;
 /** A guest's speech dialog: right of the order ticket, its tail at the guest's head (`tailY` from the panel top). */
-const SPEECH_MODAL = { x: TICKET.x + TICKET.w + 40, y: TICKET.y + 40, tailY: 90, tailLength: 34 };
+/** A guest's speech: right of the order column, low, its tail pointing at the guest's head over their name tag (the cloud stays visible). */
+const SPEECH_MODAL = { x: ORDER_AREA.x + ORDER_AREA.w + 30, bottom: 690, tailY: GUEST_SPOT.headY - 64, tailLength: 64 };
 const SPEECH_TAIL_COLOR = 'rgba(60,44,130,0.96)';
 const SPEAKER_TAG_COLOR = '#e060a8';
 const SPEAKER_TAG_SIZE = 20;
@@ -162,8 +163,8 @@ export function drawToast(): void {
 
 /**
  * Confirmation dialog; its buttons are on layer 1, so nothing else reacts while it is open. Without a cancel label
- * it has one button in the middle. A guest's speech (`speaker`) stands beside the order ticket instead, with
- * the ticket left undimmed, so the player sees the changed order while reading.
+ * it has one button in the middle. A guest's speech (`speaker`) stands beside the guest instead, with the order
+ * column left undimmed, so the player sees the changed order in the cloud while reading.
  */
 export function drawModal(): void {
   const modal = runtime.modal;
@@ -171,15 +172,15 @@ export function drawModal(): void {
   ui.layer = 1;
   const isSpeech = !!modal.speaker && runtime.scene === 'kitchen';
   ctx.fillStyle = 'rgba(8,4,26,0.62)';
-  if (isSpeech) { // dim everything but the ticket
+  if (isSpeech) { // dim everything but the guest and their cloud
     ctx.beginPath(); ctx.rect(view.left, view.top, view.right - view.left, view.bottom - view.top);
-    ctx.rect(TICKET.x, TICKET.y, TICKET.w, TICKET.h); ctx.fill('evenodd');
+    ctx.rect(ORDER_AREA.x, ORDER_AREA.y, ORDER_AREA.w, ORDER_AREA.h); ctx.fill('evenodd');
   } else fillView();
   const lines = wrapText(modal.text, 440, MODAL_TEXT_SIZE, 800);
   const w = 520, h = 150 + lines.length * 33;
-  const x = isSpeech ? SPEECH_MODAL.x : SCREEN_W / 2 - w / 2, y = isSpeech ? SPEECH_MODAL.y : SCREEN_H / 2 - h / 2;
+  const x = isSpeech ? SPEECH_MODAL.x : SCREEN_W / 2 - w / 2, y = isSpeech ? SPEECH_MODAL.bottom - h : SCREEN_H / 2 - h / 2;
   withPopIn(modal.startTime, x + w / 2, y + h / 2, () => {
-    if (isSpeech) drawSpeechTail(x, y + SPEECH_MODAL.tailY);
+    if (isSpeech) drawSpeechTail(x, SPEECH_MODAL.tailY);
     drawPanel(x, y, w, h, { light: true });
     if (modal.speaker) drawNameTag(modal.speaker, x + 24, y);
     lines.forEach((line, i) => drawText(line, x + w / 2, y + 50 + i * 33, MODAL_TEXT_SIZE, TEXT.main));
@@ -195,13 +196,13 @@ export function drawModal(): void {
   ui.layer = 0;
 }
 
-/** The speech bubble's tail, pointing left at the guest in the ticket window. */
+/** The speech bubble's tail, pointing left at the guest's head. */
 function drawSpeechTail(edgeX: number, y: number): void {
   ctx.beginPath(); ctx.moveTo(edgeX + 4, y - 18); ctx.lineTo(edgeX - SPEECH_MODAL.tailLength, y + 4); ctx.lineTo(edgeX + 4, y + 18); ctx.closePath();
   ctx.fillStyle = SPEECH_TAIL_COLOR; ctx.fill();
 }
 
-/** A guest's name on a pink pill, centred vertically on `y` (over a panel's top edge, or inside the order window). */
+/** A guest's name on a pink pill, centred vertically on `y` (over a panel's top edge, or beside the guest in the kitchen). */
 export function drawNameTag(name: string, x: number, y: number): void {
   ctx.font = font(SPEAKER_TAG_SIZE, 900);
   const tagW = ctx.measureText(name).width + 32;

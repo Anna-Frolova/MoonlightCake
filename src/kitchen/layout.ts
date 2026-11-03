@@ -1,12 +1,29 @@
 // Where things sit on the kitchen screen. Change these to rearrange the kitchen.
-// The left column holds only the order (the guest and the wanted cake); everything you work with
+// The left column holds only the order (the guest and the cake they think of); everything you work with
 // is in the middle, around the cake.
 
 /**
- * The order: the guest in a big window on top with their name on a tag inside it (`nameTag` from the window's
- * corner), a thin patience bar right under it, the wanted cake below.
+ * The order column on the left, without a frame: the guest peeks up from the bottom edge and thinks of the wanted
+ * cake in a cloud above their head. This area stays bright under the tutorial veil and the guest's speech.
  */
-export const TICKET = { x: 16, y: 70, w: 360, h: 572, portraitHeight: 238, nameTag: { x: 12, y: 28 }, patienceY: 258, patienceHeight: 8, cardY: 276 };
+export const ORDER_AREA = { x: 16, y: 70, w: 360, h: 650 };
+/**
+ * The guest: head centre at `headX`, `headY`; their name tag and a short patience bar beside them, right of the
+ * head (`nameTag` is the tag's left edge and middle, the bar hangs under it).
+ */
+export const GUEST_SPOT = {
+  headX: 132, headY: 590, catScale: 1, markOffset: { x: 82, y: -62 },
+  nameTag: { x: 226, y: 594 }, patienceBar: { x: 230, y: 626, w: 136, h: 8 },
+};
+/**
+ * The thought cloud with the wanted cake: a puffy cloud of `bumps` circles around an ellipse filling the box,
+ * the cake inside it (`picturePadding` from the box), three thought dots (centre and radius) rising from the head.
+ */
+export const THOUGHT_CLOUD = {
+  x: 22, y: 78, w: 348, h: 380, bumps: 11, bumpRadius: 52, picturePadding: { x: 40, top: 44, bottom: 36 },
+  dots: [{ x: 196, y: 512, r: 9 }, { x: 214, y: 486, r: 13 }, { x: 228, y: 458, r: 17 }],
+  bobPixels: 3, bobSpeed: 1.6,
+};
 
 /** The cake's resting point: horizontal centre (middle of the free area right of the ticket) and the bottom of the cake. */
 export const CAKE_CENTER_X = 828;

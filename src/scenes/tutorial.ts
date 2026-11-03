@@ -19,7 +19,7 @@ import { progress, runtime, type StationIndex } from '../game/state';
 import { clearTutorialGate, finishTutorial, tutorial, tutorialGate, type Rect } from '../game/tutorial';
 import { cakeTopY } from '../kitchen/kitchen';
 import {
-  CAKE_BASE_Y, CAKE_CENTER_X, CREAM_ZONE, FILLING_SHELF, FLAVOR_SHELF, INGREDIENT_SHELF, MAGIC_DRAW_AREA, TABS, TICKET, TOPPING_CHECKLIST, TUTORIAL_GUIDE,
+  CAKE_BASE_Y, CAKE_CENTER_X, CREAM_ZONE, FILLING_SHELF, FLAVOR_SHELF, INGREDIENT_SHELF, MAGIC_DRAW_AREA, TABS, ORDER_AREA, TOPPING_CHECKLIST, TUTORIAL_GUIDE,
   type ShelfLayout,
 } from '../kitchen/layout';
 import { GLAZE_STATION_INDEX, STATIONS } from '../kitchen/stations';
@@ -276,7 +276,7 @@ const currentStep = (): TutorialStep | null => {
 export function drawTutorialVeil(): void {
   const step = currentStep();
   if (!step) return;
-  const pad = TUTORIAL_GUIDE.padding, holes = [...(step.targets?.() ?? []), ...(step.shows?.() ?? []), TICKET];
+  const pad = TUTORIAL_GUIDE.padding, holes = [...(step.targets?.() ?? []), ...(step.shows?.() ?? []), ORDER_AREA];
   ctx.save();
   for (const hole of holes) {
     roundRectPath(hole.x - pad, hole.y - pad, hole.w + pad * 2, hole.h + pad * 2, HOLE_RADIUS);
