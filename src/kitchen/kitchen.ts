@@ -5,6 +5,7 @@ import { t } from '../data/strings';
 import type { Cake } from '../data/types';
 import { cakeHeight, countLayers, createCake } from '../game/cake';
 import { runtime, todaysMenu } from '../game/state';
+import { closeSettings } from '../scenes/hud';
 import { showToast } from '../scenes/sceneManager';
 import { CAKE_BASE_Y, CAKE_CENTER_X } from './layout';
 
@@ -27,6 +28,7 @@ export function setUpKitchen(): void {
   runtime.isPipingCream = false;
   runtime.autoCreamTime = null;
   runtime.kitchenThemeBlend = 0; // a special guest's kitchen transforms again for each order
+  closeSettings();
 }
 
 /** Shows a hint and returns false when the cake has no layers yet. */

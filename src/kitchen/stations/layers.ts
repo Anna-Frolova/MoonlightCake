@@ -155,6 +155,7 @@ function drawShapeSwitches(cake: Cake): void {
 }
 
 export const layersStation: Station = {
+  icon: 'layers',
   get name() { return t().stations.layers; },
   helper: 'layers',
   isDone: cake => countLayers(cake) > 0,
@@ -174,7 +175,7 @@ export const layersStation: Station = {
     drawShapeSwitches(cake);
     const isHoverable = !isStackLocked(cake);
     drawIngredientShelf(shelfFlavors(), flavor => loc(FLAVORS[flavor].name), (flavor, x, y, scale) => drawLayerPiece(flavor, cake.shape, x, y, scale),
-      { isHoverable, shelf: FLAVOR_SHELF });
+      { isHoverable, shelf: FLAVOR_SHELF, labels: 'active' });
     drawIngredientShelf(shelfFillings(), filling => loc(FILLINGS[filling].shortName), drawFillingJar, { isHoverable, shelf: FILLING_SHELF, labels: 'active' });
   },
 

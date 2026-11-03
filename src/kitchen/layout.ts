@@ -2,8 +2,11 @@
 // The left column holds only the order (the guest and the wanted cake); everything you work with
 // is in the middle, around the cake.
 
-/** The order: the guest in a big window on top, name and patience under it, the wanted cake below. */
-export const TICKET = { x: 16, y: 70, w: 360, h: 572, portraitHeight: 206, nameY: 236, patienceY: 256, cardY: 280 };
+/**
+ * The order: the guest in a big window on top with their name on a tag inside it (`nameTag` from the window's
+ * corner), a thin patience bar right under it, the wanted cake below.
+ */
+export const TICKET = { x: 16, y: 70, w: 360, h: 572, portraitHeight: 238, nameTag: { x: 12, y: 28 }, patienceY: 258, patienceHeight: 8, cardY: 276 };
 
 /** The cake's resting point: horizontal centre (middle of the free area right of the ticket) and the bottom of the cake. */
 export const CAKE_CENTER_X = 828;
@@ -42,12 +45,15 @@ export const STATION_CONTROLS = { right: 1264, y: 76, h: 46, gap: 8 };
 export const KITCHEN_MESSAGE_X = CAKE_CENTER_X;
 /** Decorative shelf with the bought helpers, on the wall at the top right. */
 export const HELPER_SHELF = { x: 1010, y: 172, w: 250, slotXs: [1045, 1105, 1165], potionX: 1226 };
-/** Station tabs along the bottom. */
-export const TABS = { y: 652, h: 58, gap: 10, sideMargin: 16 };
-/** Top bar with day, coins, reset and serve. */
+/** Station tabs along the bottom: icon pills centred on the screen, `iconScale` for the station icons. */
+export const TABS = { y: 652, h: 58, w: 104, gap: 14, iconScale: 0.95, doneBadge: { radius: 12, inset: 18 } };
+/** Top bar: a compact day counter (moon, day · guest), coins, the settings gear, then reset and serve on the right. */
 export const TOP_BAR_HEIGHT = 62;
-/** "Reset" in the top bar. */
-export const RESET_BUTTON = { x: 850, y: 8, w: 160, h: 46 };
+export const KITCHEN_TOP = { dayX: 24, coinsX: 150, settingsX: 316, y: 8 };
+/** The music / sound panel that the gear opens, just under it. */
+export const SETTINGS_PANEL = { x: KITCHEN_TOP.settingsX - 10, y: TOP_BAR_HEIGHT + 6 };
+/** "Reset" in the top bar: a small round button (a bin), with a question before the cake is thrown away. */
+export const RESET_BUTTON = { x: 950, y: 6, w: 52, h: 52 };
 /**
  * "Serve": the main button of the kitchen, bigger than the rest and hanging a little below the top bar, so on a
  * phone it is easy to hit and not right at the screen's edge (where the system may hold a touch back).

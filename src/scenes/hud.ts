@@ -33,6 +33,45 @@ export function drawCoinCounter(x: number, y: number): void {
   drawText(String(Math.round(runtime.displayedCoins)), x + 48, y + 23, 22, TEXT.gold, 'left', 900);
 }
 
+const SETTINGS_BUTTON = { w: 48, h: 44 };
+/** The panel with the music and sound toggles: padding around the two buttons (104 px wide together). */
+const SETTINGS_PANEL_SIZE = { w: 128, h: 60, pad: 12 };
+const GEAR = { teeth: 8, outer: 14, inner: 10.5, hole: 4.5 };
+let isSettingsOpen = false;
+
+export const closeSettings = (): void => { isSettingsOpen = false; };
+
+/** A gear that opens a small panel with the music and sound toggles (for top bars with no room for both). */
+export function drawSettingsButton(x: number, y: number): void {
+  button('settings', x, y, SETTINGS_BUTTON.w, SETTINGS_BUTTON.h, '', {
+    silent: true, onClick: () => { isSettingsOpen = !isSettingsOpen; sfx.tab(); },
+    draw: (bx, by, bw, bh, hovered) => {
+      ctx.save();
+      if (hovered || isSettingsOpen) { ctx.shadowColor = 'rgba(159,234,255,0.7)'; ctx.shadowBlur = 16; }
+      drawGlassPill(bx, by, bw, bh, hovered ? 0.95 : 0.78);
+      ctx.restore();
+      const cx = bx + bw / 2, cy = by + bh / 2;
+      ctx.beginPath(); // teeth: alternate the outer and inner radius around the circle
+      for (let i = 0; i < GEAR.teeth * 4; i++) {
+        const angle = (i / (GEAR.teeth * 4)) * Math.PI * 2, radius = i % 4 < 2 ? GEAR.outer : GEAR.inner;
+        ctx.lineTo(cx + Math.cos(angle) * radius, cy + Math.sin(angle) * radius);
+      }
+      ctx.closePath(); ctx.moveTo(cx + GEAR.hole, cy); ctx.arc(cx, cy, GEAR.hole, 0, Math.PI * 2, true);
+      ctx.fillStyle = TEXT.label; ctx.fill('evenodd');
+    },
+  });
+}
+
+/** The open settings panel at (x, y), above everything (layer 1): tapping anywhere outside it closes it. Draw it last. */
+export function drawSettingsPanel(x: number, y: number): void {
+  if (!isSettingsOpen) return;
+  ui.layer = 1;
+  button('settingsBackdrop', view.left, view.top, view.right - view.left, view.bottom - view.top, '', { silent: true, hoverScale: 1, onClick: closeSettings, draw: () => {} });
+  drawPanel(x, y, SETTINGS_PANEL_SIZE.w, SETTINGS_PANEL_SIZE.h, { radius: 18, noStars: true });
+  drawSoundButtons(x + SETTINGS_PANEL_SIZE.pad, y + (SETTINGS_PANEL_SIZE.h - SETTINGS_BUTTON.h) / 2);
+  ui.layer = 0;
+}
+
 /** Music and sound effect toggles (two round glass buttons). */
 export function drawSoundButtons(x: number, y: number): void {
   const iconButton = (id: string, offsetX: number, isOn: boolean, drawIcon: (bx: number, by: number) => void, onClick: () => void): void => {
@@ -142,7 +181,7 @@ export function drawModal(): void {
   withPopIn(modal.startTime, x + w / 2, y + h / 2, () => {
     if (isSpeech) drawSpeechTail(x, y + SPEECH_MODAL.tailY);
     drawPanel(x, y, w, h, { light: true });
-    if (modal.speaker) drawSpeakerTag(modal.speaker, x + 24, y);
+    if (modal.speaker) drawNameTag(modal.speaker, x + 24, y);
     lines.forEach((line, i) => drawText(line, x + w / 2, y + 50 + i * 33, MODAL_TEXT_SIZE, TEXT.main));
     const confirmX = modal.cancelLabel === null ? x + (w - 200) / 2 : x + 280;
     if (modal.cancelLabel !== null) {
@@ -162,8 +201,8 @@ function drawSpeechTail(edgeX: number, y: number): void {
   ctx.fillStyle = SPEECH_TAIL_COLOR; ctx.fill();
 }
 
-/** The guest's name on a pill over the top edge of the panel. */
-function drawSpeakerTag(name: string, x: number, y: number): void {
+/** A guest's name on a pink pill, centred vertically on `y` (over a panel's top edge, or inside the order window). */
+export function drawNameTag(name: string, x: number, y: number): void {
   ctx.font = font(SPEAKER_TAG_SIZE, 900);
   const tagW = ctx.measureText(name).width + 32;
   ctx.save();

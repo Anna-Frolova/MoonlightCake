@@ -86,6 +86,7 @@ const uk = {
 
   // kitchen
   reset: 'Скинути',
+  confirmReset: 'Викинути цей торт і почати спочатку?',
   serveCake: 'Подати торт',
   orderFrom: (catName: string) => 'Замовлення · ' + catName,
   auto: '✦ Авто',
@@ -255,6 +256,7 @@ const ja: UiStrings = {
   nextGuest: 'つぎのお客さん',
 
   reset: 'やり直す',
+  confirmReset: 'このケーキを捨てて、最初から作り直す？',
   serveCake: 'ケーキを出す',
   orderFrom: catName => `注文 · ${catName}`,
   auto: '✦ オート',

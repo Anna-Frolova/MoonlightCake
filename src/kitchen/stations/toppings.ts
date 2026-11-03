@@ -109,6 +109,7 @@ function drawToppingChecklist(cake: Cake): void {
 }
 
 export const toppingsStation: Station = {
+  icon: 'toppings',
   get name() { return t().stations.toppings; },
   helper: 'toppings',
   isDone: cake => cake.toppings.length > 0,

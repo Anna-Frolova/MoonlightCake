@@ -339,6 +339,7 @@ export function drawGlazeArc(cake: Cake): void {
 }
 
 export const glazeStation: Station = {
+  icon: 'glaze',
   get name() { return t().stations.glaze; },
   helper: 'glaze',
   isDone: cake => !!cake.glaze,

@@ -2,7 +2,8 @@
 // and the wanted cake) on the left, station buttons in the top right corner, station tabs at the bottom.
 import { ctx, SCREEN_W, view } from '../core/canvas';
 import { clock } from '../core/clock';
-import { drawFittedText, drawGlassPill, drawGlow, drawPanel, drawText, ellipsePath, font, roundRectPath, starPath } from '../core/draw';
+import { shade, withAlpha } from '../core/color';
+import { drawFittedText, drawGlassPill, drawGlow, drawPanel, drawText, ellipsePath, font, roundRectPath } from '../core/draw';
 import { easeOutCubic, lerp } from '../core/math';
 import { burst, drawMotes } from '../core/particles';
 import { sfx } from '../audio/sfx';
@@ -20,7 +21,7 @@ import { orderChangeGlow } from '../game/orderChange';
 import { activeGuestTheme, isOwned, progress, runtime, type Customer, type StationIndex } from '../game/state';
 import { currentCake, resetCake } from '../kitchen/kitchen';
 import {
-  AUTO_BUTTON, RESET_BUTTON, SERVE_BUTTON, CAKE_BASE_Y, CAKE_CENTER_X, GLAZE_STATION_CAKE_SCALE, GLAZE_STATION_CAKE_X, HELPER_KITTEN_SPOT, KITCHEN_MESSAGE_X, STATION_CONTROLS, TABS,
+  AUTO_BUTTON, KITCHEN_TOP, RESET_BUTTON, SERVE_BUTTON, SETTINGS_PANEL, CAKE_BASE_Y, CAKE_CENTER_X, GLAZE_STATION_CAKE_SCALE, GLAZE_STATION_CAKE_X, HELPER_KITTEN_SPOT, KITCHEN_MESSAGE_X, STATION_CONTROLS, TABS,
   TICKET, TOP_BAR_HEIGHT,
 } from '../kitchen/layout';
 import { drawGlazeArc, drawGlazeStationScenery, drawMovingBottles } from '../kitchen/stations/glaze';
@@ -29,11 +30,13 @@ import { drawMagicStationCircle, drawMagicStrokes } from '../kitchen/stations/ma
 import { drawDraggedTopping } from '../kitchen/stations/toppings';
 import { drawCake } from '../render/cake';
 import { drawAngerMark, drawCat, drawPaws } from '../render/cat';
+import { drawStationIcon } from '../render/icons';
 import { drawKitchenAmbience, drawKitchenBackground } from '../render/environment';
 import { kitchenTheme } from '../render/kitchenThemes';
 import { drawOrderCard } from '../render/orderCard';
 import { drawProgressBar } from '../kitchen/widgets';
-import { drawCoinCounter, drawSoundButtons } from './hud';
+import { drawCoinCounter, drawNameTag, drawSettingsButton, drawSettingsPanel } from './hud';
+import { showModal } from './sceneManager';
 import { drawTutorialVeil } from './tutorial';
 
 /** How fast the layout eases into / out of the glaze station arrangement. */
@@ -48,7 +51,11 @@ const HINT_CENTER_X = KITCHEN_MESSAGE_X;
 const HINT_MAX_WIDTH = 480;
 /** The guest's window: cat scale, where the head sits (share of the height), where sweat / anger marks go (from the head). */
 const PORTRAIT = { catScale: 1, headAt: 0.6, markOffset: { x: 82, y: -62 } };
-const PATIENCE_BAR_HEIGHT = 16;
+const PATIENCE_BAR_HEIGHT = TICKET.patienceHeight;
+/** The compact day counter: a golden crescent moon, then "day · guest/guests". */
+const DAY_COUNTER = { moonRadius: 12, moonBite: { x: 0.45, y: -0.2, radius: 0.8 }, textOffset: 22, textSize: 22, moonColor: '#ffd76a' };
+/** The bin on the reset button. */
+const BIN = { color: '#ffffff', lidW: 24, bodyTopW: 18, bodyBottomW: 14, bodyH: 18 };
 /** How fast the changed order's frame pulses. */
 const CHANGED_ORDER_PULSE_SPEED = 6;
 
@@ -108,6 +115,7 @@ export function renderKitchen(): void {
   drawTutorialVeil(); // under the bottle or topping in hand, so it stays bright wherever it is carried
   drawMovingBottles();
   drawDraggedTopping();
+  drawSettingsPanel(SETTINGS_PANEL.x, SETTINGS_PANEL.y);
 }
 
 function drawHelperKitten(): void {
@@ -121,21 +129,66 @@ function drawTopBar(): void {
   bar.addColorStop(0, 'rgba(30,18,80,0.92)'); bar.addColorStop(1, 'rgba(14,8,44,0.92)');
   ctx.fillStyle = bar; ctx.fillRect(view.left, view.top, view.right - view.left, TOP_BAR_HEIGHT - view.top);
   ctx.fillStyle = 'rgba(159,234,255,0.35)'; ctx.fillRect(view.left, TOP_BAR_HEIGHT - 1, view.right - view.left, 1.5);
-  drawText(t().dayAndGuest(progress.day, progress.guestIndex + 1, progress.guestQueue!.length), 24, 31, 21, TEXT.main, 'left', 800);
-  drawCoinCounter(250, 8);
-  drawSoundButtons(420, 8);
+  drawDayCounter(KITCHEN_TOP.dayX, TOP_BAR_HEIGHT / 2);
+  drawCoinCounter(KITCHEN_TOP.coinsX, KITCHEN_TOP.y);
+  drawSettingsButton(KITCHEN_TOP.settingsX, KITCHEN_TOP.y);
   const reset = RESET_BUTTON, serve = SERVE_BUTTON;
-  button('resetCake', reset.x, reset.y, reset.w, reset.h, t().reset, { color: BUTTON_COLOR.reset, fontSize: 21, onClick: resetCake });
+  button('resetCake', reset.x, reset.y, reset.w, reset.h, '', {
+    color: BUTTON_COLOR.reset, onClick: askResetCake,
+    draw: (x, y, w, h, hovered) => drawResetButton(x + w / 2, y + h / 2, w / 2, hovered),
+  });
   button('serveCake', serve.x, serve.y, serve.w, serve.h, t().serveCake, { color: BUTTON_COLOR.confirm, fontSize: 25, glow: isCakeReady(), onClick: serveCake });
 }
 
-/** The order: the guest in a big window, name and patience under it, the wanted cake below. */
+/** "1 · 2/5" after a crescent moon: day, then the guest of the day (the wording is left out to save room). */
+function drawDayCounter(x: number, centerY: number): void {
+  const { moonRadius: r, moonBite, textOffset, textSize, moonColor } = DAY_COUNTER, cx = x + r;
+  ctx.save();
+  ellipsePath(cx, centerY, r, r); ctx.clip(); // the moon minus a bite = a crescent
+  ctx.beginPath(); ctx.arc(cx, centerY, r, 0, Math.PI * 2);
+  ctx.moveTo(cx + r * moonBite.x + r * moonBite.radius, centerY + r * moonBite.y);
+  ctx.arc(cx + r * moonBite.x, centerY + r * moonBite.y, r * moonBite.radius, 0, Math.PI * 2);
+  ctx.fillStyle = moonColor; ctx.fill('evenodd');
+  ctx.restore();
+  drawText(`${progress.day} · ${progress.guestIndex + 1}/${progress.guestQueue!.length}`, cx + textOffset, centerY + 1, textSize, TEXT.main, 'left', 900);
+}
+
+/** Reset asks first when there is something to throw away. */
+function askResetCake(): void {
+  const cake = runtime.cake;
+  if (!cake || (!cake.stack.length && !cake.toppings.length)) { resetCake(); return; }
+  showModal(t().confirmReset, t().reset, t().cancel, resetCake, true);
+  sfx.tab();
+}
+
+/** A round pink button with a white bin on it. */
+function drawResetButton(centerX: number, centerY: number, radius: number, hovered: boolean): void {
+  const color = BUTTON_COLOR.reset, { lidW, bodyTopW, bodyBottomW, bodyH } = BIN;
+  ctx.save();
+  ctx.shadowColor = withAlpha(color, hovered ? 0.9 : 0.55); ctx.shadowBlur = hovered ? 24 : 14; ctx.shadowOffsetY = 3;
+  const fill = ctx.createLinearGradient(0, centerY - radius, 0, centerY + radius);
+  fill.addColorStop(0, shade(color, 0.32)); fill.addColorStop(0.55, color); fill.addColorStop(1, shade(color, -0.2));
+  ellipsePath(centerX, centerY, radius, radius); ctx.fillStyle = fill; ctx.fill();
+  ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+  ctx.strokeStyle = 'rgba(255,255,255,0.4)'; ctx.lineWidth = 1.5; ellipsePath(centerX, centerY, radius - 1, radius - 1); ctx.stroke();
+  const top = centerY - bodyH / 2 + 2;
+  ctx.fillStyle = BIN.color; ctx.strokeStyle = BIN.color; ctx.lineWidth = 3; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(centerX - lidW / 2, top - 4); ctx.lineTo(centerX + lidW / 2, top - 4); ctx.stroke(); // lid
+  ctx.beginPath(); ctx.moveTo(centerX - 4, top - 8); ctx.lineTo(centerX + 4, top - 8); ctx.stroke(); // handle
+  ctx.beginPath(); ctx.moveTo(centerX - bodyTopW / 2, top); ctx.lineTo(centerX + bodyTopW / 2, top);
+  ctx.lineTo(centerX + bodyBottomW / 2, top + bodyH); ctx.lineTo(centerX - bodyBottomW / 2, top + bodyH); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = color; ctx.lineWidth = 2;
+  for (const dx of [-4, 0, 4]) { ctx.beginPath(); ctx.moveTo(centerX + dx, top + 4); ctx.lineTo(centerX + dx * 0.8, top + bodyH - 4); ctx.stroke(); }
+  ctx.restore();
+}
+
+/** The order: the guest in a big window with their name tag, a thin patience bar under it, the wanted cake below. */
 function drawTicket(): void {
-  const { x, y, w, h, portraitHeight, nameY, patienceY, cardY } = TICKET, customer = runtime.customer!;
+  const { x, y, w, h, portraitHeight, nameTag, patienceY, cardY } = TICKET, customer = runtime.customer!;
   drawPanel(x, y, w, h, { radius: 20, noStars: true });
   drawGuestPortrait(customer, x + 10, y + 10, w - 20, portraitHeight);
-  drawFittedText(loc(customer.cat.name), x + 20, y + nameY, 22, w - 40, TEXT.main, 'left', 900);
-  if (customer.patience !== null) drawPatienceBar(x + 20, y + patienceY, w - 40, customer);
+  drawNameTag(loc(customer.cat.name), x + 10 + nameTag.x, y + 10 + nameTag.y);
+  if (customer.patience !== null) drawPatienceBar(x + 10, y + patienceY, w - 20, customer);
   // on the toppings station the wanted cake is shown without its magic, so its toppings are easy to see
   drawOrderCard(customer, x + 10, y + cardY, w - 20, h - cardY - 10, runtime.station === TOPPINGS_STATION_INDEX);
   drawChangedOrderGlow(customer, x + 10, y + cardY, w - 20, h - cardY - 10);
@@ -219,13 +272,14 @@ function drawStationControls(cake: Cake): void {
   station.drawControls?.(STATION_CONTROLS.right, STATION_CONTROLS.y, cake);
 }
 
+/** Station tabs: icon pills centred along the bottom; a done station gets a green tick, the suggested next one glows. */
 function drawStationTabs(cake: Cake): void {
   const nextIndex = STATIONS.findIndex(station => !station.isDone(cake));
-  const tabW = (SCREEN_W - TABS.sideMargin * 2 - TABS.gap * (STATIONS.length - 1)) / STATIONS.length;
+  const { w: tabW, h: tabH, gap, iconScale, doneBadge } = TABS, left = SCREEN_W / 2 - (STATIONS.length * tabW + (STATIONS.length - 1) * gap) / 2;
   STATIONS.forEach((station, i) => {
-    const x = TABS.sideMargin + i * (tabW + TABS.gap), isSelected = runtime.station === i, isDone = station.isDone(cake);
-    button('tab' + i, x, TABS.y, tabW, TABS.h, '', {
-      sound: 'tab', hoverScale: 1.04, onClick: () => selectStation(i as StationIndex),
+    const x = left + i * (tabW + gap), isSelected = runtime.station === i, isDone = station.isDone(cake);
+    button('tab' + i, x, TABS.y, tabW, tabH, '', {
+      sound: 'tab', hoverScale: 1.06, onClick: () => selectStation(i as StationIndex),
       draw: (bx, by, bw, bh, hovered) => {
         ctx.save();
         if (isSelected) {
@@ -240,15 +294,14 @@ function drawStationTabs(cake: Cake): void {
           drawGlassPill(bx, by, bw, bh, hovered ? 0.95 : 0.8);
         }
         ctx.restore();
-        drawFittedText(`${i + 1}  ${station.name}`, bx + bw / 2 - (isDone ? 14 : 0), by + bh / 2, 22, bw - (isDone ? 64 : 36), isSelected ? '#fff' : TEXT.main, 'center', 900);
+        drawStationIcon(station.icon, bx + bw / 2 - (isDone ? doneBadge.radius * 0.6 : 0), by + bh / 2, iconScale);
         if (isDone) {
+          const badgeX = bx + bw - doneBadge.inset, badgeY = by + bh / 2;
           ctx.save();
           ctx.shadowColor = BUTTON_COLOR.confirm; ctx.shadowBlur = 10;
-          ellipsePath(bx + bw - 28, by + bh / 2, 12, 12); ctx.fillStyle = BUTTON_COLOR.confirm; ctx.fill();
+          ellipsePath(badgeX, badgeY, doneBadge.radius, doneBadge.radius); ctx.fillStyle = BUTTON_COLOR.confirm; ctx.fill();
           ctx.restore();
-          drawText('✓', bx + bw - 28, by + bh / 2 + 1, 15, '#fff', 'center', 900);
-        } else if (i === STATIONS.length - 1) { // magic is required: a star until it's done
-          ctx.fillStyle = TEXT.gold; starPath(bx + 20, by + bh / 2, 8, 3.5); ctx.fill();
+          drawText('✓', badgeX, badgeY + 1, 15, '#fff', 'center', 900);
         }
       },
     });

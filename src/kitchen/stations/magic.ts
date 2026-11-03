@@ -119,6 +119,7 @@ export function drawMagicStationCircle(): void {
 }
 
 export const magicStation: Station = {
+  icon: 'magic',
   get name() { return t().stations.magic; },
   helper: 'magic',
   isDone: cake => cake.magicQuality !== null,

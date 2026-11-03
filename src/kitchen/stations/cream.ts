@@ -28,8 +28,9 @@ const SQUISH_INTERVAL = 0.09;
 /** The helper's whisk pipes all beads within this many seconds (plus a short finishing pause). */
 const AUTO_PIPE_SECONDS = 0.8;
 const AUTO_FINISH_SECONDS = 0.9;
-/** Piping progress in the top right corner. */
-const PROGRESS_BAR = { w: 200, h: 26 };
+/** Piping progress in the top right corner; shown only while piping and `lingerSeconds` after, fading at `fadeSpeed`. */
+const PROGRESS_BAR = { w: 200, h: 26, lingerSeconds: 1.5, fadeSpeed: 6 };
+let progressAlpha = 0;
 
 function isInCreamZone(point: Point): boolean {
   const height = runtime.cake ? cakeHeight(runtime.cake) : 0;
@@ -107,6 +108,7 @@ export function shelfCreams(): CreamId[] {
 }
 
 export const creamStation: Station = {
+  icon: 'cream',
   get name() { return t().stations.cream; },
   helper: 'cream',
   isDone: cake => cake.creamCoverage >= CREAM_DONE_COVERAGE,
@@ -118,13 +120,17 @@ export const creamStation: Station = {
     });
   },
 
-  /** Piping progress, and the cream in the bag right now. */
-  /** How much of the borders is piped, as a bar in the top right corner. */
+  /** How much of the borders is piped, as a bar in the top right corner, only while the player pipes (the tab's tick tells when it's done). */
   drawControls(rightEdge, y, cake) {
+    const isPiping = runtime.isPipingCream || runtime.autoCreamTime !== null || clock.time - runtime.lastSquishTime < PROGRESS_BAR.lingerSeconds;
+    progressAlpha += ((isPiping ? 1 : 0) - progressAlpha) * Math.min(1, clock.delta * PROGRESS_BAR.fadeSpeed);
+    if (progressAlpha < 0.02) return;
+    ctx.save(); ctx.globalAlpha = progressAlpha;
     const barX = rightEdge - PROGRESS_BAR.w, barY = y + (STATION_CONTROLS.h - PROGRESS_BAR.h) / 2;
     drawGlassPill(barX - 8, y, PROGRESS_BAR.w + 16, STATION_CONTROLS.h);
     drawProgressBar(barX, barY, PROGRESS_BAR.w, PROGRESS_BAR.h, cake.creamCoverage, cake.creamCoverage >= CREAM_DONE_COVERAGE ? BUTTON_COLOR.confirm : BUTTON_COLOR.gold);
     drawText(Math.round(cake.creamCoverage * 100) + '%', barX + PROGRESS_BAR.w / 2, barY + PROGRESS_BAR.h / 2 + 1, 18, '#fff', 'center', 900);
+    ctx.restore();
   },
 
   /** The enchanted whisk pipes the ordered cream bead by bead. */

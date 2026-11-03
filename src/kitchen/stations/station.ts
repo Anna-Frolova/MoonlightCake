@@ -5,6 +5,8 @@ import type { Point } from '../../core/math';
 import type { Cake, HelperId } from '../../data/types';
 
 export interface Station {
+  /** Which icon its tab shows. */
+  icon: 'layers' | 'cream' | 'glaze' | 'toppings' | 'magic';
   /** Tab caption. */
   name: string;
   /** Shop helper that adds an "Auto" button to this station. */

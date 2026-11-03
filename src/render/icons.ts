@@ -40,6 +40,27 @@ export function drawFlavorIcon(flavor: FlavorId, x: number, y: number, scale: nu
   });
 }
 
+/** Kitchen station icons for the tabs: a layer, a piping bag, a drop of glaze, a strawberry, a star. */
+const GLAZE_DROP = { color: '#6fb8ff', highlight: 'rgba(255,255,255,0.65)' };
+const MAGIC_STAR = { color: '#ffe27a', outer: 24, inner: 10 };
+export function drawStationIcon(station: 'layers' | 'cream' | 'glaze' | 'toppings' | 'magic', x: number, y: number, scale: number): void {
+  switch (station) {
+    case 'layers': drawFlavorIcon('strawberry', x, y, scale * 0.8); break;
+    case 'cream': drawCreamIcon('berry', x, y + 4 * scale, scale); break;
+    case 'toppings': drawToppingIcon('strawberry', x, y - 6 * scale, scale); break;
+    case 'glaze':
+      withIconTransform(x, y, scale, () => {
+        ctx.beginPath(); ctx.moveTo(0, -26); ctx.quadraticCurveTo(24, 4, 0, 22); ctx.quadraticCurveTo(-24, 4, 0, -26); ctx.closePath();
+        ctx.fillStyle = GLAZE_DROP.color; ctx.fill(); ctx.stroke();
+        ctx.fillStyle = GLAZE_DROP.highlight; ellipsePath(-6, 2, 3.5, 6); ctx.fill();
+      });
+      break;
+    case 'magic':
+      withIconTransform(x, y, scale, () => { starPath(0, 0, MAGIC_STAR.outer, MAGIC_STAR.inner); ctx.fillStyle = MAGIC_STAR.color; ctx.fill(); ctx.stroke(); });
+      break;
+  }
+}
+
 export function drawShapeIcon(shape: ShapeId, x: number, y: number, scale: number): void {
   withIconTransform(x, y, scale, () => {
     ctx.translate(0, 12); ctx.scale(0.26, 0.26);
