@@ -175,7 +175,7 @@ export const layersStation: Station = {
     const isHoverable = !isStackLocked(cake);
     drawIngredientShelf(shelfFlavors(), flavor => loc(FLAVORS[flavor].name), (flavor, x, y, scale) => drawLayerPiece(flavor, cake.shape, x, y, scale),
       { isHoverable, shelf: FLAVOR_SHELF });
-    drawIngredientShelf(shelfFillings(), filling => loc(FILLINGS[filling].shortName), drawFillingJar, { isHoverable, shelf: FILLING_SHELF });
+    drawIngredientShelf(shelfFillings(), filling => loc(FILLINGS[filling].shortName), drawFillingJar, { isHoverable, shelf: FILLING_SHELF, labels: 'active' });
   },
 
   onPointerDown(point) {

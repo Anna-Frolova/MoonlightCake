@@ -20,6 +20,10 @@ export function drawProgressBar(x: number, y: number, w: number, h: number, valu
 const SHELF_WOOD = '#4a2c80';
 const SHELF_HIGHLIGHT = '#6a46a8';
 const LABEL_SHADOW = 'rgba(20,10,50,0.9)';
+/** How fast a name fades in / out on shelves that only name the item in hand (share of the way per second). */
+const LABEL_FADE_SPEED = 10;
+/** Current opacity of each such name, eased every frame. */
+const labelAlpha = new Map<string, number>();
 
 // Every function takes the shelf's layout; the default is the shelf above the cake (INGREDIENT_SHELF).
 
@@ -47,10 +51,12 @@ export const isOverShelfItem = (point: { x: number; y: number }, x: number, coun
 /**
  * Draws the shelf board and each item on it with a springy hover, plus its name underneath.
  * `drawItem` gets the item's base point; `lifted` items float a little (the selected cream).
+ * With `labels: 'active'` only the chosen item and the one under the finger (the last tapped, on a phone) are named,
+ * so a shelf of look-alike items doesn't fill the screen with text.
  */
 export function drawIngredientShelf<T extends string>(
   items: readonly T[], label: (item: T) => string, drawItem: (item: T, x: number, y: number, scale: number) => void,
-  options: { isHoverable: boolean; lifted?: T | null; glowColor?: (item: T) => string; shelf?: ShelfLayout },
+  options: { isHoverable: boolean; lifted?: T | null; glowColor?: (item: T) => string; shelf?: ShelfLayout; labels?: 'all' | 'active' },
 ): void {
   const shelf = options.shelf ?? INGREDIENT_SHELF, { y, boardHeight, labelSize, itemScale, centerX } = shelf;
   const spacing = shelfSpacing(items.length, shelf), fit = spacing / shelf.spacing;
@@ -64,7 +70,15 @@ export function drawIngredientShelf<T extends string>(
     const bob = Math.sin(clock.time * 2 + i) * 1.5 - (isLifted ? 12 : 0);
     if (isLifted || hovered) drawGlow(x, y - shelf.itemHeight * 0.44, shelf.itemHeight * 0.64, options.glowColor?.(item) ?? '#ffffff', isLifted ? 0.5 : 0.3);
     drawItem(item, x, y + bob, scale * itemScale * fit);
+    let alpha = 1;
+    if (options.labels === 'active') {
+      const key = 'label_' + item, target = isLifted || hovered ? 1 : 0, current = labelAlpha.get(key) ?? 0;
+      alpha = current + (target - current) * Math.min(1, clock.delta * LABEL_FADE_SPEED);
+      labelAlpha.set(key, alpha);
+      if (alpha < 0.02) return;
+    }
     ctx.save(); // a dark halo (drawn twice to make it denser) keeps the names readable on the bright heaven kitchen too
+    ctx.globalAlpha = alpha;
     ctx.shadowColor = LABEL_SHADOW; ctx.shadowBlur = 5;
     for (let pass = 0; pass < 2; pass++) drawFittedText(label(item), x, y + boardHeight + 13, labelSize, spacing - 6, isLifted ? TEXT.label : TEXT.main, 'center', 900);
     ctx.restore();

@@ -114,7 +114,7 @@ export const creamStation: Station = {
   /** Piping bags of today's creams (and a special guest's own cream) on the shelf above the cake; the chosen one is lifted. */
   drawScenery() {
     drawIngredientShelf(shelfCreams(), cream => loc(CREAMS[cream].name), drawCreamOnShelf, {
-      isHoverable: !runtime.isPipingCream, lifted: runtime.selectedCream, glowColor: cream => CREAMS[cream].color,
+      isHoverable: !runtime.isPipingCream, lifted: runtime.selectedCream, glowColor: cream => CREAMS[cream].color, labels: 'active',
     });
   },
 
