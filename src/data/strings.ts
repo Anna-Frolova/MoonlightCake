@@ -160,7 +160,6 @@ const uk = {
     title: 'Навчання',
     skip: 'Пропустити навчання',
     skipPart: (station: string) => `Пропустити «${station}»`,
-    gotIt: 'Зрозуміло!',
     openTab: (station: string) => `Відкрий вкладку «${station}» унизу.`,
     order: 'Гість показує картинку торта — це замовлення. Натисни «Прийняти замовлення».',
     shape: (shape: string) => `Замовлення — зліва. Спершу форма: натисни «${shape}» угорі.`,
@@ -174,7 +173,6 @@ const uk = {
     toppings: (topping: string, count: number) => `Перетягни «${topping}» з полиці на торт — ${count} шт.`,
     magic: (sign: string) => `Чари! Намалюй ${sign} на торті одним рухом: від білої крапки за стрілками.`,
     serve: 'Торт готовий! Натисни «Подати торт».',
-    score: 'Сердечка — оцінка гостя. Що точніше торт схожий на картинку, то більше монеток і чайових.',
   },
 
   // finale
@@ -323,7 +321,6 @@ const ja: UiStrings = {
     title: 'チュートリアル',
     skip: 'チュートリアルをとばす',
     skipPart: station => `「${station}」をとばす`,
-    gotIt: 'わかった！',
     openTab: station => `下の「${station}」タブを開いてね。`,
     order: 'お客さんが見せている絵が注文だよ。「注文を受ける」を押そう。',
     shape: shape => `注文は左だよ。まずは形：上の「${shape}」を押そう。`,
@@ -337,7 +334,6 @@ const ja: UiStrings = {
     toppings: (topping, count) => `棚の「${topping}」をケーキまでドラッグ。${count}個のせよう。`,
     magic: sign => `魔法！ケーキの上に${sign}をひと筆で描こう。白い点から矢印の向きに。`,
     serve: 'ケーキの完成！「ケーキを出す」を押そう。',
-    score: 'ハートはお客さんの評価だよ。絵にそっくりなほど、コインとチップが増えるよ。',
   },
 
   finaleTitle: '王家のおすみつき！',

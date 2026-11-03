@@ -4,7 +4,7 @@ import { readStored, removeStored, writeStored } from '../core/storage';
 import type { ElementId } from '../data/types';
 
 const TUTORIAL_KEY = 'misiachnyi-korzh-tutorial';
-/** The tutorial's own buttons ("Got it", "Skip") work at every step. */
+/** The tutorial's own button ("Skip") works at every step. */
 const TUTORIAL_BUTTON_PREFIX = 'tutorial';
 
 export interface Rect { x: number; y: number; w: number; h: number }
@@ -13,8 +13,6 @@ export const tutorial = {
   isDone: readStored(TUTORIAL_KEY) === 'done',
   /** Index of the current step (runtime only: after a reload the steps already done are skipped again). */
   step: 0,
-  /** The player pressed "Got it" on the current step. */
-  confirmed: false,
   /** When the current step's hint appeared (for the pop-in animation), or null while it is hidden. */
   shownAt: null as number | null,
   /** When the player last pressed something the tutorial holds back (the highlight flashes). */
@@ -63,7 +61,7 @@ export function finishTutorial(): void {
 
 /** A new game teaches again from the first step. */
 export function resetTutorial(): void {
-  Object.assign(tutorial, { isDone: false, step: 0, confirmed: false, shownAt: null, nudgedAt: null, skippedStations: [] });
+  Object.assign(tutorial, { isDone: false, step: 0, shownAt: null, nudgedAt: null, skippedStations: [] });
   clearTutorialGate();
   removeStored(TUTORIAL_KEY);
 }

@@ -2,7 +2,8 @@
 // only the right choice works: the kitchen is veiled except for it (and the order), other presses are ignored.
 // The station tabs always work: the tutorial teaches the open station when it can, and leaves the player free on
 // a station it has nothing to teach on. Each step completes by itself once the player has done it; in the kitchen
-// the panel skips just the open part (layers, cream…), elsewhere the whole tutorial.
+// the panel skips just the open part (layers, cream…), elsewhere the whole tutorial. Once a part is skipped, the
+// tutorial no longer points to the next tab: it speaks up again only when the player opens a station themselves.
 import { ctx, SCREEN_W, view } from '../core/canvas';
 import { clock } from '../core/clock';
 import { withAlpha } from '../core/color';
@@ -17,6 +18,7 @@ import { t } from '../data/strings';
 import type { ElementId, EssenceId, ToppingId } from '../data/types';
 import { cakeHeight, countLayers, createCreamDots } from '../game/cake';
 import { recipeToDrops } from '../game/colorMixing';
+import { isCakeReady } from '../game/flow';
 import { progress, runtime, type StationIndex } from '../game/state';
 import { clearTutorialGate, finishTutorial, skipTutorialStation, tutorial, tutorialGate, type Rect } from '../game/tutorial';
 import { cakeTopY } from '../kitchen/kitchen';
@@ -52,10 +54,6 @@ interface TutorialStep {
   buttonsOnly?: boolean;
   /** On the magic step only this element's sign is recognised. */
   magicElement?(): ElementId;
-  /** The panel waits for this (the result card's hearts pop in first); the gate is closed all the same. */
-  isHintShown?(): boolean;
-  /** Shows a "Got it" button that completes the step. */
-  needsConfirm?: boolean;
 }
 
 /** Where the hint panel sits: clear of the cake, the tools and the speech bubble. */
@@ -67,15 +65,11 @@ const COACH = {
   kitchen: { x: 958, y: TABS.y, w: 306 },
   kitchenGlaze: { x: 958, y: 126, w: 306 },
   hallOrder: { x: 36, y: 130, w: 380 },
-  /** Under the "next guest" button while the result card fills the left side. */
-  hallResult: { x: 770, offsetBelowBubble: 90, w: 480 },
 };
 const COACH_TEXT_SIZE = 21;
 const COACH_LINE_HEIGHT = 28;
 /** Gap kept between the kitchen hint panel and the station tabs. */
 const COACH_TAB_GAP = 8;
-/** The result-card hint waits until the hearts have popped in. */
-const SCORE_HINT_DELAY = 1.6;
 /** A press the tutorial holds back makes the highlight flash this long. */
 const NUDGE_SECONDS = 0.5;
 /** Rounding of the bright holes in the veil. */
@@ -239,19 +233,11 @@ const STEPS: TutorialStep[] = [
     drawGuide: () => drawSignGuide(order().element),
     magicElement: () => order().element,
   }),
-  {
-    isRelevant: inKitchen,
+  { // only once the cake is complete (some parts may have been skipped and are still to make)
+    isRelevant: () => inKitchen() && isCakeReady(),
     isDone: () => ['judging', 'reacting', 'leaving'].includes(runtime.customer?.state ?? ''),
     text: () => t().tutorial.serve,
     targets: () => buttonRect('serveCake'),
-  },
-  { // the result card
-    isRelevant: () => runtime.scene === 'hall' && isTutorialGuest() && runtime.customer?.state === 'reacting',
-    isHintShown: () => runtime.customer!.reactionTime > SCORE_HINT_DELAY,
-    isDone: () => tutorial.confirmed,
-    text: () => t().tutorial.score,
-    buttonsOnly: true,
-    needsConfirm: true,
   },
 ];
 
@@ -276,7 +262,6 @@ export function updateTutorial(): void {
   if (isGuestScene && runtime.customer && !runtime.customer.isTutorial) { finishTutorial(); return; }
   while (tutorial.step < STEPS.length && isPassed(STEPS[tutorial.step])) {
     tutorial.step++;
-    tutorial.confirmed = false;
     tutorial.shownAt = null;
   }
   if (tutorial.step >= STEPS.length) { finishTutorial(); return; }
@@ -292,13 +277,16 @@ let shownStep: TutorialStep | null = null;
 
 /**
  * The step to show now. In the kitchen it follows the player: on the open station, its first step still to do
- * (once the cake has a layer — every station but the layers needs one), otherwise the next step in order.
+ * (once the cake has a layer — every station but the layers needs one), otherwise the next step in order. After
+ * a skip there is no "open this tab" hint: the player goes on by themselves.
  */
 function currentStep(): TutorialStep | null {
   const step = tutorial.isDone || runtime.scene === 'title' ? null : STEPS[tutorial.step];
   if (!step?.isRelevant()) return null;
-  if (step.station === undefined || (runtime.station !== 0 && !countLayers(cake()))) return step;
-  return STEPS.slice(tutorial.step).find(later => later.station === runtime.station && !isPassed(later)) ?? step;
+  const canFollow = step.station !== undefined && (runtime.station === 0 || countLayers(cake()) > 0);
+  const shown = canFollow ? STEPS.slice(tutorial.step).find(later => later.station === runtime.station && !isPassed(later)) ?? step : step;
+  if (tutorial.skippedStations.length && shown.isGated?.() === false) return null;
+  return shown;
 }
 
 // ---------------- drawing ----------------
@@ -324,10 +312,6 @@ export function drawTutorialVeil(): void {
 
 function coachPosition(): { x: number; y: number; w: number } {
   if (runtime.scene === 'kitchen') return runtime.station === GLAZE_STATION_INDEX ? COACH.kitchenGlaze : COACH.kitchen;
-  if (runtime.customer?.state === 'reacting') {
-    const { x, w, offsetBelowBubble } = COACH.hallResult;
-    return { x, y: runtime.speechBubbleBottom + offsetBelowBubble, w };
-  }
   return COACH.hallOrder;
 }
 
@@ -432,7 +416,7 @@ function drawSignGuide(element: ElementId): void {
 export function drawTutorial(): void {
   if (runtime.fade) return;
   const step = currentStep();
-  if (!step || step.isHintShown?.() === false) { tutorial.shownAt = null; return; }
+  if (!step) { tutorial.shownAt = null; return; }
   if (step !== shownStep) { shownStep = step; tutorial.shownAt = null; }
   tutorial.shownAt ??= clock.time;
 
@@ -449,11 +433,6 @@ export function drawTutorial(): void {
     drawText(t().tutorial.title, x + 40, y + 25, 17, TEXT.gold, 'left', 900);
     lines.forEach((line, i) => drawText(line, x + 20, y + 58 + i * COACH_LINE_HEIGHT, COACH_TEXT_SIZE, TEXT.main, 'left', 700));
     const buttonY = y + h - 50;
-    if (step.needsConfirm) {
-      button('tutorialGotIt', x + w - 140, buttonY, 124, 38, t().tutorial.gotIt, {
-        color: BUTTON_COLOR.confirm, fontSize: 19, onClick: () => { tutorial.confirmed = true; },
-      });
-    }
     // in the kitchen only this station's part is skipped (the player may already know how to make layers)
     const station = step.station;
     button('tutorialSkip', x + 16, buttonY, 196, 38, station === undefined ? t().tutorial.skip : t().tutorial.skipPart(STATIONS[station].name), {
