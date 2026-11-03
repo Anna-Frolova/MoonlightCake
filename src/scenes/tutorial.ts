@@ -1,9 +1,10 @@
 // Day-1 tutorial: a hint panel walks the player through the first guest's cake step by step. While it runs,
 // only the right choice works: the kitchen is veiled except for it (and the order), other presses are ignored.
-// The station tabs always work: the tutorial teaches the open station when it can, and leaves the player free on
-// a station it has nothing to teach on. Each step completes by itself once the player has done it; in the kitchen
-// the panel skips just the open part (layers, cream…), elsewhere the whole tutorial. Once a part is skipped, the
-// tutorial no longer points to the next tab: it speaks up again only when the player opens a station themselves.
+// In the kitchen each station's part is independent: the station tabs always work, and the open station's part
+// is taught whenever it is neither done nor skipped, whatever happened on the other stations. Each step completes
+// by itself once the player has done it; in the kitchen the panel skips just the open part (layers, cream…),
+// elsewhere the whole tutorial. On a station with nothing left to teach the hint points to the next tab, unless
+// a part was skipped: then the player goes on by themselves.
 import { ctx, SCREEN_W, view } from '../core/canvas';
 import { clock } from '../core/clock';
 import { withAlpha } from '../core/color';
@@ -140,16 +141,16 @@ function toppingDishRect(kind: ToppingId): Rect[] {
 
 /**
  * A step on a kitchen station: elsewhere the hint asks to open this tab (the player stays free there), here the
- * station's own step. Every station but the layers needs a layer first (the layers part may have been skipped),
- * so until there is one the hint sends the player to the layers instead.
+ * station's own step. Every station but the layers works on a cake with a layer: while there is none (the layers
+ * part may have been skipped), the hint adds that a layer comes first.
  */
 function atStation(index: StationIndex, step: Omit<TutorialStep, 'isRelevant'>): TutorialStep {
-  const goTo = (): StationIndex => (index === 0 || countLayers(cake()) > 0 ? index : 0);
-  const isHere = (): boolean => runtime.station === index && goTo() === index, tab = (): Rect[] => buttonRect('tab' + goTo());
+  const isHere = (): boolean => runtime.station === index, tab = (): Rect[] => buttonRect('tab' + index);
+  const layerNote = (): string => (index !== 0 && !countLayers(cake()) ? ' ' + t().tutorial.layerFirst(STATIONS[0].name) : '');
   return {
     isRelevant: inKitchen,
     isDone: () => inKitchen() && step.isDone(),
-    text: () => (isHere() ? step.text() : t().tutorial.openTab(STATIONS[goTo()].name)),
+    text: () => (isHere() ? step.text() + layerNote() : t().tutorial.openTab(STATIONS[index].name)),
     targets: () => (isHere() ? step.targets?.() ?? [] : tab()),
     pressArea: () => (isHere() ? (step.pressArea ?? step.targets)?.() ?? [] : tab()),
     shows: () => (isHere() ? step.shows?.() ?? [] : []),
@@ -276,15 +277,15 @@ export function updateTutorial(): void {
 let shownStep: TutorialStep | null = null;
 
 /**
- * The step to show now. In the kitchen it follows the player: on the open station, its first step still to do
- * (once the cake has a layer — every station but the layers needs one), otherwise the next step in order. After
- * a skip there is no "open this tab" hint: the player goes on by themselves.
+ * The step to show now. In the kitchen it follows the player: on the open station, its first step still to do,
+ * otherwise the next step in order (as an "open this tab" hint). After a skip there is no such hint: the player
+ * goes on by themselves.
  */
 function currentStep(): TutorialStep | null {
   const step = tutorial.isDone || runtime.scene === 'title' ? null : STEPS[tutorial.step];
   if (!step?.isRelevant()) return null;
-  const canFollow = step.station !== undefined && (runtime.station === 0 || countLayers(cake()) > 0);
-  const shown = canFollow ? STEPS.slice(tutorial.step).find(later => later.station === runtime.station && !isPassed(later)) ?? step : step;
+  const here = step.station === undefined ? undefined : STEPS.slice(tutorial.step).find(later => later.station === runtime.station && !isPassed(later));
+  const shown = here ?? step;
   if (tutorial.skippedStations.length && shown.isGated?.() === false) return null;
   return shown;
 }
