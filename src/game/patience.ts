@@ -8,8 +8,8 @@ import { totalToppingCount } from './orders';
 import { runtime, type Customer } from './state';
 
 /** Seconds a guest waits for an order: bigger cakes get more time. The first `calmShare` of it patience stays full. */
-// generous on purpose: new players should never feel rushed (a typical cake gives ~4–5 minutes)
-const PATIENCE = { baseSeconds: 200, perLayerSeconds: 30, perToppingSeconds: 8, calmShare: 0.6 };
+// enough for a new player to finish calmly, yet a guest can be lost (a typical cake gives ~3 minutes)
+const PATIENCE = { baseSeconds: 120, perLayerSeconds: 20, perToppingSeconds: 6, calmShare: 0.5 };
 /** An angry guest's meow is a little lower, a growl. */
 const ANGRY_VOICE = 0.8;
 /** Below these levels the guest looks impatient, then upset. */
