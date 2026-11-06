@@ -105,6 +105,25 @@ function pickSpecialGuests(day: number): CatId[] {
   return chosen.slice(0, count);
 }
 
+/**
+ * TESTING AID (temporary): opening the game with `?jump=night` moves this device's save to the day of the night
+ * raid, with Count Krykhta as the last guest. The address is cleaned afterwards, so reloading doesn't jump again.
+ */
+export function applyTestJump(): void {
+  const url = new URL(location.href);
+  if (url.searchParams.get('jump') !== 'night') return;
+  const raidDay = Number(Object.keys(STORY_VISITS).find(day => STORY_VISITS[Number(day)]?.raid));
+  progress.menu = null;
+  for (let day = 1; day <= raidDay; day++) progress.menu = buildDailyMenu(day, progress.menu, progress.seed);
+  Object.assign(progress, {
+    day: raidDay, phase: 'inDay', guestIndex: 1, guestQueue: [{ cat: 'pushinka' }, { cat: STORY_VISITS[raidDay]!.cat }],
+    land: (raidDay - 1) / STORY_DAYS, finaleSeen: false,
+  });
+  saveProgress();
+  url.searchParams.delete('jump');
+  history.replaceState(null, '', url);
+}
+
 export function hasProgressWorthContinuing(): boolean {
   return progress.day > 1 || progress.guestIndex > 0 || progress.phase !== 'dayStart' || progress.coins > 0;
 }
