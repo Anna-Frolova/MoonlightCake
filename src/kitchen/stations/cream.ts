@@ -14,7 +14,7 @@ import type { Cake, CreamId } from '../../data/types';
 import {
   cakeHeight, countLayers, CREAM_DONE_COVERAGE, CREAM_FULL_COVERAGE, createCreamDots, updateCreamCoverage,
 } from '../../game/cake';
-import { runtime, todaysMenu } from '../../game/state';
+import { isOwned, runtime, todaysMenu } from '../../game/state';
 import { drawCreamOnShelf } from '../../render/shelfItems';
 import { showToast } from '../../scenes/sceneManager';
 import { currentCake, currentOrder, requireLayer } from '../kitchen';
@@ -57,6 +57,20 @@ function selectCream(cream: CreamId): void {
     sfx.poof();
   }
   runtime.selectedCream = cream;
+}
+
+/** The enchanted whisk (once bought) pipes the chosen cream by itself, bead by bead. */
+function pipeWithWhisk(): void {
+  const cake = currentCake(), cream = runtime.selectedCream!;
+  if (!requireLayer(cake) || (cake.cream === cream && cake.creamCoverage >= CREAM_FULL_COVERAGE)) return;
+  if (cake.cream !== cream) judgeChoice(cream === currentOrder().cream, 'surprised', true, 'cream');
+  cake.cream = cream;
+  if (!cake.creamDots) createCreamDots(cake);
+  const dots = cake.creamDots!;
+  dots.forEach((dot, i) => { dot.isPiped = false; dot.revealAt = (i / dots.length) * AUTO_PIPE_SECONDS; });
+  cake.creamCompleted = false;
+  runtime.autoCreamTime = 0;
+  sfx.sparkle();
 }
 
 /** Pipes every bead near the point. */
@@ -111,6 +125,7 @@ export const creamStation: Station = {
   icon: 'cream',
   get name() { return t().stations.cream; },
   helper: 'cream',
+  currentHint: cake => (isOwned('helper:cream') && !cake.cream ? t().creamTapHint : null),
   isDone: cake => cake.creamCoverage >= CREAM_DONE_COVERAGE,
 
   /** Piping bags of today's creams (and a special guest's own cream) on the shelf above the cake; the chosen one is lifted. */
@@ -133,25 +148,15 @@ export const creamStation: Station = {
     ctx.restore();
   },
 
-  /** The enchanted whisk pipes the cream the player chose, bead by bead. */
-  autoComplete() {
-    const cake = currentCake(), cream = runtime.selectedCream;
-    if (!requireLayer(cake)) return;
-    if (!cream) { showToast(t().pickCreamOnShelf); sfx.fail(); return; }
-    if (cake.cream !== cream) judgeChoice(cream === currentOrder().cream, 'surprised', true, 'cream');
-    cake.cream = cream;
-    if (!cake.creamDots) createCreamDots(cake);
-    const dots = cake.creamDots!;
-    dots.forEach((dot, i) => { dot.isPiped = false; dot.revealAt = (i / dots.length) * AUTO_PIPE_SECONDS; });
-    cake.creamCompleted = false;
-    runtime.autoCreamTime = 0;
-    sfx.sparkle();
-  },
 
   onPointerDown(point, cake) {
     const creams = shelfCreams(), xs = shelfItemXs(creams.length);
     const tapped = creams.find((_, i) => isOverShelfItem(point, xs[i], creams.length));
-    if (tapped) { selectCream(tapped); return true; }
+    if (tapped) {
+      selectCream(tapped);
+      if (isOwned('helper:cream')) pipeWithWhisk();
+      return true;
+    }
     if (!isInCreamZone(point)) return false;
     if (!countLayers(cake)) { showToast(t().needLayerFirst); return true; }
     if (!runtime.selectedCream) { showToast(t().pickCreamOnShelf); return true; }

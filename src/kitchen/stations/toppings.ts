@@ -17,8 +17,9 @@ import { drawToppingDish } from '../../render/shelfItems';
 import { drawTopping } from '../../render/toppings';
 import { showToast } from '../../scenes/sceneManager';
 import { cakeTopY, currentCake, currentOrder, requireLayer } from '../kitchen';
-import { CAKE_BASE_Y, CAKE_CENTER_X, CLEAR_TOPPINGS_BUTTON, INGREDIENT_SHELF, TOPPING_CHECKLIST, TOPPING_HOLD_OFFSET } from '../layout';
+import { CAKE_BASE_Y, CAKE_CENTER_X, CAKE_SIDE_BUTTON, CLEAR_TOPPINGS_BUTTON, INGREDIENT_SHELF, TOPPING_CHECKLIST, TOPPING_HOLD_OFFSET } from '../layout';
 import { drawIngredientShelf, shelfItemHalfWidth, shelfItemXs } from '../widgets';
+import { drawUndoButton } from './layers';
 import type { Station } from './station';
 import { judgeChoice } from '../../game/guestReactions';
 
@@ -174,6 +175,12 @@ export const toppingsStation: Station = {
   },
 
   drawControls(_rightEdge, _y, cake) {
+    // undo takes back the last topping put on the cake, under the right thumb like on the layers station
+    const side = CAKE_SIDE_BUTTON, size = side.h, isEmpty = !cake.toppings.length;
+    button('undoTopping', side.x + (side.w - size) / 2, side.y, size, size, '', {
+      disabled: isEmpty, onClick: () => { cake.toppings.pop(); sfx.pickup(); },
+      draw: (x, y, w, h, hovered) => drawUndoButton(x + w / 2, y + h / 2, w / 2, isEmpty, hovered),
+    });
     const clear = CLEAR_TOPPINGS_BUTTON;
     button('clearToppings', clear.x, clear.y, clear.w, clear.h, t().removeAll, {
       color: BUTTON_COLOR.secondary, fontSize: 19, disabled: !cake.toppings.length,

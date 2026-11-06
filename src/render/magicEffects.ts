@@ -73,6 +73,9 @@ function drawFire(geometry: ShapeGeometry, top: number, t: number, quality: numb
 }
 
 /** Frosty sides, icicles along the front rim, a glowing frozen edge and drifting snowflakes. */
+/** Icicles hang this far below the top edge, under the cream on the rim. */
+const ICICLE_DROP = 16;
+
 function drawIce(geometry: ShapeGeometry, top: number, height: number, t: number, intensity: number, grow: number): void {
   ctx.fillStyle = `rgba(210,245,255,${0.34 * intensity * grow})`;
   for (const edge of geometry.frontEdges) {
@@ -83,17 +86,12 @@ function drawIce(geometry: ShapeGeometry, top: number, height: number, t: number
   }
   geometry.frontRim.forEach(([x, z], i) => {
     const length = (18 + ((i * 37) % 18)) * grow;
-    const px = x * 0.98, py = top + z * SQUASH + 6;
+    const px = x * 0.98, py = top + z * SQUASH + ICICLE_DROP;
     const g = ctx.createLinearGradient(0, py, 0, py + length);
     g.addColorStop(0, 'rgba(220,248,255,1)'); g.addColorStop(1, 'rgba(70,170,255,0.85)');
     ctx.fillStyle = g;
     ctx.beginPath(); ctx.moveTo(px - 5.5, py); ctx.lineTo(px + 5.5, py); ctx.lineTo(px, py + length); ctx.closePath(); ctx.fill();
   });
-  ctx.save();
-  ctx.shadowColor = '#8fe6ff'; ctx.shadowBlur = 16;
-  ctx.beginPath(); geometry.outline.forEach(([x, z], i) => (i ? ctx.lineTo(x, top + z * SQUASH) : ctx.moveTo(x, top + z * SQUASH))); ctx.closePath();
-  ctx.strokeStyle = `rgba(190,240,255,${0.85 * grow})`; ctx.lineWidth = 6; ctx.stroke();
-  ctx.restore();
   ctx.strokeStyle = `rgba(230,250,255,${0.9 * intensity})`; ctx.lineWidth = 2.2;
   for (let k = 0; k < 12; k++) {
     const fx = Math.sin(k * 7.3) * 150 + Math.sin(t + k) * 10;

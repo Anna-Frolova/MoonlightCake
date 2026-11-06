@@ -110,7 +110,7 @@ function itemAt<T>(items: T[], shelf: ShelfLayout, point: Point): T | undefined 
 }
 
 /** A glossy sky-blue disc with a white ring and a bold white "back" arrow (↶ drawn, so it's thick on a phone). */
-function drawUndoButton(centerX: number, centerY: number, radius: number, isDisabled: boolean, hovered: boolean): void {
+export function drawUndoButton(centerX: number, centerY: number, radius: number, isDisabled: boolean, hovered: boolean): void {
   const color = BUTTON_COLOR.undo;
   ctx.save();
   ctx.globalAlpha = isDisabled ? UNDO_LOOK.disabledAlpha : 1;
