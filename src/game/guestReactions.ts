@@ -174,7 +174,7 @@ const displeasureLevel = (customer: Customer): number =>
 /** The guest's face when not reacting: the worse of what their patience and the player's mistakes show. */
 export function guestMood(customer: Customer): Mood {
   const fromPatience = patienceMood(customer), level = displeasureLevel(customer);
-  if (!level) return fromPatience;
+  if (!level) return customer.cat.isCold && fromPatience === 'neutral' ? 'flat' : fromPatience;
   const fromMistakes: Mood = level === 1 ? 'flat' : customer.cat.temper === 'angry' ? 'angry' : 'sad';
   return (MOOD_SEVERITY[fromMistakes] ?? 0) > (MOOD_SEVERITY[fromPatience] ?? 0) ? fromMistakes : fromPatience;
 }

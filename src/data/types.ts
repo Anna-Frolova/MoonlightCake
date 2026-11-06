@@ -18,7 +18,7 @@ export type ToppingId =
   | 'chili' | 'feather' | 'bat' | 'sushi' | 'candle' | 'butterfly';
 export type GlazeColorId =
   | 'red' | 'yellow' | 'blue' | 'orange' | 'green' | 'purple' | 'sunset' | 'teal' | 'lime'
-  | 'pink' | 'sky' | 'lilac' | 'lemon' | 'white' | 'night' | 'plum' | 'forest' | 'cherry' | 'black';
+  | 'pink' | 'sky' | 'lilac' | 'lemon' | 'white' | 'night' | 'plum' | 'forest' | 'cherry' | 'black' | 'grey';
 export type PaletteId = 'berry' | 'sunny' | 'sea' | 'lavender' | 'forest' | 'night' | 'chocolate'
   | 'inferno' | 'heaven' | 'dracula' | 'shrine' | 'cult' | 'meadow';
 /** After the everyday five come the special guests' magic: dark (demon, cultist), light (angel), blood (vampire), sakura (samurai). */
@@ -29,7 +29,8 @@ export type CatId =
   | 'pushinka' | 'barsyk' | 'lihtaryk' | 'vusan' | 'mzhychka' | 'bulochka' | 'murlin'
   | 'mokhovyk' | 'serdenko' | 'morok' | 'drimko' | 'queen'
   | 'teacher' | 'grandpa'
-  | 'demon' | 'angel' | 'vampire' | 'samurai' | 'cultist' | 'fairy';
+  | 'demon' | 'angel' | 'vampire' | 'samurai' | 'cultist' | 'fairy'
+  | 'zoryana' | 'nyukhach' | 'krykhta';
 export type DecorId = 'garland' | 'catnip' | 'gramophone' | 'cushion' | 'vitrage' | 'chandelier';
 /** Kitchen station a helper automates. */
 export type HelperId = 'layers' | 'cream' | 'glaze' | 'toppings';
@@ -131,6 +132,10 @@ export interface CatDef extends CatLook {
   favoriteShapes: ShapeId[];
   /** A picky guest orders only cakes that follow this rule. */
   orderRule?: OrderRule;
+  /** Orders a grey cake without any magic (the villain's test). */
+  ordersGreyCake?: boolean;
+  /** Never warm: the resting face is unimpressed, not friendly. */
+  isCold?: boolean;
   /** Gets angry instead of sad when kept waiting or served a bad cake (with angry lines instead of sad ones). */
   temper?: 'angry';
   /** A special guest: orders cakes in their own style and transforms the kitchen and the music. */
@@ -172,6 +177,8 @@ export interface Order {
   glaze: GlazeColorId;
   toppings: Partial<Record<ToppingId, number>>;
   element: ElementId;
+  /** The cake must have no magic at all (`element` is then ignored). */
+  noMagic?: boolean;
   /** The Moon Queen's special order (pays more). */
   isRoyal: boolean;
   /** A special guest's order (pays more too). */
@@ -231,7 +238,7 @@ export type MenuCategory = keyof MenuLists;
 /** `tutorial` marks the first guest of day 1 (saves from older versions may hold 1 or 2 there: still truthy). */
 export interface QueuedGuest { cat: CatId; tutorial?: boolean }
 
-export type GamePhase = 'dayStart' | 'inDay' | 'dayEnd' | 'shop';
+export type GamePhase = 'dayStart' | 'inDay' | 'night' | 'dayEnd' | 'map' | 'shop';
 
 export interface SaveData {
   version: number;
@@ -244,6 +251,8 @@ export interface SaveData {
   phase: GamePhase;
   guestIndex: number;
   guestQueue: QueuedGuest[] | null;
+  /** How far the region's land has healed, 0..1 (grows with each story day's hearts). */
+  land: number;
   dayStats: { earned: number; served: number; hearts: number; bestHearts: number };
   totals: { served: number; hearts: number; earned: number };
   finaleSeen: boolean;

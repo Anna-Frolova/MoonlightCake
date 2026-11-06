@@ -113,7 +113,7 @@ export function generateOrder(cat: CatDef, day: number, isTutorial?: boolean): O
   const toppings: Order['toppings'] = {};
   for (const kind of kinds) toppings[kind] = randomInt(1, maxPerKind(day, kindCount));
 
-  return {
+  const order: Order = {
     palette: paletteId,
     shape: rule.shapes.length ? pickRandom(rule.shapes) : pickPreferring(menu.shapes, cat.favoriteShapes, FAVORITE_SHAPE_CHANCE),
     layerCount,
@@ -126,6 +126,7 @@ export function generateOrder(cat: CatDef, day: number, isTutorial?: boolean): O
     isRoyal,
     isSpecial: false,
   };
+  return cat.ordersGreyCake ? { ...order, glaze: 'grey', noMagic: true } : order;
 }
 
 /** A special guest's cake: their own palette and magic, always their signature topping, two or three layers. */
@@ -165,8 +166,7 @@ export function buildOrderPicture(order: Order): Cake {
   updateCreamCoverage(cake);
   cake.glaze = glazeRgb(order.glaze);
   cake.toppings = arrangeToppings(order.shape, order.toppings, cakeHeight(cake));
-  cake.magicQuality = 1;
-  cake.element = order.element;
+  if (!order.noMagic) { cake.magicQuality = 1; cake.element = order.element; }
   return cake;
 }
 

@@ -90,5 +90,6 @@ export const GLAZE_COLORS: GlazeColorDef[] = [
   { id: 'forest', name: { uk: 'Темно-зелена',        ja: '深緑' },         recipe: { yellow: 1, blue: 1, dark: 1 } },
   { id: 'cherry', name: { uk: 'Бордова',             ja: 'ワインレッド' }, recipe: { red: 1, dark: 1 } },
   { id: 'black',  name: { uk: 'Чорна',               ja: '黒' },           recipe: { dark: 1 } },
+  { id: 'grey',   name: { uk: 'Сіра',                ja: '灰色' },         recipe: { white: 1, dark: 1 } },
 ];
 export const glazeColorById = (id: GlazeColorId): GlazeColorDef => GLAZE_COLORS.find(c => c.id === id)!;

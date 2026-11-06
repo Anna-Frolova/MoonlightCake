@@ -48,7 +48,7 @@ function shownElements(): ElementId[] {
  * drawn doesn't matter (hard on a phone), only which element it is.
  */
 function castMagic(element: ElementId): void {
-  const cake = currentCake(), top = cakeTopY(cake), def = ELEMENTS[element], isWanted = element === currentOrder().element;
+  const cake = currentCake(), top = cakeTopY(cake), def = ELEMENTS[element], isWanted = !currentOrder().noMagic && element === currentOrder().element;
   cake.magicQuality = 1;
   cake.element = element;
   cake.magicCastTime = clock.time;
@@ -121,7 +121,7 @@ export function drawMagicStationCircle(): void {
 export const magicStation: Station = {
   icon: 'magic',
   get name() { return t().stations.magic; },
-  isDone: cake => cake.magicQuality !== null,
+  isDone: cake => cake.magicQuality !== null || !!runtime.customer?.order.noMagic,
 
   /**
    * The elements drawn on the wall above the cake like glowing chalk signs — not buttons: a sign is cast by
@@ -131,7 +131,7 @@ export const magicStation: Station = {
     const order = currentOrder(), time = clock.time, { y, w, signSize, gap } = ELEMENT_ROW, elements = shownElements();
     const left = CAKE_CENTER_X - (elements.length * w + (elements.length - 1) * gap) / 2, signY = y + signSize / 2;
     elements.forEach((element, i) => {
-      const def = ELEMENTS[element], isOpen = def.unlockDay <= progress.day, isWanted = order.element === element;
+      const def = ELEMENTS[element], isOpen = def.unlockDay <= progress.day, isWanted = !order.noMagic && order.element === element;
       const centerX = left + i * (w + gap) + w / 2, size = signSize * (isWanted ? SIGN_SCALE.wanted : SIGN_SCALE.other);
       ctx.save();
       ctx.globalAlpha = isOpen ? 1 : 0.25; // the other signs are not dimmed: on bright kitchens they would vanish

@@ -6,6 +6,7 @@ import { t } from '../data/strings';
 import type { Cake, HelperId, KitchenThemeId } from '../data/types';
 import { createCake, createCreamDots, updateCreamCoverage } from '../game/cake';
 import { activeGuestTheme, isOwned, progress, runtime } from '../game/state';
+import { drawCrackedMoon, drawLand } from './world';
 import { CAKE_BASE_Y, CAKE_CENTER_X, HELPER_SHELF } from '../kitchen/layout';
 import { drawCake } from './cake';
 import { softGradient } from './cat';
@@ -171,11 +172,19 @@ function drawVitrage(time: number): void {
     ctx.globalAlpha = 0.72 + 0.18 * Math.sin(time * 1.5 + i); ctx.fill(); ctx.globalAlpha = 1;
     ctx.strokeStyle = '#1a0f33'; ctx.lineWidth = 5; ctx.stroke();
   }
+  ctx.save(); // the world still shows through the lower panes
+  ellipsePath(cx, cy, radius, radius); ctx.clip();
+  drawLand(cx - radius, cy + VITRAGE_LAND.top, radius * 2, radius - VITRAGE_LAND.top, progress.land, time, WINDOW_LAND.detail);
+  ctx.restore();
   ellipsePath(cx, cy, 52, 52); ctx.fillStyle = '#f2f4ff'; ctx.fill(); ctx.stroke();
   ctx.beginPath(); ctx.arc(cx + 15, cy - 8, 44, 0, Math.PI * 2); ctx.fillStyle = '#9a7bf0'; ctx.fill(); // crescent
 }
 
-/** Arched window with the night sky, an aurora and the moon. */
+/** The land in the window starts this far below its top; the lake and trees are drawn bigger there. */
+const WINDOW_LAND = { top: 150, detail: 0.42 };
+const VITRAGE_LAND = { top: 34 };
+
+/** Arched window with the night sky, an aurora, the cracked moon and the world outside. */
 function drawNightWindow(time: number): void {
   const x = 70, y = 80, w = 220, h = 250, archY = y + 96;
   const windowPath = (): void => {
@@ -204,10 +213,8 @@ function drawNightWindow(time: number): void {
     ctx.fillStyle = `rgba(230,240,255,${0.4 + 0.6 * Math.abs(Math.sin(time * 1.3 + i))})`;
     starPath(starX, starY, 3.5, 1.3, 4, 0); ctx.fill();
   }
-  drawGlow(x + 150, y + 80, 90, '#d8e4ff', 0.45);
-  ctx.fillStyle = '#eef3ff'; ctx.beginPath(); ctx.arc(x + 150, y + 80, 36, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = 'rgba(150,170,230,0.35)';
-  ellipsePath(x + 140, y + 72, 8, 6); ctx.fill(); ellipsePath(x + 160, y + 92, 6, 5); ctx.fill();
+  drawCrackedMoon(x + 150, y + 80, 36, progress.land);
+  drawLand(x, y + WINDOW_LAND.top, w, h - WINDOW_LAND.top, progress.land, time, WINDOW_LAND.detail);
   ctx.restore();
 
   ctx.strokeStyle = WINDOW_FRAME; ctx.lineWidth = 9;

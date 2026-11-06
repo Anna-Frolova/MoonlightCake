@@ -139,6 +139,28 @@ export const SPECIAL_GUESTS: CatDef[] = [
   },
 ];
 
+/** The people of the story: each comes on their day (data/story.ts), never as an ordinary guest. */
+export const STORY_GUESTS: CatDef[] = [
+  {
+    id: 'zoryana', name: { uk: 'Чаклунка Зоряна', ja: '星の魔女ホシノ' }, firstDay: 99, voicePitch: 0.95, voice: 'female',
+    fur: '#cfc6e8', furAccent: '#9a8fc0', pattern: 'none', eyeColor: '#ffd23f',
+    hat: 'wizard', outfit: 'robe', outfitColor: '#4a3a9e', accessory: 'glasses',
+    favoritePalettes: ['night', 'lavender'], favoriteShapes: ['star', 'round'],
+  },
+  {
+    id: 'nyukhach', name: { uk: 'Нюхач', ja: 'クンクン' }, firstDay: 99, voicePitch: 1.35, voice: 'male', isKitten: true,
+    fur: '#a89078', furAccent: '#7a6450', pattern: 'stripes', eyeColor: '#7fe0a0',
+    hat: 'flatcap', outfit: 'vest', outfitColor: '#6e6e80',
+    favoritePalettes: ['chocolate', 'sunny'], favoriteShapes: ['round', 'square'],
+  },
+  {
+    id: 'krykhta', name: { uk: 'Граф Крихта', ja: 'クラム伯爵' }, firstDay: 99, voicePitch: 0.72, voice: 'male', ordersGreyCake: true, isCold: true,
+    fur: '#8a8a98', furAccent: '#5c5c6a', pattern: 'stripes', eyeColor: '#c8d0e0',
+    hat: 'tophat', outfit: 'vest', outfitColor: '#33333f', accessory: 'monocle',
+    favoritePalettes: ['night', 'chocolate'], favoriteShapes: ['square', 'round'],
+  },
+];
+
 /** The special last guest of day 5. */
 export const MOON_QUEEN: CatDef = {
   id: 'queen', name: { uk: 'Місячна Королева', ja: '月の女王' }, firstDay: 99, voicePitch: 1.05, voice: 'female', isGenerous: true, ordersBigCakes: true,
@@ -160,4 +182,4 @@ export const HELPER_KITTEN: CatLook = {
 };
 
 export const catById = (id: CatId): CatDef =>
-  id === 'queen' ? MOON_QUEEN : [...GUESTS, ...SPECIAL_GUESTS].find(c => c.id === id)!;
+  id === 'queen' ? MOON_QUEEN : [...GUESTS, ...SPECIAL_GUESTS, ...STORY_GUESTS].find(c => c.id === id)!;

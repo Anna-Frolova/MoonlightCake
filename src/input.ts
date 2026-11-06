@@ -9,6 +9,7 @@ import { burst } from './core/particles';
 import { findButtonAt, pointer, pressedButtonAt, ui } from './core/ui';
 import { runtime, type StationIndex } from './game/state';
 import { lookAt } from './game/guestReactions';
+import { extendRaidStroke, finishRaidStroke, startRaidStroke } from './game/nightRaid';
 import { isPressAllowed, tutorial, tutorialGate } from './game/tutorial';
 import { GLAZE_STATION_INDEX, STATIONS } from './kitchen/stations';
 import { handleHallEnterKey, skipSpeechTyping } from './scenes/hall';
@@ -37,12 +38,14 @@ function onPointerDown(event: PointerEvent): void {
   if (hit) { ui.pressedId = hit.id; return; }
   if (runtime.modal) return;
   if (runtime.scene === 'hall' && skipSpeechTyping()) return;
+  if (runtime.scene === 'night') { startRaidStroke(point); return; }
   activeStation()?.onPointerDown?.(point, runtime.cake!);
 }
 
 function onPointerMove(event: PointerEvent): void {
   const point = updatePointer(event);
   if (pointer.isDown && activeStation()) lookAt(point.x, point.y);
+  if (runtime.scene === 'night') extendRaidStroke(point);
   activeStation()?.onPointerMove?.(point, runtime.cake!);
 }
 
@@ -67,6 +70,7 @@ function onPointerUp(event: PointerEvent): void {
 function releaseGestures(point: Point): void {
   // every station gets the release, so nothing stays stuck if the tab changed mid-gesture
   if (activeStation()) for (const station of STATIONS) station.onPointerUp?.(point, runtime.cake!);
+  if (runtime.scene === 'night') finishRaidStroke();
   clearGestures();
 }
 

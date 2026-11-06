@@ -5,7 +5,7 @@ import { sfx } from '../audio/sfx';
 import { clock } from '../core/clock';
 import { loc } from '../core/language';
 import { pickRandom, randomInt } from '../core/math';
-import { SPECIAL_GUESTS } from '../data/cats';
+import { SPECIAL_GUESTS, STORY_GUESTS } from '../data/cats';
 import { ELEMENTS } from '../data/elements';
 import { CREAMS, TOPPINGS } from '../data/ingredients';
 import { PALETTES } from '../data/palettes';
@@ -34,11 +34,11 @@ function dayPick(n: number): number {
   return mixed % n;
 }
 
-/** Is the guest at `index` today's guest who will change their order? Never the tutorial, special guests or the queen. */
+/** Is the guest at `index` today's guest who will change their order? Never the tutorial, special or story guests, or the queen. */
 export function changesOrderToday(queue: readonly QueuedGuest[], index: number): boolean {
   if (!ORDER_CHANGE.enabled) return false;
   const ordinary = queue.map((guest, i) => ({ guest, i }))
-    .filter(({ guest }) => !guest.tutorial && guest.cat !== 'queen' && !SPECIAL_GUESTS.some(cat => cat.id === guest.cat))
+    .filter(({ guest }) => !guest.tutorial && guest.cat !== 'queen' && ![...SPECIAL_GUESTS, ...STORY_GUESTS].some(cat => cat.id === guest.cat))
     .map(({ i }) => i);
   return ordinary.length > 0 && ordinary[dayPick(ordinary.length)] === index;
 }

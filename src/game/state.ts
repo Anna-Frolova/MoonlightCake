@@ -57,7 +57,7 @@ export const decorTipBonus = (): number => SHOP_ITEMS.reduce((sum, item) => sum 
 
 // ---------------- runtime-only state ----------------
 
-export type SceneId = 'title' | 'dayStart' | 'hall' | 'kitchen' | 'dayEnd' | 'finale' | 'shop';
+export type SceneId = 'title' | 'dayStart' | 'hall' | 'kitchen' | 'night' | 'dayEnd' | 'map' | 'finale' | 'shop';
 /** Kitchen stations in order: layers → cream → glaze → toppings → magic. */
 export type StationIndex = 0 | 1 | 2 | 3 | 4;
 
@@ -118,6 +118,9 @@ export interface RuntimeState {
   customer: Customer | null;
   /** Bottom of the speech bubble — buttons are placed under it. */
   speechBubbleBottom: number;
+  /** The map: the story's opening or the end of a day, and the land it starts from (it grows to `progress.land`). */
+  mapMode: 'intro' | 'day';
+  mapLandFrom: number;
 
   // ---- kitchen ----
   cake: Cake | null;
@@ -156,7 +159,7 @@ export interface RuntimeState {
 export const runtime: RuntimeState = {
   scene: 'title', sceneStartTime: 0, fade: null, toast: null, modal: null, shake: 0,
   displayedCoins: progress.coins, coinBump: 0, lastHoveredButton: null, lastHoverSoundTime: 0, shopTab: 'decor',
-  customer: null, speechBubbleBottom: 330,
+  customer: null, speechBubbleBottom: 330, mapMode: 'day', mapLandFrom: 0,
   cake: null, station: 0, isServing: false, selectedCream: null, isPipingCream: false, lastSquishTime: 0, autoCreamTime: null,
   draggedTopping: null, toppingTray: [], helperKittenJump: 0, jumpingToppings: [],
   heldPotion: null, pouringPotion: null, returningPotion: null, glazeArc: null,

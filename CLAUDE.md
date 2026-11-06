@@ -40,7 +40,7 @@ npm.cmd run app:sync && (cd android && ./gradlew.bat assembleDebug)
 ```
 
 Подводные камни Android-проверки:
-- `__game` в APK нет (это сборка). Состояние страницы читаем через DevTools WebView: `adb forward tcp:9222 localabstract:webview_devtools_remote_<pid>` (pid — `adb shell pidof io.github.annafrolova.moonlightcake`, после перезапуска приложения он новый — пересоздать forward), затем `http://127.0.0.1:9222/json` → `webSocketDebuggerUrl` → `Runtime.evaluate` (в Node есть глобальный `WebSocket`). Сохранение: `Capacitor.Plugins.Preferences.get({ key: 'misiachnyi-korzh-v6' })`.
+- `__game` в APK нет (это сборка). Состояние страницы читаем через DevTools WebView: `adb forward tcp:9222 localabstract:webview_devtools_remote_<pid>` (pid — `adb shell pidof io.github.annafrolova.moonlightcake`, после перезапуска приложения он новый — пересоздать forward), затем `http://127.0.0.1:9222/json` → `webSocketDebuggerUrl` → `Runtime.evaluate` (в Node есть глобальный `WebSocket`). Сохранение: `Capacitor.Plugins.Preferences.get({ key: 'misiachnyi-korzh-v7' })`.
 - Координаты тапа — в пикселях экрана 2400×1080 (скриншот уменьшается при показе — пересчитывать). Без статус-бара игра крупнее, кнопки смещаются — брать координаты со свежего скриншота.
 - Каждую adb/node-команду оборачивать в `timeout`, иначе зависший вызов съедает весь лимит.
 - После обновления Vite дев-сервер нужно перезапустить (иначе в консоли `__WS_TOKEN__ is not defined`).
@@ -55,7 +55,7 @@ npm.cmd run app:sync && (cd android && ./gradlew.bat assembleDebug)
 
 ## Сохранения
 
-`src/game/save.ts`: ключ `localStorage` `misiachnyi-korzh-v6`, `SAVE_VERSION = 6`. Если меняется форма `SaveData`, повышай версию **и** ключ вместе (старые сохранения иначе ломают загрузку).
+`src/game/save.ts`: ключ `localStorage` `misiachnyi-korzh-v7`, `SAVE_VERSION = 7`. Если меняется форма `SaveData`, повышай версию **и** ключ вместе (старые сохранения иначе ломают загрузку).
 
 ## Проверка в браузере
 

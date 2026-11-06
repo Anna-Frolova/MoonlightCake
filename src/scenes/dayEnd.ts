@@ -1,4 +1,4 @@
-// End of a day: stats and the way to the shop (or to the finale after day 5).
+// End of a day: stats and the way on to the map (in endless mode to the shop).
 import { ctx, SCREEN_H, SCREEN_W } from '../core/canvas';
 import { clock } from '../core/clock';
 import { drawFittedText, drawPanel, drawText, drawTitle, roundRectPath, withPopIn } from '../core/draw';
@@ -8,7 +8,7 @@ import { BUTTON_COLOR, TEXT } from '../core/theme';
 import { button } from '../core/ui';
 import { STORY_DAYS } from '../data/schedule';
 import { t } from '../data/strings';
-import { goToShop, showFinale } from '../game/flow';
+import { leaveDayEnd } from '../game/flow';
 import { progress, runtime } from '../game/state';
 import { drawCounter, drawHallBackground } from '../render/environment';
 import { dimBackground, drawCoinCounter } from './hud';
@@ -41,9 +41,8 @@ export function renderDayEnd(): void {
     const comment = average >= 4.3 ? t().dayCommentGreat
       : average >= 3.3 ? t().dayCommentGood : t().dayCommentCozy;
     drawFittedText(comment, SCREEN_W / 2, y + 352, 19, w - 60, TEXT.muted, 'center', 700);
-    const isFinaleNext = progress.day === STORY_DAYS && !progress.finaleSeen;
-    button('toShop', SCREEN_W / 2 - 160, y + h - 84, 320, 62, isFinaleNext ? t().next : t().toShop, {
-      color: BUTTON_COLOR.confirm, fontSize: 23, glow: true, onClick: isFinaleNext ? showFinale : goToShop,
+    button('toShop', SCREEN_W / 2 - 160, y + h - 84, 320, 62, progress.day <= STORY_DAYS ? t().next : t().toShop, {
+      color: BUTTON_COLOR.confirm, fontSize: 23, glow: true, onClick: leaveDayEnd,
     });
   });
   drawCoinCounter(16, 12);

@@ -119,7 +119,7 @@ export function scoreCake(cake: Cake, order: Order, cat: CatDef, decorTipBonus: 
   parts.push({ kind: 'toppings', score: clamp(accuracy - extraKinds * 0.15, 0, 1), weight: WEIGHTS.toppings });
 
   // how neatly the sign was drawn doesn't matter: the right magic is perfect, the wrong one barely counts
-  const magicScore = !cake.element ? 0 : cake.element === order.element ? 1 : WRONG_MAGIC_SCORE;
+  const magicScore = order.noMagic ? (cake.element ? 0 : 1) : !cake.element ? 0 : cake.element === order.element ? 1 : WRONG_MAGIC_SCORE;
   parts.push({ kind: 'magic', score: magicScore, weight: WEIGHTS.magic });
 
   if (patienceLeft !== null) parts.push({ kind: 'speed', score: patienceLeft, weight: WEIGHTS.speed });

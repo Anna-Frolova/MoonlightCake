@@ -14,6 +14,7 @@ import { t } from './data/strings';
 import { activeGuestTheme, progress, runtime } from './game/state';
 import { updatePatience } from './game/patience';
 import { loseGuestPatience } from './game/flow';
+import { updateRaid } from './game/nightRaid';
 import { updateOrderChange } from './game/orderChange';
 import { isPressAllowed } from './game/tutorial';
 import { setUpInput } from './input';
@@ -24,6 +25,8 @@ import { updatePotions } from './kitchen/stations/glaze';
 import { drawMagicCircle } from './render/environment';
 import { renderDayEnd } from './scenes/dayEnd';
 import { renderDayStart } from './scenes/dayStart';
+import { renderMap } from './scenes/map';
+import { renderNight } from './scenes/night';
 import { renderFinale } from './scenes/finale';
 import { renderHall, updateHall } from './scenes/hall';
 import { drawModal, drawToast } from './scenes/hud';
@@ -47,7 +50,7 @@ const GLAZE_SPREAD_SPEED = 0.75;
 
 const SCENE_RENDERERS = {
   title: renderTitle, dayStart: renderDayStart, hall: renderHall, kitchen: renderKitchen,
-  dayEnd: renderDayEnd, finale: renderFinale, shop: renderShop,
+  night: renderNight, dayEnd: renderDayEnd, map: renderMap, finale: renderFinale, shop: renderShop,
 };
 
 function update(dt: number): void {
@@ -76,6 +79,7 @@ function update(dt: number): void {
   updateHall(dt);
   if (updatePatience(dt)) loseGuestPatience();
   updateOrderChange(dt);
+  updateRaid();
   updateTutorial();
   updateCakeAnimations(dt);
 }

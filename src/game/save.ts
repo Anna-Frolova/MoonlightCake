@@ -2,16 +2,14 @@
 import { readStored, writeStored } from '../core/storage';
 import type { SaveData } from '../data/types';
 
-const SAVE_KEY = 'misiachnyi-korzh-v6';
+const SAVE_KEY = 'misiachnyi-korzh-v7';
 /** Bump when the save structure changes incompatibly; old saves are then ignored. */
-const SAVE_VERSION = 6;
-/** Taken out of the shop: whoever bought it gets the coins back on loading. */
-const REMOVED_ITEM = { id: 'helper:magic', refund: 110 };
+const SAVE_VERSION = 7;
 
 export function createNewSave(): SaveData {
   return {
     version: SAVE_VERSION, day: 1, coins: 0, owned: {}, seed: (Math.random() * 1e9) | 0,
-    menu: null, phase: 'dayStart', guestIndex: 0, guestQueue: null,
+    menu: null, phase: 'dayStart', guestIndex: 0, guestQueue: null, land: 0,
     dayStats: { earned: 0, served: 0, hearts: 0, bestHearts: 0 },
     totals: { served: 0, hearts: 0, earned: 0 },
     finaleSeen: false, musicOn: true, soundOn: true,
@@ -23,14 +21,11 @@ export function loadSave(): SaveData | null {
     const stored = JSON.parse(readStored(SAVE_KEY) ?? 'null') as Partial<SaveData> | null;
     if (!stored || stored.version !== SAVE_VERSION) return null;
     const defaults = createNewSave();
-    const save: SaveData = {
+    return {
       ...defaults, ...stored,
       dayStats: { ...defaults.dayStats, ...stored.dayStats },
       totals: { ...defaults.totals, ...stored.totals },
     };
-    const owned = save.owned as Record<string, boolean>;
-    if (owned[REMOVED_ITEM.id]) { delete owned[REMOVED_ITEM.id]; save.coins += REMOVED_ITEM.refund; }
-    return save;
   } catch {
     return null; // corrupted: start fresh
   }

@@ -102,7 +102,7 @@ export function remindToPour(cake: Cake): void {
 export function offerShadeHint(): void {
   const customer = runtime.customer;
   if (!customer) return;
-  const recipe = glazeColorById(customer.order.glaze).recipe, shade = recipe.white ? 'white' : recipe.dark ? 'dark' : null;
+  const recipe = glazeColorById(customer.order.glaze).recipe, shade = recipe.white && recipe.dark ? null : recipe.white ? 'white' : recipe.dark ? 'dark' : null;
   if (!shade || Object.keys(recipe).length < 2 || !availableEssences().includes(shade) || !takeShadeHint()) return;
   sfx.meow(customer.cat.voicePitch, 'neutral', customer.cat.voice);
   showModal(shade === 'white' ? t().shadeHintLight : t().shadeHintDark, t().orderChangeOk, null, () => {}, false, loc(customer.cat.name));

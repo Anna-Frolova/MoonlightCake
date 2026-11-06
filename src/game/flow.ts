@@ -7,8 +7,9 @@ import { randomInt } from '../core/math';
 import { burst } from '../core/particles';
 import { clock } from '../core/clock';
 import { pointer } from '../core/ui';
-import { catById, GUESTS, SPECIAL_GUESTS } from '../data/cats';
+import { catById, GUESTS, SPECIAL_GUESTS, STORY_GUESTS } from '../data/cats';
 import { guestsPerDay, STORY_DAYS } from '../data/schedule';
+import { STORY_GUEST_PLACE, STORY_VISITS } from '../data/story';
 import { t } from '../data/strings';
 import type { CatId, QueuedGuest, ShopItemDef } from '../data/types';
 import { goToScene, showModal, showToast } from '../scenes/sceneManager';
@@ -17,6 +18,7 @@ import { buildDailyMenu } from './dailyMenu';
 import { catLine, pickWithoutRepeat } from './lines';
 import { canTakeOrder, generateOrder } from './orders';
 import { createNewSave } from './save';
+import { startRaid } from './nightRaid';
 import { patienceLeft, patienceSeconds } from './patience';
 import { scoreCake } from './scoring';
 import { resetTutorial } from './tutorial';
@@ -37,6 +39,9 @@ const ROYAL_VISIT_DAY = STORY_DAYS;
 const SPECIALS_ONLY_FROM_DAY = 8;
 /** Special guests a day: one in the story, two in endless mode. */
 const SPECIAL_GUESTS_PER_DAY = { story: 1, endless: 2 };
+/** A day of only perfect cakes heals this share of the region's land; the day's average hearts scale it. */
+const LAND_PER_DAY = 1 / STORY_DAYS;
+const MAX_HEARTS_PER_CAKE = 5;
 /** Cream coverage below which serving asks "serve without cream?". */
 const CREAM_MISSING_COVERAGE = 0.3;
 /** A guest leaving with at least this many hearts meows goodbye; after 5 hearts they purr this long. */
@@ -75,6 +80,8 @@ function buildGuestQueue(day: number): QueuedGuest[] {
   // special guests: never first (on day 1 that is the tutorial guest) and never the last of the regulars' places
   for (const id of specials) queue.splice(randomInt(1, Math.max(1, queue.length - 1)), 0, { cat: id });
   if (hasQueen) queue.push({ cat: 'queen' });
+  const storyGuest = STORY_VISITS[day]?.cat;
+  if (storyGuest) queue.splice(STORY_GUEST_PLACE, 1, { cat: storyGuest });
   return queue;
 }
 
@@ -84,7 +91,7 @@ function buildGuestQueue(day: number): QueuedGuest[] {
  */
 function ensureSpecialGuest(queue: QueuedGuest[], day: number): void {
   if (queue.some(guest => SPECIAL_GUESTS.some(cat => cat.id === guest.cat))) return;
-  const stillToCome = queue.map((_, i) => i).filter(i => i >= progress.guestIndex && i < queue.length - 1 && !queue[i].tutorial && queue[i].cat !== 'queen');
+  const stillToCome = queue.map((_, i) => i).filter(i => i >= progress.guestIndex && i < queue.length - 1 && !queue[i].tutorial && queue[i].cat !== 'queen' && !STORY_GUESTS.some(cat => cat.id === queue[i].cat));
   const [special] = pickSpecialGuests(day);
   if (stillToCome.length && special) queue[stillToCome[randomInt(0, stillToCome.length - 1)]] = { cat: special };
 }
@@ -109,7 +116,7 @@ export function startNewGame(): void {
   progress.menu = buildDailyMenu(1, null, progress.seed);
   saveProgress();
   runtime.displayedCoins = 0;
-  goToScene('dayStart');
+  goToScene('map', () => { runtime.mapMode = 'intro'; runtime.mapLandFrom = 0; });
 }
 
 export function continueGame(): void {
@@ -122,7 +129,9 @@ export function continueGame(): void {
         spawnNextGuest();
       });
       break;
+    case 'night': goToScene('night', startRaid); break;
     case 'dayEnd': goToScene('dayEnd'); break;
+    case 'map': goToScene('map', () => { runtime.mapMode = 'day'; runtime.mapLandFrom = progress.land; }); break;
     case 'shop': goToScene('shop'); break;
     default: goToScene('dayStart');
   }
@@ -141,7 +150,7 @@ export function spawnNextGuest(): void {
   const next = queue[progress.guestIndex], cat = catById(next.cat), order = generateOrder(cat, progress.day, !!next.tutorial);
   runtime.customer = {
     cat, order, greeting: catLine(cat, 'hello'),
-    state: 'entering', x: GUEST_ENTRY_X, time: 0, mood: 'neutral', speech: null,
+    state: 'entering', x: GUEST_ENTRY_X, time: 0, mood: cat.isCold ? 'flat' : 'neutral', speech: null,
     orderShownFor: 0, reactionTime: 0, score: null, servedCake: null, hasPaid: false, orderPicture: null,
     // the tutorial guest is in no hurry
     patience: next.tutorial ? null : patienceSeconds(order), waitTime: 0, moodChangedAt: 0, displeasure: 0, isTutorial: !!next.tutorial,
@@ -174,7 +183,7 @@ export function serveCake(): void {
   if (cake.creamCoverage < CREAM_MISSING_COVERAGE) missing.push(t().missingCream);
   if (!cake.glaze) missing.push(t().missingGlaze);
   if (!cake.toppings.length) missing.push(t().missingToppings);
-  if (cake.magicQuality === null) missing.push(t().missingMagic);
+  if (cake.magicQuality === null && !runtime.customer?.order.noMagic) missing.push(t().missingMagic);
   if (missing.length) {
     showModal(t().serveAnyway(missing), t().serve, t().keepWorking, handOverCake);
     sfx.tab();
@@ -257,10 +266,34 @@ export function isLastGuestOfDay(): boolean {
 }
 
 function endDay(): void {
-  progress.phase = 'dayEnd';
+  const hasRaid = !!STORY_VISITS[progress.day]?.raid;
+  progress.phase = hasRaid ? 'night' : 'dayEnd';
   saveProgress();
   runtime.customer = null;
+  if (hasRaid) goToScene('night', startRaid); else goToScene('dayEnd');
+}
+
+/** On from the night's result. */
+export function finishNight(): void {
   goToScene('dayEnd');
+}
+
+/** After a story day the land heals by the day's hearts (once: reloading on the map doesn't count again); endless days skip the map. */
+export function leaveDayEnd(): void {
+  if (progress.day > STORY_DAYS) { goToShop(); return; }
+  const stats = progress.dayStats, before = progress.land;
+  const average = stats.served ? stats.hearts / stats.served : 0;
+  progress.land = Math.min(1, before + LAND_PER_DAY * (average / MAX_HEARTS_PER_CAKE));
+  progress.phase = 'map';
+  saveProgress();
+  goToScene('map', () => { runtime.mapMode = 'day'; runtime.mapLandFrom = before; });
+}
+
+/** On from the map: the first day after the opening, otherwise the finale or the shop. */
+export function leaveMap(): void {
+  if (runtime.mapMode === 'intro') goToScene('dayStart');
+  else if (progress.day === STORY_DAYS && !progress.finaleSeen) showFinale();
+  else goToShop();
 }
 
 export function goToShop(): void {
@@ -317,7 +350,7 @@ export function setSoundOn(on: boolean): void {
 export function isCakeReady(): boolean {
   const cake = runtime.cake;
   return !!cake && countLayers(cake) > 0 && cake.creamCoverage >= CREAM_DONE_COVERAGE && !!cake.glaze
-    && cake.toppings.length > 0 && cake.magicQuality !== null;
+    && cake.toppings.length > 0 && (cake.magicQuality !== null || !!runtime.customer?.order.noMagic);
 }
 
 export const askStartNewGame = (): void =>
