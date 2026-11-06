@@ -26,31 +26,31 @@ export const SHOP_ITEMS: ShopItemDef[] = [
     id: 'decor:chandelier', tab: 'decor', price: 150, tipBonus: 0.12,
     name: { uk: 'Кришталева люстра', ja: 'クリスタルのシャンデリア' },
   },
-  // Helpers: each adds an "Auto" button to its kitchen station.
+  // Helpers take the routine off the player's hands, but the choices stay theirs (see `autoComplete` of each station).
   {
     id: 'helper:layers', tab: 'helpers', price: 140,
     name: { uk: 'Чарівна лопатка', ja: '魔法のヘラ' },
-    description: { uk: 'Сама складає коржі й начинку.', ja: 'スポンジとフィリングを自動で重ねる。' },
+    description: { uk: 'Перший корж і начинку кладеш ти, решту складає лопатка.', ja: '最初のスポンジとフィリングをのせれば、残りは自動で重ねる。' },
   },
   {
     id: 'helper:cream', tab: 'helpers', price: 130,
     name: { uk: 'Зачарований віночок', ja: '魔法の泡立て器' },
-    description: { uk: 'Сам обводить торт кремом.', ja: 'クリームを自動でしぼる。' },
+    description: { uk: 'Ти обираєш крем, а віночок сам обводить ним торт.', ja: 'クリームを選べば、自動でしぼる。' },
   },
   {
     id: 'helper:glaze', tab: 'helpers', price: 170,
     name: { uk: 'Розумний казан', ja: 'かしこい大釜' },
-    description: { uk: 'Сам змішує колір і поливає торт.', ja: '色を混ぜて自動でかける。' },
+    description: { uk: 'Підказує рецепт кольору із замовлення. Змішуєш ти.', ja: '注文の色のレシピを教えてくれる。混ぜるのは自分で。' },
   },
   {
     id: 'helper:toppings', tab: 'helpers', price: 160,
     name: { uk: 'Кіт-помічник Пушок', ja: 'お手伝い猫ワタゲ' },
-    description: { uk: 'Сам розкладає прикраси.', ja: 'トッピングを自動で並べる。' },
+    description: { uk: 'Торкнись блюдця — і Пушок покладе прикрасу на торт.', ja: 'お皿をタップすると、ワタゲがトッピングをのせる。' },
   },
   {
     id: 'helper:magic', tab: 'helpers', price: 110,
     name: { uk: 'Кришталева куля', ja: '水晶玉' },
-    description: { uk: 'Ідеальні чари одним дотиком.', ja: 'ひと触れで完璧な魔法。' },
+    description: { uk: 'Показує на торті знак, який треба намалювати.', ja: 'ケーキの上に描く印を見せてくれる。' },
   },
 ];
 

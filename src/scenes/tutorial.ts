@@ -14,7 +14,7 @@ import { lerp, type Point } from '../core/math';
 import { BUTTON_COLOR, TEXT, TUTORIAL_COLOR } from '../core/theme';
 import { button, ui } from '../core/ui';
 import { CREAMS, ESSENCE_ORDER, ESSENCES, FILLINGS, FLAVORS, glazeColorById, SHAPES, TOPPINGS } from '../data/ingredients';
-import { ELEMENTS, SIGN_SHAPES } from '../data/elements';
+import { ELEMENTS } from '../data/elements';
 import { t } from '../data/strings';
 import type { ElementId, EssenceId, ToppingId } from '../data/types';
 import { cakeHeight, countLayers, createCreamDots } from '../game/cake';
@@ -29,9 +29,9 @@ import {
 } from '../kitchen/layout';
 import { GLAZE_STATION_INDEX, STATIONS } from '../kitchen/stations';
 import { shelfCreams } from '../kitchen/stations/cream';
-import { bottleRect, cauldronRect } from '../kitchen/stations/glaze';
+import { bottleRect, cauldronRect, glazeRecipeText } from '../kitchen/stations/glaze';
 import { shelfFillings, shelfFlavors } from '../kitchen/stations/layers';
-import { signPointAt } from '../render/signs';
+import { drawArrowhead, drawSignGuide } from '../render/signs';
 import { shelfItemHalfWidth, shelfItemXs } from '../kitchen/widgets';
 
 interface TutorialStep {
@@ -80,8 +80,6 @@ const NUDGE_SECONDS = 0.5;
 const HOLE_RADIUS = 18;
 /** The drag guide: one trip shelf → cake takes `cycle` s (the last part is a pause), the hand is a glowing dot. */
 const DRAG_GUIDE = { cycle: 1.8, travel: 0.75, handRadius: 14, dash: [10, 9], lineWidth: 4, arrowSize: 16 };
-/** The dashed sign: dash pattern, line width, arrowheads spread along it, the spark running round it. */
-const SIGN_GUIDE = { dash: [16, 12], lineWidth: 6, arrows: 3, arrowSize: 26, sparkSpeed: 0.45, sparkCycle: 1.25, dimWhileDrawing: 0.35 };
 /** Beads of cream still to pipe: ring size and pulse speed. */
 const BEAD_GUIDE = { radius: 7, pulseSpeed: 5 };
 
@@ -116,13 +114,6 @@ const center = (rect: Rect): Point => ({ x: rect.x + rect.w / 2, y: rect.y + rec
 function nextEssence(): EssenceId | null {
   const needed = recipeToDrops(glazeColorById(order().glaze).recipe), drops = cake().cauldron, pouring = runtime.pouringPotion;
   return ESSENCE_ORDER.find(e => drops[e] + (pouring?.essence === e && !pouring.dropAdded ? 1 : 0) < needed[e]) ?? null;
-}
-
-/** "orange = red + yellow", from the colour's recipe. */
-function recipeText(): string {
-  const needed = recipeToDrops(glazeColorById(order().glaze).recipe);
-  return ESSENCE_ORDER.filter(e => needed[e] > 0)
-    .map(e => (needed[e] > 1 ? `${needed[e]}× ` : '') + loc(ESSENCES[e].name).toLocaleLowerCase()).join(' + ');
 }
 
 /** Ordered toppings that still need more on the cake. */
@@ -207,7 +198,7 @@ const STEPS: TutorialStep[] = [
     isDone: () => !!cake().glaze,
     text: () => {
       const essence = nextEssence();
-      return essence ? `${t().tutorial.glazeMix(loc(glazeColorById(order().glaze).name), recipeText(), loc(ESSENCES[essence].name))} ${t().tutorial.glazeShades}` : t().tutorial.glazePour;
+      return essence ? `${t().tutorial.glazeMix(loc(glazeColorById(order().glaze).name), glazeRecipeText(order().glaze), loc(ESSENCES[essence].name))} ${t().tutorial.glazeShades}` : t().tutorial.glazePour;
     },
     targets: () => { const essence = nextEssence(); return essence ? [bottleRect(essence)] : buttonRect('pourGlaze'); },
     shows: () => [cauldronRect()],
@@ -234,7 +225,7 @@ const STEPS: TutorialStep[] = [
     text: () => t().tutorial.magic(loc(ELEMENTS[order().element].signName)),
     targets: () => [cakeRect()],
     pressArea: () => [{ x: MAGIC_DRAW_AREA.left, y: MAGIC_DRAW_AREA.top, w: SCREEN_W - MAGIC_DRAW_AREA.left, h: MAGIC_DRAW_AREA.bottom - MAGIC_DRAW_AREA.top }],
-    drawGuide: () => drawSignGuide(order().element),
+    drawGuide: () => drawSignGuide(order().element, CAKE_CENTER_X, cakeTopY(cake()) - TUTORIAL_GUIDE.aboveCakeTop, TUTORIAL_GUIDE.signSize, !!runtime.magicStroke),
     magicElement: () => order().element,
   }),
   { // only once the cake is complete (some parts may have been skipped and are still to make)
@@ -341,16 +332,6 @@ function drawHighlight(rect: Rect, withArrow: boolean): void {
   ctx.restore();
 }
 
-/** A filled arrowhead with its tip at (x, y), pointing along `angle`. */
-function drawArrowhead(x: number, y: number, angle: number, size: number): void {
-  ctx.save();
-  ctx.translate(x, y); ctx.rotate(angle);
-  ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-size, -size * 0.6); ctx.lineTo(-size * 0.7, 0); ctx.lineTo(-size, size * 0.6); ctx.closePath();
-  ctx.strokeStyle = TUTORIAL_COLOR.guideUnderlay; ctx.lineWidth = 4; ctx.stroke();
-  ctx.fillStyle = TUTORIAL_COLOR.guide; ctx.fill();
-  ctx.restore();
-}
-
 /** A dashed arc from the shelf to where the thing goes, and a glowing "finger" carrying it along again and again. */
 function drawDragGuide(from: Point, to: Point): void {
   const control = { x: (from.x + to.x) / 2, y: Math.min(from.y, to.y) - TUTORIAL_GUIDE.arcLift };
@@ -387,34 +368,6 @@ function drawBeadGuide(): void {
     ellipsePath(runtime.cakeX + dot.x * runtime.cakeScale, CAKE_BASE_Y + dot.y * runtime.cakeScale, BEAD_GUIDE.radius, BEAD_GUIDE.radius);
     ctx.stroke();
   }
-  ctx.restore();
-}
-
-/** The sign to draw, big and dashed over the cake: arrows show the way, a spark runs it from the white start dot. */
-function drawSignGuide(element: ElementId): void {
-  const sign = SIGN_SHAPES[element], size = TUTORIAL_GUIDE.signSize;
-  const centerX = CAKE_CENTER_X, centerY = cakeTopY(cake()) - TUTORIAL_GUIDE.aboveCakeTop;
-  const points = sign.closed ? [...sign.points, sign.points[0]] : sign.points;
-  const toScreen = ([x, y]: [number, number]): Point => ({ x: centerX + (x - 0.5) * size, y: centerY + (y - 0.5) * size });
-  const at = (k: number): Point => { const [x, y] = signPointAt(element, centerX, centerY, size, k); return { x, y }; };
-  ctx.save();
-  ctx.globalAlpha = runtime.magicStroke ? SIGN_GUIDE.dimWhileDrawing : 1;
-  ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-  ctx.beginPath();
-  points.forEach((point, i) => { const p = toScreen(point); if (i) ctx.lineTo(p.x, p.y); else ctx.moveTo(p.x, p.y); });
-  ctx.setLineDash(SIGN_GUIDE.dash); ctx.lineDashOffset = -clock.time * 30; // the dashes march the way to draw
-  ctx.strokeStyle = TUTORIAL_COLOR.guideUnderlay; ctx.lineWidth = SIGN_GUIDE.lineWidth + 5; ctx.stroke();
-  ctx.strokeStyle = TUTORIAL_COLOR.guide; ctx.lineWidth = SIGN_GUIDE.lineWidth; ctx.stroke();
-  ctx.setLineDash([]);
-  for (let i = 0; i < SIGN_GUIDE.arrows; i++) {
-    const k = (i + 0.5) / SIGN_GUIDE.arrows, before = at(k - 0.01), tip = at(k + 0.01);
-    drawArrowhead(tip.x, tip.y, Math.atan2(tip.y - before.y, tip.x - before.x), SIGN_GUIDE.arrowSize);
-  }
-  const start = toScreen(points[0]), startPulse = 1 + 0.2 * Math.sin(clock.time * 6);
-  drawGlow(start.x, start.y, 30, '#ffffff', 0.6);
-  ctx.fillStyle = '#ffffff'; ellipsePath(start.x, start.y, 10 * startPulse, 10 * startPulse); ctx.fill();
-  const spark = at(Math.min(1, (clock.time * SIGN_GUIDE.sparkSpeed) % SIGN_GUIDE.sparkCycle));
-  drawGlow(spark.x, spark.y, 26, ELEMENTS[element].color, 0.9);
   ctx.restore();
 }
 

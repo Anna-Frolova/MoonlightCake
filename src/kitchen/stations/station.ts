@@ -9,16 +9,18 @@ export interface Station {
   icon: 'layers' | 'cream' | 'glaze' | 'toppings' | 'magic';
   /** Tab caption. */
   name: string;
-  /** Shop helper that adds an "Auto" button to this station. */
+  /** Shop helper of this station. */
   helper: HelperId;
+  /** Caption of the helper's button, when it isn't "Auto". */
+  helperLabel?: string;
   /** Shown as a tick on the tab. */
   isDone(cake: Cake): boolean;
   /** A message shown above the cake in special situations (null = nothing to say; the tutorial teaches the basics). */
   currentHint?(cake: Cake): string | null;
   /** The station's buttons in the top right corner, right-aligned so they end at `rightEdge` (left of "Auto"). */
   drawControls?(rightEdge: number, y: number, cake: Cake): void;
-  /** What the helper does when "Auto" is pressed. */
-  autoComplete(): void;
+  /** What the helper's button does; a helper without it works some other way (no button). */
+  autoComplete?(): void;
   /** Pointer pressed on the scene (not on a button). Return true if handled. */
   onPointerDown?(point: Point, cake: Cake): boolean;
   onPointerMove?(point: Point, cake: Cake): void;

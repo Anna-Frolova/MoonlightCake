@@ -25,6 +25,7 @@ export function setUpKitchen(): void {
   runtime.station = 0;
   runtime.selectedCream = null;
   runtime.draggedTopping = null;
+  runtime.jumpingToppings = [];
   runtime.isPipingCream = false;
   runtime.autoCreamTime = null;
   runtime.kitchenThemeBlend = 0; // a special guest's kitchen transforms again for each order
@@ -48,5 +49,6 @@ export function resetCake(): void {
   runtime.cake = createCake(cake.shape);
   runtime.autoCreamTime = null;
   runtime.draggedTopping = null;
+  runtime.jumpingToppings = [];
   runtime.isPipingCream = false;
 }

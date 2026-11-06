@@ -11,7 +11,7 @@ import { BUTTON_COLOR, TEXT } from '../../core/theme';
 import { button, pointer, springScale } from '../../core/ui';
 import { ESSENCE_ORDER, ESSENCES, glazeColorById } from '../../data/ingredients';
 import { t } from '../../data/strings';
-import type { Cake, EssenceId } from '../../data/types';
+import type { Cake, EssenceId, GlazeColorId } from '../../data/types';
 import { cakeHeight, countLayers } from '../../game/cake';
 import { glazeRgb, mixDrops, NAMED_COLOR_DISTANCE, nearestGlazeColor, recipeToDrops, totalDrops } from '../../game/colorMixing';
 import { availableEssences, isOwned, runtime } from '../../game/state';
@@ -74,6 +74,16 @@ function bottleTip(x: number, y: number, rotation: number): Point {
 }
 
 /** A colour is mixed but not on the cake yet: easy to forget when going on to the next station. */
+/** "orange = red + yellow" for the colour's recipe, without the colour's name. */
+export function glazeRecipeText(glaze: GlazeColorId): string {
+  const needed = recipeToDrops(glazeColorById(glaze).recipe);
+  return ESSENCE_ORDER.filter(e => needed[e] > 0)
+    .map(e => (needed[e] > 1 ? `${needed[e]}× ` : '') + loc(ESSENCES[e].name).toLocaleLowerCase()).join(' + ');
+}
+
+/** The cake the smart cauldron shows the recipe for (its button turns the hint on and off). */
+let recipeHintCake: Cake | null = null;
+
 export const hasUnpouredGlaze = (cake: Cake): boolean => totalDrops(cake.cauldron) > 0 && !cake.glaze;
 
 let remindedCake: Cake | null = null;
@@ -368,7 +378,13 @@ export const glazeStation: Station = {
   icon: 'glaze',
   get name() { return t().stations.glaze; },
   helper: 'glaze',
+  get helperLabel() { return t().helperHint; },
   isDone: cake => !!cake.glaze,
+  currentHint(cake) {
+    if (recipeHintCake !== cake) return null;
+    const glaze = currentOrder().glaze;
+    return `${loc(glazeColorById(glaze).name)} = ${glazeRecipeText(glaze)}`;
+  },
 
   /** "Pour on the cake" — big, right of the cake; "empty the cauldron" — low, left of the cauldron. The colour's name is under the cauldron. */
   drawControls(_rightEdge, _y, cake) {
@@ -381,13 +397,11 @@ export const glazeStation: Station = {
     });
   },
 
-  /** The smart cauldron mixes the ordered colour and pours it. */
+  /** The smart cauldron tells the ordered colour's recipe; mixing stays the player's. */
   autoComplete() {
     const cake = currentCake();
-    if (!requireLayer(cake)) return;
-    cake.cauldron = recipeToDrops(glazeColorById(currentOrder().glaze).recipe);
-    sfx.bubble(); sfx.sparkle();
-    setTimeout(pourGlaze, 350);
+    recipeHintCake = recipeHintCake === cake ? null : cake;
+    sfx.tab();
   },
 
   onPointerDown(point) {

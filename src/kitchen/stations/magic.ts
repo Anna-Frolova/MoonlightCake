@@ -10,16 +10,16 @@ import { burst, emitParticle, floatingText } from '../../core/particles';
 import { TEXT } from '../../core/theme';
 import { ELEMENT_ORDER, ELEMENTS, GUEST_ELEMENTS } from '../../data/elements';
 import { t } from '../../data/strings';
-import type { ElementId } from '../../data/types';
+import type { Cake, ElementId } from '../../data/types';
 import { cakeHeight, countLayers } from '../../game/cake';
 import { recognizeSign } from '../../game/signRecognition';
 import { progress, runtime } from '../../game/state';
 import { tutorialGate } from '../../game/tutorial';
 import { drawMagicCircle } from '../../render/environment';
-import { drawSign, signPointAt } from '../../render/signs';
+import { drawSign, drawSignGuide, signPointAt } from '../../render/signs';
 import { showToast } from '../../scenes/sceneManager';
-import { cakeTopY, currentCake, currentOrder, requireLayer } from '../kitchen';
-import { CAKE_BASE_Y, CAKE_CENTER_X, ELEMENT_ROW, MAGIC_DRAW_AREA } from '../layout';
+import { cakeTopY, currentCake, currentOrder } from '../kitchen';
+import { CAKE_BASE_Y, CAKE_CENTER_X, ELEMENT_ROW, MAGIC_DRAW_AREA, TUTORIAL_GUIDE } from '../layout';
 import type { Station } from './station';
 import { judgeChoice } from '../../game/guestReactions';
 
@@ -97,6 +97,9 @@ function drawStrokePath(points: Vec2[], color: string, alpha: number, width: num
   ctx.restore();
 }
 
+/** The cake the crystal ball shows the sign over (its button turns the hint on and off). */
+let signHintCake: Cake | null = null;
+
 /** The stroke being drawn, and the last one fading out in the colour of its result. */
 export function drawMagicStrokes(): void {
   if (runtime.magicStroke) drawStrokePath(runtime.magicStroke.points, STROKE_COLOR, 1, STROKE_WIDTH);
@@ -122,6 +125,7 @@ export const magicStation: Station = {
   icon: 'magic',
   get name() { return t().stations.magic; },
   helper: 'magic',
+  get helperLabel() { return t().helperHint; },
   isDone: cake => cake.magicQuality !== null,
 
   /**
@@ -154,10 +158,17 @@ export const magicStation: Station = {
     });
   },
 
-  /** The crystal ball casts the ordered element perfectly. */
+  /** The crystal ball shows the ordered sign over the cake to trace; drawing it stays the player's. */
   autoComplete() {
-    if (!requireLayer()) return;
-    castMagic(currentOrder().element);
+    const cake = currentCake();
+    signHintCake = signHintCake === cake ? null : cake;
+    sfx.tab();
+  },
+
+  drawOverlay(cake) {
+    if (signHintCake === cake && cake.magicQuality === null) {
+      drawSignGuide(currentOrder().element, CAKE_CENTER_X, cakeTopY(cake) - TUTORIAL_GUIDE.aboveCakeTop, TUTORIAL_GUIDE.signSize, !!runtime.magicStroke);
+    }
   },
 
   onPointerDown(point, cake) {

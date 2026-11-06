@@ -133,6 +133,8 @@ export interface RuntimeState {
   /** Tray slots this frame (the toppings station registers them while drawing). */
   toppingTray: { x: number; y: number; w: number; h: number; topping: ToppingId }[];
   helperKittenJump: number;
+  /** Toppings Pushok is sending from a dish to the cake (`x`, `y` as on the cake). */
+  jumpingToppings: { topping: ToppingId; fromX: number; fromY: number; x: number; y: number; startTime: number }[];
   heldPotion: { essence: EssenceId; x: number; y: number; grabOffsetX: number; grabOffsetY: number } | null;
   pouringPotion: { essence: EssenceId; time: number; startX: number; startY: number; dropAdded: boolean } | null;
   returningPotion: { essence: EssenceId; startX: number; startY: number; time: number } | null;
@@ -156,7 +158,7 @@ export const runtime: RuntimeState = {
   displayedCoins: progress.coins, coinBump: 0, lastHoveredButton: null, lastHoverSoundTime: 0, shopTab: 'decor',
   customer: null, speechBubbleBottom: 330,
   cake: null, station: 0, isServing: false, selectedCream: null, isPipingCream: false, lastSquishTime: 0, autoCreamTime: null,
-  draggedTopping: null, toppingTray: [], helperKittenJump: 0,
+  draggedTopping: null, toppingTray: [], helperKittenJump: 0, jumpingToppings: [],
   heldPotion: null, pouringPotion: null, returningPotion: null, glazeArc: null,
   glazeLayoutBlend: 0, cakeX: 760, cakeScale: 1,
   magicStroke: null, fadingStroke: null, kitchenThemeBlend: 0, splat: null, purrUntil: 0,

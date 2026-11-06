@@ -133,12 +133,12 @@ export const creamStation: Station = {
     ctx.restore();
   },
 
-  /** The enchanted whisk pipes the ordered cream bead by bead. */
+  /** The enchanted whisk pipes the cream the player chose, bead by bead. */
   autoComplete() {
-    const cake = currentCake();
+    const cake = currentCake(), cream = runtime.selectedCream;
     if (!requireLayer(cake)) return;
-    const cream = currentOrder().cream;
-    runtime.selectedCream = cream;
+    if (!cream) { showToast(t().pickCreamOnShelf); sfx.fail(); return; }
+    if (cake.cream !== cream) judgeChoice(cream === currentOrder().cream, 'surprised', true);
     cake.cream = cream;
     if (!cake.creamDots) createCreamDots(cake);
     const dots = cake.creamDots!;

@@ -321,11 +321,11 @@ function drawPatienceBar(x: number, y: number, w: number, customer: Customer): v
   ctx.beginPath(); ctx.moveTo(markX - 5, y - 8); ctx.lineTo(markX + 5, y - 8); ctx.lineTo(markX, y - 2); ctx.closePath(); ctx.fill();
 }
 
-/** "Auto" (once the helper is bought) right of the cake under the side button; the station's own buttons. */
+/** The helper's button (once it is bought) right of the cake under the side button; the station's own buttons. */
 function drawStationControls(cake: Cake): void {
   const station = STATIONS[runtime.station], auto = AUTO_BUTTON;
-  if (isOwned(helperItemId(station.helper))) {
-    button('auto', auto.x, auto.y, auto.w, auto.h, t().auto, { color: BUTTON_COLOR.gold, fontSize: 22, glow: true, onClick: station.autoComplete });
+  if (station.autoComplete && isOwned(helperItemId(station.helper))) {
+    button('auto', auto.x, auto.y, auto.w, auto.h, station.helperLabel ?? t().auto, { color: BUTTON_COLOR.gold, fontSize: 22, glow: true, onClick: station.autoComplete });
   }
   station.drawControls?.(STATION_CONTROLS.right, STATION_CONTROLS.y, cake);
 }

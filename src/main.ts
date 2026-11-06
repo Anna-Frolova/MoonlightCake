@@ -19,6 +19,7 @@ import { isPressAllowed } from './game/tutorial';
 import { setUpInput } from './input';
 import { setUpNativeApp } from './nativeApp';
 import { updateAutoCream } from './kitchen/stations/cream';
+import { updateJumpingToppings } from './kitchen/stations/toppings';
 import { updatePotions } from './kitchen/stations/glaze';
 import { drawMagicCircle } from './render/environment';
 import { renderDayEnd } from './scenes/dayEnd';
@@ -86,6 +87,7 @@ function updateCakeAnimations(dt: number): void {
   for (const placed of cake.toppings) if (placed.popProgress !== undefined && placed.popProgress < 1) placed.popProgress = Math.min(1, placed.popProgress + dt * TOPPING_POP_SPEED);
   if (cake.glazeProgress < 1) cake.glazeProgress = Math.min(1, cake.glazeProgress + dt * GLAZE_SPREAD_SPEED);
   updateAutoCream(dt);
+  updateJumpingToppings();
 }
 
 function render(): void {
