@@ -15,6 +15,15 @@ function bell(semitone: number, delay = 0, volume = 0.09, duration = 0.9): void 
   playTone(frequency * 3.98, duration * 0.25, { volume: volume * 0.1, delay, reverb: 0.5, attack: 0.003 });
 }
 
+/** Every spell ends on the same short rising shimmer, so a cast always sounds like it worked (whatever the element). */
+function spellFlourish(delay: number): void {
+  [12, 16, 19, 24].forEach((step, i) => bell(step, delay + i * 0.06, 0.055, 0.9));
+  for (let i = 0; i < 6; i++) playTone(randomRange(2200, 3400), 0.2, { volume: 0.03, delay: delay + 0.12 + i * 0.04, reverb: 0.6, attack: 0.002 });
+}
+/** When the flourish comes in after each element's own sound. */
+const SPELL_FLOURISH_DELAY: Partial<Record<ElementId, number>> = { fire: 0.42, ice: 0.3, bolt: 0.3, nature: 0.5, dark: 0.75, blood: 1.05, sakura: 0.8 };
+
+// Only mistakes fall in pitch (`fail`), so what the player does right rises or stays level.
 export const sfx = {
   hover() { playTone(2400 + Math.random() * 400, 0.06, { volume: 0.018, reverb: 0.4, attack: 0.003 }); },
   click() { bell(pickRandom(PENTATONIC) + 12 * randomInt(0, 1), 0, 0.07, 0.5); playTone(260, 0.1, { volume: 0.08, slideTo: 520, reverb: 0.1 }); },
@@ -22,11 +31,12 @@ export const sfx = {
   /** A cake layer landing — a soft slime-like "bloop". */
   plop() {
     playTone(170, 0.22, { volume: 0.35, slideTo: 480, reverb: 0.15, attack: 0.005 });
-    playTone(520, 0.12, { volume: 0.1, slideTo: 260, delay: 0.08, reverb: 0.2 });
+    playTone(420, 0.12, { volume: 0.08, slideTo: 760, delay: 0.08, reverb: 0.2 });
     playNoise(0.08, 0.05, 700, { q: 2, reverb: 0.05, filter: 'lowpass' });
   },
-  squish() { playNoise(0.12, 0.06, 650 + Math.random() * 300, { q: 3, sweepTo: 1200, reverb: 0.1 }); playTone(240, 0.1, { volume: 0.05, slideTo: 180, reverb: 0.05 }); },
-  drop() { playTone(1500, 0.16, { volume: 0.14, slideTo: 520, reverb: 0.5, attack: 0.003 }); },
+  squish() { playNoise(0.12, 0.06, 650 + Math.random() * 300, { q: 3, sweepTo: 1200, reverb: 0.1 }); playTone(180, 0.1, { volume: 0.05, slideTo: 250, reverb: 0.05 }); },
+  /** A drop into the cauldron: water "blips" upwards. */
+  drop() { playTone(460, 0.15, { volume: 0.15, slideTo: 1350, reverb: 0.5, attack: 0.003 }); },
   bubble() { for (let i = 0; i < 4; i++) playTone(randomRange(260, 520), 0.12, { volume: 0.07, slideTo: randomRange(700, 1100), delay: i * 0.07, reverb: 0.3 }); },
   pour() { playNoise(0.7, 0.07, 400, { q: 0.8, sweepTo: 1600, reverb: 0.3, filter: 'lowpass' }); playTone(300, 0.6, { volume: 0.05, slideTo: 600, reverb: 0.4 }); },
   place() { playTone(620, 0.1, { volume: 0.14, slideTo: 980, reverb: 0.3, attack: 0.003 }); bell(12 + pickRandom(PENTATONIC), 0.02, 0.03, 0.3); },
@@ -46,7 +56,7 @@ export const sfx = {
       case 'fire':
         playNoise(0.7, 0.14, 250, { q: 0.7, sweepTo: 1800, reverb: 0.3, filter: 'lowpass' });
         for (let i = 0; i < 7; i++) playNoise(0.04, 0.06, 3200, { delay: 0.05 + i * 0.07 + randomRange(0, 0.05), q: 3, reverb: 0.1 });
-        playTone(160, 0.6, { wave: 'sawtooth', volume: 0.035, slideTo: 80, reverb: 0.3 });
+        playTone(110, 0.55, { wave: 'triangle', volume: 0.09, slideTo: 330, reverb: 0.4, attack: 0.05 }); // flaring up
         break;
       case 'ice':
         [24, 28, 31, 36, 40].forEach((step, i) => bell(step, i * 0.05, 0.05, 1.3));
@@ -83,6 +93,8 @@ export const sfx = {
       default:
         sfx.chime(); sfx.sparkle();
     }
+    const flourishAt = SPELL_FLOURISH_DELAY[element];
+    if (flourishAt !== undefined) spellFlourish(flourishAt);
   },
   /** A special guest walks in: the café hints at the change. */
   specialArrival(theme: KitchenThemeId) {

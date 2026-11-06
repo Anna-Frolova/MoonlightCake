@@ -1,5 +1,6 @@
 // The kitchen: the cake in the middle with the station's shelf or switches around it, the order (the guest
-// and the wanted cake in their thought cloud) on the left, station buttons in the top right corner, station tabs at the bottom.
+// and the wanted cake in their thought cloud) on the left, station buttons in the top right corner, station tabs
+// and "Serve" at the bottom.
 import { ctx, SCREEN_W, view } from '../core/canvas';
 import { clock } from '../core/clock';
 import { shade, withAlpha } from '../core/color';
@@ -114,6 +115,7 @@ export function renderKitchen(): void {
   drawTicket();
   drawStationControls(cake);
   drawStationTabs(cake);
+  drawServeButton();
   drawTutorialVeil(); // under the bottle or topping in hand, so it stays bright wherever it is carried
   drawMovingBottles();
   drawDraggedTopping();
@@ -134,12 +136,17 @@ function drawTopBar(): void {
   drawDayCounter(KITCHEN_TOP.dayX, TOP_BAR_HEIGHT / 2);
   drawCoinCounter(KITCHEN_TOP.coinsX, KITCHEN_TOP.y);
   drawSettingsButton(KITCHEN_TOP.settingsX, KITCHEN_TOP.y);
-  const reset = RESET_BUTTON, serve = SERVE_BUTTON;
+  const reset = RESET_BUTTON;
   button('resetCake', reset.x, reset.y, reset.w, reset.h, '', {
     color: BUTTON_COLOR.reset, onClick: askResetCake,
     draw: (x, y, w, h, hovered) => drawResetButton(x + w / 2, y + h / 2, w / 2, hovered),
   });
-  button('serveCake', serve.x, serve.y, serve.w, serve.h, t().serveCake, { color: BUTTON_COLOR.confirm, fontSize: 25, glow: isCakeReady(), onClick: serveCake });
+}
+
+/** "Serve" bottom right; it glows once the cake is complete (an unfinished one is asked about in `serveCake`). */
+function drawServeButton(): void {
+  const serve = SERVE_BUTTON;
+  button('serveCake', serve.x, serve.y, serve.w, serve.h, t().serveCake, { color: BUTTON_COLOR.confirm, fontSize: serve.fontSize, glow: isCakeReady(), onClick: serveCake });
 }
 
 /** "1 · 2/5" after a crescent moon: day, then the guest of the day (the wording is left out to save room). */

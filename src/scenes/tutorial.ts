@@ -51,6 +51,8 @@ interface TutorialStep {
   shows?(): Rect[];
   /** Drawn over the veil: shows the gesture (a dashed sign, a drag, the beads still to pipe). */
   drawGuide?(): void;
+  /** Gap between the hint panel and the tabs, instead of `COACH_TAB_GAP`. */
+  coachGap?: number;
   /** In the hall only buttons are held back (a tap still skips the guest's typing). */
   buttonsOnly?: boolean;
   /** On the magic step only this element's sign is recognised. */
@@ -69,8 +71,9 @@ const COACH = {
 };
 const COACH_TEXT_SIZE = 21;
 const COACH_LINE_HEIGHT = 28;
-/** Gap kept between the kitchen hint panel and the station tabs. */
+/** Gap kept between the kitchen hint panel and the station tabs (wider over "Serve", to leave room for the arrow to it). */
 const COACH_TAB_GAP = 8;
+const COACH_SERVE_GAP = 64;
 /** A press the tutorial holds back makes the highlight flash this long. */
 const NUDGE_SECONDS = 0.5;
 /** Rounding of the bright holes in the veil. */
@@ -239,6 +242,7 @@ const STEPS: TutorialStep[] = [
     isDone: () => ['judging', 'reacting', 'leaving'].includes(runtime.customer?.state ?? ''),
     text: () => t().tutorial.serve,
     targets: () => buttonRect('serveCake'),
+    coachGap: COACH_SERVE_GAP,
   },
 ];
 
@@ -427,7 +431,7 @@ export function drawTutorial(): void {
   const { x, y: preferredY, w } = coachPosition();
   const lines = wrapText(step.text(), w - 40, COACH_TEXT_SIZE, 700);
   const h = 48 + lines.length * COACH_LINE_HEIGHT + 58;
-  const y = runtime.scene === 'kitchen' ? Math.min(preferredY, TABS.y - COACH_TAB_GAP - h) : preferredY;
+  const y = runtime.scene === 'kitchen' ? Math.min(preferredY, TABS.y - (step.coachGap ?? COACH_TAB_GAP) - h) : preferredY;
   withPopIn(tutorial.shownAt, x + w / 2, y + h / 2, () => {
     drawPanel(x, y, w, h, { light: true, noStars: true });
     ctx.fillStyle = TEXT.gold; starPath(x + 26, y + 24, 8, 3.2); ctx.fill();

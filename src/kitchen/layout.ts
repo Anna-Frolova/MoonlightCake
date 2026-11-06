@@ -40,9 +40,9 @@ export const GLAZE_STATION_CAKE_SCALE = 0.72;
  * sits right of the cake, low on the screen, where the right thumb rests on a phone.
  */
 export const CAKE_SIDE_BUTTON = { x: 1136, y: 430, w: 128, h: 92 };
-/** Toppings station: "Remove all" in the side button's place right of the cake, far from "Serve" up in the top bar. */
+/** Toppings station: "Remove all" in the side button's place right of the cake. */
 export const CLEAR_TOPPINGS_BUTTON = { x: CAKE_SIDE_BUTTON.x, y: CAKE_SIDE_BUTTON.y + 16, w: CAKE_SIDE_BUTTON.w, h: 60 };
-/** The helper's "Auto" button: under the side button, away from "Serve" in the top bar. */
+/** The helper's "Auto" button: under the side button. */
 export const AUTO_BUTTON = { x: CAKE_SIDE_BUTTON.x, y: CAKE_SIDE_BUTTON.y + CAKE_SIDE_BUTTON.h + 14, w: CAKE_SIDE_BUTTON.w, h: 56 };
 
 export const CAULDRON = { x: CAKE_CENTER_X - 40, y: 592 };
@@ -68,18 +68,15 @@ export const KITCHEN_MESSAGE_X = CAKE_CENTER_X;
 export const HELPER_SHELF = { x: 1010, y: 172, w: 250, slotXs: [1045, 1105, 1165], potionX: 1226 };
 /** Station tabs along the bottom: icon pills centred on the screen, `iconScale` for the station icons. */
 export const TABS = { y: 652, h: 58, w: 104, gap: 14, iconScale: 0.95, doneBadge: { radius: 12, inset: 18 } };
-/** Top bar: a compact day counter (moon, day · guest), coins, the settings gear, then reset and serve on the right. */
+/** Top bar: a compact day counter (moon, day · guest), coins, the settings gear, then reset on the right. */
 export const TOP_BAR_HEIGHT = 62;
 export const KITCHEN_TOP = { dayX: 24, coinsX: 150, settingsX: 316, y: 8 };
 /** The music / sound panel that the gear opens, just under it. */
 export const SETTINGS_PANEL = { x: KITCHEN_TOP.settingsX - 10, y: TOP_BAR_HEIGHT + 6 };
 /** "Reset" in the top bar: a small round button (a bin), with a question before the cake is thrown away. */
-export const RESET_BUTTON = { x: 950, y: 6, w: 52, h: 52 };
-/**
- * "Serve": the main button of the kitchen, bigger than the rest and hanging a little below the top bar, so on a
- * phone it is easy to hit and not right at the screen's edge (where the system may hold a touch back).
- */
-export const SERVE_BUTTON = { x: 1024, y: 10, w: 240, h: 58 };
+export const RESET_BUTTON = { x: 1212, y: 6, w: 52, h: 52 };
+/** "Serve": the main button of the kitchen, bottom right on the line of the tabs, where the player looks for it; well apart from the last tab. */
+export const SERVE_BUTTON = { x: 1070, y: TABS.y, w: 194, h: TABS.h, fontSize: 23 };
 
 /** Area around the cake where pressing starts piping cream. */
 export const CREAM_ZONE = { halfWidth: 175, above: 75, below: 55 };
