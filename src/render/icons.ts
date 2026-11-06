@@ -180,15 +180,6 @@ export function drawHelperIcon(helper: HelperId, x: number, y: number, scale: nu
       case 'toppings':
         drawCat(HELPER_KITTEN, 0, 30, 0.2, time, 'happy');
         break;
-      case 'magic': { // crystal ball
-        roundRectPath(-14, 14, 28, 8, 3); ctx.fillStyle = '#6a3a8a'; ctx.fill(); ctx.stroke();
-        ellipsePath(0, -2, 17, 17);
-        const ball = ctx.createRadialGradient(-5, -8, 2, 0, -2, 18);
-        ball.addColorStop(0, '#ffffff'); ball.addColorStop(0.5, '#c9b3ff'); ball.addColorStop(1, '#6a4fc0');
-        ctx.fillStyle = ball; ctx.fill(); ctx.stroke();
-        ctx.fillStyle = `rgba(255,255,255,${0.5 + 0.5 * Math.sin(time * 4)})`; starPath(4, -6, 5, 1.8, 4, 0); ctx.fill();
-        break;
-      }
     }
   });
 }

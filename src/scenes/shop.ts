@@ -18,7 +18,7 @@ import { drawShopItemIcon } from '../render/icons';
 import { dimBackground, drawCoinCounter, drawSoundButtons } from './hud';
 
 const TAB_IDS = ['decor', 'helpers'] as const;
-const CARD = { w: 284, h: 140, gap: 12, rowGap: 14, columns: 4, gridX: 60, gridY: 172 };
+const CARD = { w: 284, h: 172, gap: 12, rowGap: 14, columns: 4, gridX: 60, gridY: 172 };
 const DISABLED_COLOR = '#4c4478';
 
 function drawItemCard(item: ShopItemDef, index: number): void {
@@ -45,7 +45,7 @@ function drawItemCard(item: ShopItemDef, index: number): void {
   const descriptionY = y + 28 + nameLines.length * 21;
   if (item.tipBonus) drawText(t().tipBonus(Math.round(item.tipBonus * 100)), x + 92, descriptionY, 18, TEXT.gold, 'left', 900);
   else if (item.description) {
-    wrapText(loc(item.description), w - 100, 15, 700).slice(0, 2)
+    wrapText(loc(item.description), w - 100, 15, 700).slice(0, 3)
       .forEach((line, j) => drawText(line, x + 92, descriptionY + j * 18, 15, TEXT.muted, 'left', 700));
   }
   ctx.restore();

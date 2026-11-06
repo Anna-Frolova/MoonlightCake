@@ -385,7 +385,7 @@ function drawCatnipPot(x: number, time: number): void {
 // ---------------- kitchen ----------------
 
 /** Helpers shown on the kitchen shelf once bought (the glaze cauldron and kitten appear elsewhere). */
-const SHELF_HELPERS: HelperId[] = ['layers', 'cream', 'magic'];
+const SHELF_HELPERS: HelperId[] = ['layers', 'cream'];
 
 /**
  * The kitchen behind the cake. While a special guest waits, their theme spreads out from the cake in a growing

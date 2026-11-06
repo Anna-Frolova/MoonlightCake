@@ -65,7 +65,7 @@ export const STATION_CONTROLS = { right: 1264, y: 76, h: 46, gap: 8 };
 /** Centre of short messages (toasts, "already decorated" hint). */
 export const KITCHEN_MESSAGE_X = CAKE_CENTER_X;
 /** Decorative shelf with the bought helpers, on the wall at the top right. */
-export const HELPER_SHELF = { x: 1010, y: 172, w: 250, slotXs: [1045, 1105, 1165], potionX: 1226 };
+export const HELPER_SHELF = { x: 1010, y: 172, w: 250, slotXs: [1070, 1150], potionX: 1226 };
 /** Station tabs along the bottom: icon pills centred on the screen, `iconScale` for the station icons. */
 export const TABS = { y: 652, h: 58, w: 104, gap: 14, iconScale: 0.95, doneBadge: { radius: 12, inset: 18 }, reminderPulseSpeed: 6 };
 /** Top bar: a compact day counter (moon, day · guest), coins, the settings gear, then reset on the right. */

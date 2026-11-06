@@ -32,7 +32,7 @@ export type CatId =
   | 'demon' | 'angel' | 'vampire' | 'samurai' | 'cultist' | 'fairy';
 export type DecorId = 'garland' | 'catnip' | 'gramophone' | 'cushion' | 'vitrage' | 'chandelier';
 /** Kitchen station a helper automates. */
-export type HelperId = 'layers' | 'cream' | 'glaze' | 'toppings' | 'magic';
+export type HelperId = 'layers' | 'cream' | 'glaze' | 'toppings';
 export type ShopItemId = `decor:${DecorId}` | `helper:${HelperId}`;
 
 /** Number of drops of each essence in the cauldron. */

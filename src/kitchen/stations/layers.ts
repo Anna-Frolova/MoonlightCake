@@ -187,27 +187,25 @@ export const layersStation: Station = {
     return false;
   },
 
-  /** The magic spatula goes on with the player's first layer and filling, up to the order's height. */
+  /** The magic spatula picks the shape and stacks the ordered layers with fillings. */
   autoComplete() {
-    const cake = currentCake(), wanted = currentOrder().layerCount;
+    const cake = currentCake(), order = currentOrder();
     if (complainIfLocked(t().lockedAuto)) return;
-    const firstLayer = cake.stack.find(item => item.kind === 'layer');
-    if (!firstLayer || firstLayer.kind !== 'layer') { showToast(t().needLayerFirst); sfx.fail(); return; }
-    if (countLayers(cake) >= wanted) { showToast(t().layersEnough); return; }
-    const firstFilling = cake.stack.find(item => item.kind === 'filling');
-    const filling = firstFilling?.kind === 'filling' ? firstFilling.filling : null;
+    cake.shape = order.shape;
+    cake.stack = [];
     cake.creamDots = null;
+    const { flavor, filling } = order;
     let step = 0;
-    while (countLayers(cake) < wanted) {
+    for (let n = 0; n < order.layerCount; n++) {
       // negative progress = wait before falling, so items land one after another
-      if (filling && cake.stack[cake.stack.length - 1].kind === 'layer') {
+      cake.stack.push({ kind: 'layer', flavor, dropProgress: -step * 0.6 });
+      setTimeout(sfx.plop, step * AUTO_STACK_INTERVAL_MS + AUTO_STACK_INTERVAL_MS);
+      step++;
+      if (n < order.layerCount - 1 && filling) {
         cake.stack.push({ kind: 'filling', filling, dropProgress: -step * 0.6 });
         setTimeout(sfx.squish, step * AUTO_STACK_INTERVAL_MS + AUTO_STACK_INTERVAL_MS);
         step++;
       }
-      cake.stack.push({ kind: 'layer', flavor: firstLayer.flavor, dropProgress: -step * 0.6 });
-      setTimeout(sfx.plop, step * AUTO_STACK_INTERVAL_MS + AUTO_STACK_INTERVAL_MS);
-      step++;
     }
     sfx.sparkle();
     burst(HELPER_SHELF_SPOT.x, HELPER_SHELF_SPOT.y, 14, ['#ffd84a', '#fff'], { kind: 'star', gravity: 50 });

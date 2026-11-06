@@ -95,7 +95,6 @@ const uk = {
   auto: '✦ Авто',
   helperHint: '✦ Підказка',
   toppingTapHint: 'Торкнись блюдця — Пушок покладе прикрасу',
-  layersEnough: 'Коржів уже досить',
   needLayerFirst: 'Спершу поклади корж',
   needAnyLayer: 'Спершу поклади хоча б один корж!',
   missingCream: 'без крему',
@@ -112,7 +111,7 @@ const uk = {
     glaze: 'Глазур',
     toppings: 'Прикраси',
     magic: 'Чари',
-  } as Record<HelperId, string>,
+  } as Record<HelperId | 'magic', string>,
 
   // layers station
   lockedShape: 'Торт уже прикрашено. Щоб змінити форму — «Скинути».',
@@ -272,7 +271,6 @@ const ja: UiStrings = {
   auto: '✦ オート',
   helperHint: '✦ ヒント',
   toppingTapHint: 'お皿をタップすると、ワタゲがのせるよ',
-  layersEnough: 'スポンジはもう足りてるよ',
   needLayerFirst: 'まずスポンジをのせてね',
   needAnyLayer: 'まずスポンジを1枚はのせてね！',
   missingCream: 'クリーム',

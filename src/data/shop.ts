@@ -26,11 +26,11 @@ export const SHOP_ITEMS: ShopItemDef[] = [
     id: 'decor:chandelier', tab: 'decor', price: 150, tipBonus: 0.12,
     name: { uk: 'Кришталева люстра', ja: 'クリスタルのシャンデリア' },
   },
-  // Helpers take the routine off the player's hands, but the choices stay theirs (see `autoComplete` of each station).
+  // Helpers take the routine off the player's hands (see `autoComplete` of each station); magic has none.
   {
     id: 'helper:layers', tab: 'helpers', price: 140,
     name: { uk: 'Чарівна лопатка', ja: '魔法のヘラ' },
-    description: { uk: 'Перший корж і начинку кладеш ти, решту складає лопатка.', ja: '最初のスポンジとフィリングをのせれば、残りは自動で重ねる。' },
+    description: { uk: 'Сама складає коржі й начинку.', ja: 'スポンジとフィリングを自動で重ねる。' },
   },
   {
     id: 'helper:cream', tab: 'helpers', price: 130,
@@ -46,11 +46,6 @@ export const SHOP_ITEMS: ShopItemDef[] = [
     id: 'helper:toppings', tab: 'helpers', price: 160,
     name: { uk: 'Кіт-помічник Пушок', ja: 'お手伝い猫ワタゲ' },
     description: { uk: 'Торкнись блюдця — і Пушок покладе прикрасу на торт.', ja: 'お皿をタップすると、ワタゲがトッピングをのせる。' },
-  },
-  {
-    id: 'helper:magic', tab: 'helpers', price: 110,
-    name: { uk: 'Кришталева куля', ja: '水晶玉' },
-    description: { uk: 'Показує на торті знак, який треба намалювати.', ja: 'ケーキの上に描く印を見せてくれる。' },
   },
 ];
 

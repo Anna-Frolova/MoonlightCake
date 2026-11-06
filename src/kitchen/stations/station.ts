@@ -9,8 +9,8 @@ export interface Station {
   icon: 'layers' | 'cream' | 'glaze' | 'toppings' | 'magic';
   /** Tab caption. */
   name: string;
-  /** Shop helper of this station. */
-  helper: HelperId;
+  /** Shop helper of this station, if it has one. */
+  helper?: HelperId;
   /** Caption of the helper's button, when it isn't "Auto". */
   helperLabel?: string;
   /** Shown as a tick on the tab. */
