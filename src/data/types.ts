@@ -31,7 +31,7 @@ export type CatId =
   | 'teacher' | 'grandpa'
   | 'demon' | 'angel' | 'vampire' | 'samurai' | 'cultist' | 'fairy'
   | 'zoryana' | 'nyukhach' | 'krykhta';
-export type DecorId = 'garland' | 'catnip' | 'gramophone' | 'cushion' | 'vitrage' | 'chandelier';
+export type DecorId = 'garland' | 'catnip' | 'gramophone' | 'cushion' | 'chandelier';
 /** Kitchen station a helper automates. */
 export type HelperId = 'layers' | 'cream' | 'glaze' | 'toppings';
 export type ShopItemId = `decor:${DecorId}` | `helper:${HelperId}`;

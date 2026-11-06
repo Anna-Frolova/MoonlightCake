@@ -85,9 +85,9 @@ const uk = {
     ],
     nightHint: 'Малюй знак над тінню, поки вона не дісталася книги рецептів!',
     nightWonTitle: 'Книга вціліла',
-    nightWon: 'Сірі крихти втекли в темряву. Хто ж їх послав?',
+    nightWon: 'Тіні розтанули в темряві. Хто ж їх послав?',
     nightLostTitle: 'Сторінки вкрадено',
-    nightLost: 'Сірі крихти втекли зі сторінками й дрібними монетками. Але магію так просто не вкрасти.',
+    nightLost: 'Тіні втекли зі сторінками й дрібними монетками. Але магію так просто не вкрасти.',
   },
 
   // what a guest may say while the cake is made (game/guestComments.ts); `isShe` picks the verb form
@@ -297,9 +297,9 @@ const ja: UiStrings = {
     ],
     nightHint: '影の上のしるしを描こう。レシピの本に届く前に！',
     nightWonTitle: '本は守られた',
-    nightWon: '灰色のくずは闇へ逃げていった。いったい誰の差し金だろう？',
+    nightWon: '影は闇にとけていった。いったい誰の差し金だろう？',
     nightLostTitle: 'ページを取られた',
-    nightLost: '灰色のくずはページと小銭を持って逃げた。でも魔法はかんたんには盗めない。',
+    nightLost: '影はページと小銭を持って逃げた。でも魔法はかんたんには盗めない。',
   },
 
   guestComments: {

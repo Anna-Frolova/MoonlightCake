@@ -73,24 +73,59 @@ function drawFire(geometry: ShapeGeometry, top: number, t: number, quality: numb
 }
 
 /** Frosty sides, icicles along the front rim, a glowing frozen edge and drifting snowflakes. */
-/** Icicles hang this far below the top edge, under the cream on the rim. */
-const ICICLE_DROP = 16;
+/** Frost ferns on the sides: one every `step` points of the front rim, reaching this share of the cake's height. */
+const FROST_FERNS = { step: 3, reach: 0.72, branches: 4, branchLength: 13, lineWidth: 2.2 };
+/** Ice crystals standing on the plate round the foot of the cake: where along the front (shares), how tall, from what offset out of the rim. */
+const ICE_CRYSTALS = { spots: [0.03, 0.2, 0.8, 0.97], heights: [34, 24, 28, 38], outset: 1.05, width: 11 };
 
+/** One frost fern growing up the side from (x, y): a stem with little leaves on both sides, longer towards the foot. */
+function drawFrostFern(x: number, y: number, length: number, lean: number): void {
+  const { branches, branchLength } = FROST_FERNS;
+  ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + lean, y - length);
+  for (let b = 1; b <= branches; b++) {
+    const k = b / (branches + 1), px = x + lean * k, py = y - length * k, reach = branchLength * (1.1 - k) * Math.min(1, length / 40);
+    ctx.moveTo(px, py); ctx.lineTo(px - reach, py - reach * 0.7);
+    ctx.moveTo(px, py); ctx.lineTo(px + reach, py - reach * 0.7);
+  }
+  ctx.stroke();
+}
+
+/** Three shards of ice growing out of one point on the plate, each with a lit face. */
+function drawIceCrystal(x: number, y: number, height: number): void {
+  const w = ICE_CRYSTALS.width;
+  for (const [dx, scale, lean] of [[-w * 0.8, 0.62, -7], [w * 0.8, 0.7, 7], [0, 1, 0]] as const) {
+    const tipX = x + dx + lean, tipY = y - height * scale, half = w * (0.5 + scale * 0.5);
+    const g = ctx.createLinearGradient(0, tipY, 0, y);
+    g.addColorStop(0, 'rgba(240,252,255,0.98)'); g.addColorStop(1, 'rgba(120,205,255,0.9)');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.moveTo(x + dx - half, y); ctx.lineTo(tipX, tipY); ctx.lineTo(x + dx + half, y); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx.beginPath(); ctx.moveTo(x + dx - half * 0.5, y); ctx.lineTo(tipX, tipY); ctx.lineTo(x + dx, y); ctx.closePath(); ctx.fill();
+  }
+}
+
+/** A cold veil on the sides with frost ferns growing up from the foot, crystals on the plate, snowflakes in the air; the top stays clear. */
 function drawIce(geometry: ShapeGeometry, top: number, height: number, t: number, intensity: number, grow: number): void {
-  ctx.fillStyle = `rgba(210,245,255,${0.34 * intensity * grow})`;
+  ctx.fillStyle = `rgba(210,245,255,${0.26 * intensity * grow})`;
   for (const edge of geometry.frontEdges) {
     ctx.beginPath();
     ctx.moveTo(edge.from[0], edge.from[1] * SQUASH); ctx.lineTo(edge.to[0], edge.to[1] * SQUASH);
     ctx.lineTo(edge.to[0], top + edge.to[1] * SQUASH); ctx.lineTo(edge.from[0], top + edge.from[1] * SQUASH);
     ctx.closePath(); ctx.fill();
   }
-  geometry.frontRim.forEach(([x, z], i) => {
-    const length = (18 + ((i * 37) % 18)) * grow;
-    const px = x * 0.98, py = top + z * SQUASH + ICICLE_DROP;
-    const g = ctx.createLinearGradient(0, py, 0, py + length);
-    g.addColorStop(0, 'rgba(220,248,255,1)'); g.addColorStop(1, 'rgba(70,170,255,0.85)');
-    ctx.fillStyle = g;
-    ctx.beginPath(); ctx.moveTo(px - 5.5, py); ctx.lineTo(px + 5.5, py); ctx.lineTo(px, py + length); ctx.closePath(); ctx.fill();
+  const front = geometry.frontRim.slice().sort((a, b) => a[0] - b[0]);
+  ctx.save();
+  ctx.strokeStyle = `rgba(240,252,255,${0.9 * grow})`; ctx.lineWidth = FROST_FERNS.lineWidth; ctx.lineCap = 'round';
+  ctx.shadowColor = '#8fe6ff'; ctx.shadowBlur = 6;
+  front.forEach(([x, z], i) => {
+    if (i % FROST_FERNS.step) return;
+    const length = height * FROST_FERNS.reach * (0.55 + 0.45 * Math.abs(Math.sin(i * 2.3))) * grow;
+    drawFrostFern(x * 0.97, z * SQUASH - 4, length, Math.sin(i * 1.7) * 9);
+  });
+  ctx.restore();
+  ICE_CRYSTALS.spots.forEach((spot, i) => {
+    const [x, z] = front[Math.round(spot * (front.length - 1))];
+    drawIceCrystal(x * ICE_CRYSTALS.outset, z * SQUASH + 8, ICE_CRYSTALS.heights[i] * grow);
   });
   ctx.strokeStyle = `rgba(230,250,255,${0.9 * intensity})`; ctx.lineWidth = 2.2;
   for (let k = 0; k < 12; k++) {

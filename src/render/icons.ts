@@ -132,13 +132,6 @@ export function drawDecorIcon(decor: DecorId, x: number, y: number, scale: numbe
         ellipsePath(4, -4, 20, 12); ctx.fillStyle = '#c9c3f0'; ctx.fill(); ctx.stroke();
         ellipsePath(-14, -6, 10, 9); ctx.fill(); ctx.stroke();
         break;
-      case 'vitrage':
-        ['#5b7fff', '#a06aff', '#3fd5e8', '#ff6ac8', '#ffd04e', '#6be0a0'].forEach((color, i) => {
-          ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, 26, (i * Math.PI) / 3, ((i + 1) * Math.PI) / 3); ctx.closePath();
-          ctx.fillStyle = color; ctx.fill(); ctx.stroke();
-        });
-        ellipsePath(0, 0, 10, 10); ctx.fillStyle = '#f2f4ff'; ctx.fill(); ctx.stroke();
-        break;
       case 'chandelier':
         ctx.beginPath(); ctx.ellipse(0, -4, 26, 8, 0, 0, Math.PI); ctx.strokeStyle = '#e8b84a'; ctx.lineWidth = 4; ctx.stroke();
         for (let i = 0; i < 5; i++) {

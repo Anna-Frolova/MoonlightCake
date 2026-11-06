@@ -29,7 +29,6 @@ const SHELF_WOOD = '#4a2c80';
 const SHELF_HIGHLIGHT = '#6a46a8';
 const WINDOW_FRAME = '#3d2468';
 const GOLD_METAL = '#e8b84a';
-const VITRAGE_GLASS = ['#5b7fff', '#a06aff', '#3fd5e8', '#ff6ac8', '#ffd04e', '#6be0a0'];
 const GARLAND_BULBS = ['#7ff0ff', '#ff8fd8', '#c9a0ff', '#fff096'];
 
 /** Glowing rune circle slowly rotating on the floor/wall. `rgb` is its colour as "r,g,b". */
@@ -138,7 +137,7 @@ export function drawHallBackground(time: number): void {
   }
   drawMagicCircle(640, 330, 215, time, 0.13);
 
-  if (isOwned('decor:vitrage')) drawVitrage(time); else drawNightWindow(time);
+  drawNightWindow(time);
   drawShelfBoard(38, 330, 284, 22); // window sill
   if (isOwned('decor:cushion')) drawSleepingKitten(time);
   if (runtime.scene !== 'title') drawMenuBoard();
@@ -162,27 +161,8 @@ export function drawHallBackground(time: number): void {
   if (isOwned('decor:garland')) drawGarland(time);
 }
 
-function drawVitrage(time: number): void {
-  const cx = 180, cy = 205, radius = 122;
-  drawGlow(cx, cy, 270, '#a08cff', 0.28);
-  ellipsePath(cx, cy, radius + 15, radius + 15); ctx.fillStyle = WINDOW_FRAME; ctx.fill();
-  for (let i = 0; i < 12; i++) {
-    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, radius, (i * Math.PI) / 6, ((i + 1) * Math.PI) / 6); ctx.closePath();
-    ctx.fillStyle = VITRAGE_GLASS[i % 6];
-    ctx.globalAlpha = 0.72 + 0.18 * Math.sin(time * 1.5 + i); ctx.fill(); ctx.globalAlpha = 1;
-    ctx.strokeStyle = '#1a0f33'; ctx.lineWidth = 5; ctx.stroke();
-  }
-  ctx.save(); // the world still shows through the lower panes
-  ellipsePath(cx, cy, radius, radius); ctx.clip();
-  drawLand(cx - radius, cy + VITRAGE_LAND.top, radius * 2, radius - VITRAGE_LAND.top, progress.land, time, WINDOW_LAND.detail);
-  ctx.restore();
-  ellipsePath(cx, cy, 52, 52); ctx.fillStyle = '#f2f4ff'; ctx.fill(); ctx.stroke();
-  ctx.beginPath(); ctx.arc(cx + 15, cy - 8, 44, 0, Math.PI * 2); ctx.fillStyle = '#9a7bf0'; ctx.fill(); // crescent
-}
-
 /** The land in the window starts this far below its top; the lake and trees are drawn bigger there. */
 const WINDOW_LAND = { top: 150, detail: 0.42 };
-const VITRAGE_LAND = { top: 34 };
 
 /** Arched window with the night sky, an aurora, the cracked moon and the world outside. */
 function drawNightWindow(time: number): void {

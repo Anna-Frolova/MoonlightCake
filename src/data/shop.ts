@@ -19,10 +19,6 @@ export const SHOP_ITEMS: ShopItemDef[] = [
     name: { uk: 'Подушка на підвіконні', ja: '窓辺のクッション' },
   },
   {
-    id: 'decor:vitrage', tab: 'decor', price: 110, tipBonus: 0.10,
-    name: { uk: 'Місячний вітраж', ja: '月のステンドグラス' },
-  },
-  {
     id: 'decor:chandelier', tab: 'decor', price: 150, tipBonus: 0.12,
     name: { uk: 'Кришталева люстра', ja: 'クリスタルのシャンデリア' },
   },

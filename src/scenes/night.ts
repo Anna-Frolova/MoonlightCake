@@ -1,7 +1,7 @@
-// The night raid: the dark hall, the chef guarding the recipe book, grey crumbs creeping in with signs over them.
+// The night raid: the dark hall, the chef guarding the recipe book, black ghosts creeping in with signs over them.
 import { ctx, SCREEN_H, SCREEN_W } from '../core/canvas';
 import { clock } from '../core/clock';
-import { drawGlow, drawPanel, drawText, drawTitle, ellipsePath, roundRectPath, withPopIn, wrapText } from '../core/draw';
+import { drawGlow, drawPanel, drawText, drawTitle, roundRectPath, withPopIn, wrapText } from '../core/draw';
 import { drawMotes } from '../core/particles';
 import { BUTTON_COLOR, TEXT } from '../core/theme';
 import { button } from '../core/ui';
@@ -19,7 +19,11 @@ import { dimBackground, drawCoinCounter } from './hud';
 
 const DARKNESS = 0.68;
 const CHEF_SCALE = 0.95;
-const CRUMB = { radius: 26, color: '#6a6084', rim: '#d8ccff', eyes: '#fff6dc', signSize: 46, signY: 62, signPlate: 'rgba(14,8,44,0.82)' };
+/** The ghosts: black with a pale glow so they stand out from the night, half-width and height of the body, how it writhes, its arms, the sign over its head. */
+const GHOST = {
+  body: '#07040f', rim: '#b8a4ff', eyes: '#ffe27a', width: 27, height: 64, speed: 4.2, sway: 9, hemWaves: 4, hemDepth: 7,
+  armLength: 44, armWidth: 6, fingerLength: 11, signSize: 44, signAbove: 44, signPlate: 'rgba(14,8,44,0.86)',
+};
 const BOOK = { w: 104, h: 28, cover: '#7a3f8e', page: '#fff6dc', glow: '#ffe27a' };
 const PAGE_ICONS = { y: 42, spacing: 40, w: 26, h: 32, color: '#fff6dc', lost: 'rgba(255,255,255,0.14)' };
 const HINT = { y: 92, size: 20, seconds: 9 };
@@ -49,20 +53,48 @@ function drawBook(): void {
   roundRectPath(x + 2, y - h / 2, w / 2 - 2, h - 2, 5); ctx.fill();
 }
 
-/** A crumb of grey: a soft blob with two eyes, its sign on a dark plate above it; hurrying gets it a redder plate edge. */
+/** A black ghost writhing on its way: a swaying body with a torn wavy hem, thin arms reaching forward, glowing slanted eyes. */
 function drawCrumb(crumb: RaidCrumb): void {
-  const { x, y } = crumbPosition(crumb), r = CRUMB.radius, def = ELEMENTS[crumb.element];
+  const { x, y } = crumbPosition(crumb), def = ELEMENTS[crumb.element], { width, height, hemWaves, sway } = GHOST;
+  const phase = clock.time * GHOST.speed + crumb.fromY, lean = Math.sin(phase * 0.7) * sway, reach = RAID_BOOK.x > x ? 1 : -1;
+  const headY = y - height * 0.55, hemY = y + height * 0.45;
   ctx.save();
-  ctx.shadowColor = CRUMB.rim; ctx.shadowBlur = 16;
-  ellipsePath(x, y, r, r * 0.86); ctx.fillStyle = CRUMB.color; ctx.fill();
+  ctx.shadowColor = GHOST.rim; ctx.shadowBlur = 18;
+  for (const side of [-1, 1]) drawGhostArm(x + side * width * 0.75 + lean * 0.4, headY + height * 0.4, side, reach, phase);
+  ctx.fillStyle = GHOST.body;
+  ctx.beginPath();
+  ctx.moveTo(x - width + lean * 0.3, y);
+  ctx.quadraticCurveTo(x - width + lean, headY - height * 0.1, x + lean, headY - height * 0.12); // up over the head
+  ctx.quadraticCurveTo(x + width + lean, headY - height * 0.1, x + width + lean * 0.3, y);
+  for (let i = hemWaves * 2; i >= 0; i--) { // back along the hem, its tatters writhing
+    const k = i / (hemWaves * 2), px = x - width + width * 2 * k - lean * 0.5;
+    ctx.lineTo(px, hemY + (i % 2 ? -GHOST.hemDepth : GHOST.hemDepth * 0.6) + Math.sin(phase * 1.6 + i * 1.3) * GHOST.hemDepth * 0.7);
+  }
+  ctx.closePath(); ctx.fill();
   ctx.restore();
-  ctx.fillStyle = CRUMB.eyes;
-  ellipsePath(x - r * 0.3, y - r * 0.12, 5, 6); ctx.fill();
-  ellipsePath(x + r * 0.3, y - r * 0.12, 5, 6); ctx.fill();
-  const plateY = y - CRUMB.signY, half = CRUMB.signSize / 2 + 8;
-  ctx.fillStyle = CRUMB.signPlate; roundRectPath(x - half, plateY - half, half * 2, half * 2, 12); ctx.fill();
+  for (const side of [-1, 1]) { // slanted eyes, inner corners down
+    const eyeX = x + lean * 0.8 + side * width * 0.36, eyeY = headY + height * 0.16;
+    ctx.fillStyle = GHOST.eyes; ctx.shadowColor = GHOST.eyes; ctx.shadowBlur = 10;
+    ctx.beginPath(); ctx.moveTo(eyeX - side * 8, eyeY + 4); ctx.lineTo(eyeX + side * 8, eyeY - 5); ctx.lineTo(eyeX + side * 3, eyeY + 6); ctx.closePath(); ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+  const plateY = headY - GHOST.signAbove, half = GHOST.signSize / 2 + 8;
+  ctx.fillStyle = GHOST.signPlate; roundRectPath(x - half, plateY - half, half * 2, half * 2, 12); ctx.fill();
   if (crumbProgress(crumb) > 0.7) { ctx.strokeStyle = BUTTON_COLOR.danger; ctx.lineWidth = 3; ctx.stroke(); }
-  drawSign(crumb.element, x, plateY, CRUMB.signSize, def.color, 3);
+  drawSign(crumb.element, x, plateY, GHOST.signSize, def.color, 3);
+}
+
+/** A thin wavering arm with three claw-like fingers, raised and reaching towards the book. */
+function drawGhostArm(x: number, y: number, side: number, reach: number, phase: number): void {
+  const { armLength, armWidth, fingerLength } = GHOST, wave = Math.sin(phase * 1.3 + side) * 12;
+  const elbowX = x + side * armLength * 0.4 + reach * 8, elbowY = y + wave, handX = x + side * armLength * 0.8 + reach * armLength * 0.3, handY = y - armLength * 0.35 - wave;
+  ctx.strokeStyle = GHOST.body; ctx.lineCap = 'round'; ctx.lineWidth = armWidth;
+  ctx.beginPath(); ctx.moveTo(x, y); ctx.quadraticCurveTo(elbowX, elbowY, handX, handY); ctx.stroke();
+  ctx.lineWidth = armWidth * 0.5;
+  for (const spread of [-0.55, 0, 0.55]) {
+    const angle = Math.atan2(handY - elbowY, handX - elbowX) + spread + Math.sin(phase * 2 + spread) * 0.15;
+    ctx.beginPath(); ctx.moveTo(handX, handY); ctx.lineTo(handX + Math.cos(angle) * fingerLength, handY + Math.sin(angle) * fingerLength); ctx.stroke();
+  }
 }
 
 function drawPageIcons(): void {

@@ -1,4 +1,4 @@
-// A night raid: after a villain's visit grey crumbs creep to the recipe book, each carrying a magic sign.
+// A night raid: after a villain's visit black ghosts creep to the recipe book, each carrying a magic sign.
 // Drawing the sign banishes the crumb nearest the book. Losing costs a few coins, never the land's progress.
 import { sfx } from '../audio/sfx';
 import { clock } from '../core/clock';
