@@ -4,6 +4,7 @@ import { readStored, removeStored, writeStored } from '../core/storage';
 import type { ElementId } from '../data/types';
 
 const TUTORIAL_KEY = 'misiachnyi-korzh-tutorial';
+const SHADE_HINT_KEY = 'misiachnyi-korzh-shade-hint';
 /** The tutorial's own button ("Skip") works at every step. */
 const TUTORIAL_BUTTON_PREFIX = 'tutorial';
 
@@ -59,9 +60,17 @@ export function finishTutorial(): void {
   writeStored(TUTORIAL_KEY, 'done');
 }
 
+/** True only the first time: the one-off hint about the white and dark bottles (kept apart from the save, like the tutorial). */
+export function takeShadeHint(): boolean {
+  if (readStored(SHADE_HINT_KEY) === 'done') return false;
+  writeStored(SHADE_HINT_KEY, 'done');
+  return true;
+}
+
 /** A new game teaches again from the first step. */
 export function resetTutorial(): void {
   Object.assign(tutorial, { isDone: false, step: 0, shownAt: null, nudgedAt: null, skippedStations: [] });
   clearTutorialGate();
   removeStored(TUTORIAL_KEY);
+  removeStored(SHADE_HINT_KEY);
 }

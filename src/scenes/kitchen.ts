@@ -25,7 +25,7 @@ import {
   AUTO_BUTTON, KITCHEN_TOP, RESET_BUTTON, SERVE_BUTTON, SETTINGS_PANEL, CAKE_BASE_Y, CAKE_CENTER_X, GLAZE_STATION_CAKE_SCALE, GLAZE_STATION_CAKE_X, HELPER_KITTEN_SPOT, KITCHEN_MESSAGE_X, STATION_CONTROLS, TABS,
   GUEST_WINDOW, THOUGHT_CLOUD, TOP_BAR_HEIGHT,
 } from '../kitchen/layout';
-import { drawGlazeArc, drawGlazeStationScenery, drawMovingBottles } from '../kitchen/stations/glaze';
+import { drawGlazeArc, drawGlazeStationScenery, drawMovingBottles, hasUnpouredGlaze, offerShadeHint, remindToPour } from '../kitchen/stations/glaze';
 import { GLAZE_STATION_INDEX, STATIONS, TOPPINGS_STATION_INDEX } from '../kitchen/stations';
 import { drawMagicStationCircle, drawMagicStrokes } from '../kitchen/stations/magic';
 import { drawDraggedTopping } from '../kitchen/stations/toppings';
@@ -85,7 +85,9 @@ function updateKitchenTheme(dt: number): void {
 }
 
 export function selectStation(index: StationIndex): void {
+  if (runtime.station === GLAZE_STATION_INDEX && index !== GLAZE_STATION_INDEX) remindToPour(currentCake());
   runtime.station = index;
+  if (index === GLAZE_STATION_INDEX) offerShadeHint();
 }
 
 export function renderKitchen(): void {
@@ -328,12 +330,16 @@ function drawStationControls(cake: Cake): void {
   station.drawControls?.(STATION_CONTROLS.right, STATION_CONTROLS.y, cake);
 }
 
-/** Station tabs: icon pills centred along the bottom; a done station gets a green tick, the suggested next one glows. */
+/**
+ * Station tabs: icon pills centred along the bottom; a done station gets a green tick, the suggested next one glows.
+ * The glaze tab pulses pink with a "!" while a mixed colour waits in the cauldron.
+ */
 function drawStationTabs(cake: Cake): void {
   const nextIndex = STATIONS.findIndex(station => !station.isDone(cake));
   const { w: tabW, h: tabH, gap, iconScale, doneBadge } = TABS, left = SCREEN_W / 2 - (STATIONS.length * tabW + (STATIONS.length - 1) * gap) / 2;
   STATIONS.forEach((station, i) => {
     const x = left + i * (tabW + gap), isSelected = runtime.station === i, isDone = station.isDone(cake);
+    const needsPour = i === GLAZE_STATION_INDEX && !isSelected && hasUnpouredGlaze(cake), pulse = 0.5 + 0.5 * Math.sin(clock.time * TABS.reminderPulseSpeed);
     button('tab' + i, x, TABS.y, tabW, tabH, '', {
       sound: 'tab', hoverScale: 1.06, onClick: () => selectStation(i as StationIndex),
       draw: (bx, by, bw, bh, hovered) => {
@@ -346,18 +352,20 @@ function drawStationTabs(cake: Cake): void {
           ctx.shadowBlur = 0;
           ctx.fillStyle = 'rgba(255,255,255,0.28)'; roundRectPath(bx + 10, by + 3, bw - 20, bh * 0.4, bh / 3); ctx.fill();
         } else {
-          if (nextIndex === i) { ctx.shadowColor = `rgba(140,230,255,${0.5 + 0.35 * Math.sin(clock.time * 5)})`; ctx.shadowBlur = 20; } // suggested next step
+          if (needsPour) { ctx.shadowColor = withAlpha(BUTTON_COLOR.pink, 0.5 + 0.5 * pulse); ctx.shadowBlur = 16 + 14 * pulse; }
+          else if (nextIndex === i) { ctx.shadowColor = `rgba(140,230,255,${0.5 + 0.35 * Math.sin(clock.time * 5)})`; ctx.shadowBlur = 20; } // suggested next step
           drawGlassPill(bx, by, bw, bh, hovered ? 0.95 : 0.8);
         }
         ctx.restore();
-        drawStationIcon(station.icon, bx + bw / 2 - (isDone ? doneBadge.radius * 0.6 : 0), by + bh / 2, iconScale);
-        if (isDone) {
+        drawStationIcon(station.icon, bx + bw / 2 - (isDone || needsPour ? doneBadge.radius * 0.6 : 0), by + bh / 2, iconScale);
+        if (isDone || needsPour) {
           const badgeX = bx + bw - doneBadge.inset, badgeY = by + bh / 2;
           ctx.save();
-          ctx.shadowColor = BUTTON_COLOR.confirm; ctx.shadowBlur = 10;
-          ellipsePath(badgeX, badgeY, doneBadge.radius, doneBadge.radius); ctx.fillStyle = BUTTON_COLOR.confirm; ctx.fill();
+          const badgeColor = needsPour ? BUTTON_COLOR.pink : BUTTON_COLOR.confirm;
+          ctx.shadowColor = badgeColor; ctx.shadowBlur = 10;
+          ellipsePath(badgeX, badgeY, doneBadge.radius, doneBadge.radius); ctx.fillStyle = badgeColor; ctx.fill();
           ctx.restore();
-          drawText('✓', badgeX, badgeY + 1, 15, '#fff', 'center', 900);
+          drawText(needsPour ? '!' : '✓', badgeX, badgeY + 1, 15, '#fff', 'center', 900);
         }
       },
     });

@@ -15,8 +15,9 @@ import type { Cake, EssenceId } from '../../data/types';
 import { cakeHeight, countLayers } from '../../game/cake';
 import { glazeRgb, mixDrops, NAMED_COLOR_DISTANCE, nearestGlazeColor, recipeToDrops, totalDrops } from '../../game/colorMixing';
 import { availableEssences, isOwned, runtime } from '../../game/state';
+import { takeShadeHint } from '../../game/tutorial';
 import { BOTTLE_NECK_TOP, drawPotionBottle } from '../../render/potionBottle';
-import { showToast } from '../../scenes/sceneManager';
+import { showModal, showToast } from '../../scenes/sceneManager';
 import { currentCake, currentOrder, requireLayer } from '../kitchen';
 import {
   CAKE_BASE_Y, CAKE_SIDE_BUTTON, CAULDRON, CAULDRON_CAPACITY, CAULDRON_MOUTH, ELIXIR_SHELF, EMPTY_CAULDRON_BUTTON, POUR_POSITION, POUR_REACH,
@@ -70,6 +71,31 @@ const isOverCauldron = (x: number, y: number): boolean =>
 function bottleTip(x: number, y: number, rotation: number): Point {
   const reach = BOTTLE_NECK_TOP * ELIXIR_SHELF.bottleScale;
   return { x: x + Math.sin(rotation) * reach, y: y - Math.cos(rotation) * reach };
+}
+
+/** A colour is mixed but not on the cake yet: easy to forget when going on to the next station. */
+export const hasUnpouredGlaze = (cake: Cake): boolean => totalDrops(cake.cauldron) > 0 && !cake.glaze;
+
+let remindedCake: Cake | null = null;
+
+/** Once per cake, on leaving the station with the mix still in the cauldron (the tab keeps a mark until it is poured). */
+export function remindToPour(cake: Cake): void {
+  if (!hasUnpouredGlaze(cake) || remindedCake === cake) return;
+  remindedCake = cake;
+  showToast(t().glazeNotPoured);
+}
+
+/**
+ * The first order for a lighter or darker shade of a colour (like sky blue, not blue): the guest says which way
+ * it goes, once per game. Plain white or black need no hint.
+ */
+export function offerShadeHint(): void {
+  const customer = runtime.customer;
+  if (!customer) return;
+  const recipe = glazeColorById(customer.order.glaze).recipe, shade = recipe.white ? 'white' : recipe.dark ? 'dark' : null;
+  if (!shade || Object.keys(recipe).length < 2 || !availableEssences().includes(shade) || !takeShadeHint()) return;
+  sfx.meow(customer.cat.voicePitch, 'neutral', customer.cat.voice);
+  showModal(shade === 'white' ? t().shadeHintLight : t().shadeHintDark, t().orderChangeOk, null, () => {}, false, loc(customer.cat.name));
 }
 
 function addDrop(essence: EssenceId): void {

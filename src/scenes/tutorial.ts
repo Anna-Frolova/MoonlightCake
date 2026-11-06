@@ -207,7 +207,7 @@ const STEPS: TutorialStep[] = [
     isDone: () => !!cake().glaze,
     text: () => {
       const essence = nextEssence();
-      return essence ? t().tutorial.glazeMix(loc(glazeColorById(order().glaze).name), recipeText(), loc(ESSENCES[essence].name)) : t().tutorial.glazePour;
+      return essence ? `${t().tutorial.glazeMix(loc(glazeColorById(order().glaze).name), recipeText(), loc(ESSENCES[essence].name))} ${t().tutorial.glazeShades}` : t().tutorial.glazePour;
     },
     targets: () => { const essence = nextEssence(); return essence ? [bottleRect(essence)] : buttonRect('pourGlaze'); },
     shows: () => [cauldronRect()],
