@@ -134,6 +134,10 @@ export const sfx = {
   purr(pitch = 1, seconds = 2, delay = 0) { playPurr(pitch, seconds, delay); },
   /** An angry hiss before the guest throws the cake. */
   hiss(seconds = 0.6) { playNoise(seconds, 0.12, 4500, { q: 0.8, sweepTo: 2500, reverb: 0.15, filter: 'highpass' }); },
+  /** A disapproving "ts-ts" with the tongue. */
+  tsk() { for (const delay of [0, 0.14]) playNoise(0.035, 0.1, 5200, { q: 4, delay, reverb: 0.1 }); },
+  /** A quick shocked breath in. */
+  gasp() { playNoise(0.24, 0.08, 700, { q: 1, sweepTo: 2600, reverb: 0.2 }); },
   /** The cake flying at the screen. */
   throwCake() { playNoise(0.4, 0.08, 400, { q: 1.4, sweepTo: 3000, reverb: 0.2 }); },
   /** …and hitting it. */

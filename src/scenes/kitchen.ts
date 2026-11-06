@@ -4,7 +4,7 @@
 import { ctx, SCREEN_W, view } from '../core/canvas';
 import { clock } from '../core/clock';
 import { shade, withAlpha } from '../core/color';
-import { drawFittedText, drawGlassPill, drawGlow, drawText, ellipsePath, font, roundRectPath, withPopIn, wrapText } from '../core/draw';
+import { drawFittedText, drawGlassPill, drawGlow, drawText, ellipsePath, font, heartPath, roundRectPath, withPopIn, wrapText } from '../core/draw';
 import { easeOutCubic, lerp } from '../core/math';
 import { burst, drawMotes } from '../core/particles';
 import { sfx } from '../audio/sfx';
@@ -17,7 +17,7 @@ import { helperItemId } from '../data/shop';
 import type { Cake } from '../data/types';
 import { isCakeReady, serveCake } from '../game/flow';
 import { patienceBarValue, patienceLeft, PATIENCE_CALM_MARK, PATIENCE_LEVELS } from '../game/patience';
-import { currentReaction, guestMood, headPose, reactionMood, updateGaze } from '../game/guestReactions';
+import { currentReaction, guestMood, headPose, reactionMark, reactionMood, updateGaze, type ReactionMark } from '../game/guestReactions';
 import { currentComment, GUEST_COMMENTS } from '../game/guestComments';
 import { orderChangeGlow } from '../game/orderChange';
 import { activeGuestTheme, isOwned, progress, runtime, type Customer, type StationIndex } from '../game/state';
@@ -62,6 +62,8 @@ const DAY_COUNTER = { moonRadius: 12, moonBite: { x: 0.45, y: -0.2, radius: 0.8 
 const BIN = { color: '#ffffff', lidW: 24, bodyTopW: 18, bodyBottomW: 14, bodyH: 18 };
 /** The guest's comment bubble: pale like the thought cloud, dark text. */
 const COMMENT_LOOK = { fill: '#f3edff', text: '#3a2a6e', shadow: 'rgba(20,10,50,0.6)', fadeSeconds: 0.3 };
+/** The heart or note floating up with a pleased sound: how long, how far, how much it drifts aside. */
+const FLOATING_MARK = { seconds: 1.1, rise: 46, sway: 8, heartSize: 15, heartColor: '#ff6fa8', noteColor: '#ffe27a' };
 /** How fast the changed order's frame pulses. */
 const CHANGED_ORDER_PULSE_SPEED = 6;
 
@@ -312,12 +314,29 @@ function drawGuestWindow(customer: Customer): void {
   ctx.restore();
   ctx.strokeStyle = frameColor; ctx.lineWidth = 3; roundRectPath(x + 1.5, y + 1.5, w - 3, h - 3, 15); ctx.stroke();
   const sideX = headX + markOffset.x, sideY = headY + markOffset.y;
+  const floating = reactionMark();
+  if (floating) drawFloatingMark(floating.kind, sideX, sideY, floating.age);
   if (reaction === 'surprised' || reaction === 'worried') drawReactionMark(reaction, sideX, sideY, time);
   else if (mood === 'thinking') { // a drop of sweat
     ctx.fillStyle = '#8fd8ff'; ctx.beginPath();
     ctx.moveTo(sideX, sideY - 16); ctx.quadraticCurveTo(sideX + 11, sideY + 4, sideX, sideY + 8);
     ctx.quadraticCurveTo(sideX - 11, sideY + 4, sideX, sideY - 16); ctx.fill();
   } else if (mood === 'angry' || mood === 'hissing') drawAngerMark(sideX, sideY, 1.5, time); // a sad guest just has a tear (drawn on the face)
+}
+
+/** A heart or a note drifting up beside the head and fading. */
+function drawFloatingMark(kind: ReactionMark, x: number, y: number, age: number): void {
+  const k = Math.min(1, age / FLOATING_MARK.seconds), { rise, sway, heartSize, heartColor, noteColor } = FLOATING_MARK;
+  ctx.save();
+  ctx.globalAlpha = Math.min(1, (1 - k) * 2);
+  ctx.translate(x + Math.sin(k * Math.PI * 2) * sway, y - k * rise);
+  if (kind === 'heart') { ctx.fillStyle = heartColor; heartPath(0, 0, heartSize); ctx.fill(); }
+  else { // a quaver: a head, a stem and a flag
+    ctx.fillStyle = noteColor; ctx.strokeStyle = noteColor; ctx.lineWidth = 3.5; ctx.lineCap = 'round';
+    ellipsePath(-6, 12, 8, 6); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(1, 11); ctx.lineTo(1, -14); ctx.quadraticCurveTo(4, -5, 13, -3); ctx.stroke();
+  }
+  ctx.restore();
 }
 
 /** "!" for surprise, "?" for worry — popping in beside the head (a pleased guest just shows it on their face). */
