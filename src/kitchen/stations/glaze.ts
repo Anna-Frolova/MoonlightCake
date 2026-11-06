@@ -139,7 +139,7 @@ function pourGlaze(): void {
   runtime.glazeArc = { startTime: clock.time, color: rgbToHex(color) };
   lookAt(runtime.cakeX, CAKE_BASE_Y - cakeHeight(cake) * runtime.cakeScale);
   const isRightColor = colorDistance(color, glazeRgb(currentOrder().glaze)) < GLAZE_RIGHT_DISTANCE;
-  setTimeout(() => judgeChoice(isRightColor, 'worried', true), GLAZE_LANDS_MS);
+  setTimeout(() => judgeChoice(isRightColor, 'worried', true, 'glaze'), GLAZE_LANDS_MS);
   setTimeout(() => burst(runtime.cakeX, CAKE_BASE_Y - cakeHeight(cake) * runtime.cakeScale - 10, 20, rgbToHex(color), { lift: 120, gravity: 400 }), 420);
 }
 

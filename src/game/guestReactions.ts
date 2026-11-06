@@ -3,17 +3,22 @@
 // and then nodding with an "m-hm" at a right one and shaking their head with an "m-m" at a wrong one.
 // Choices are also heard now and then, in the guest's own voice: a contented "hm", "m-hm", "mrrp!" or a short purr for
 // a right one; "hmm?", "m-m" or a grumble for a wrong one (more often — that's the useful hint).
+// Every sound has its face (SOUND_FACE), and the meows have intonations: an asking "mew?", a sharp "mrow!", a long
+// pleading whine, even a hiss, harsher the more mistakes were made (WRONG_SOUNDS).
 // Mistakes add up: after a few the guest's face goes flat (with a sigh), after more sad or angry (a sad meow or
-// a "hmph"); right choices slowly bring the smile back.
+// a "hmph"); right choices slowly bring the smile back. Now and then the guest also says something (guestComments.ts).
 import { sfx } from '../audio/sfx';
 import { clock } from '../core/clock';
 import { clamp, pickWeighted } from '../core/math';
-import type { Mood } from '../data/types';
+import type { GuestCommentTopic, Mood } from '../data/types';
 import type { HeadPose } from '../render/cat';
+import { maybeComment, resetGuestComment } from './guestComments';
 import { patienceMood } from './patience';
 import { runtime, type Customer } from './state';
 
-export type GuestReaction = 'surprised' | 'worried' | 'pleased';
+type WrongReaction = 'surprised' | 'worried';
+/** `voiced`: just the face that goes with a sound, without a mark beside the head. */
+export type GuestReaction = WrongReaction | 'pleased' | 'voiced';
 
 /** Seconds the guest keeps looking at the last thing the player touched before looking back at them. */
 const GAZE_HOLD_SECONDS = 1.8;
@@ -24,16 +29,35 @@ const GAZE_FULL_DISTANCE = 260;
 /** Resting gaze: at the player, a little down (towards the cake area under the window). */
 const GAZE_REST = { x: 0.15, y: 0.2 };
 /** How long each reaction face stays. */
-const REACTION_SECONDS: Record<GuestReaction, number> = { surprised: 1.9, worried: 1.6, pleased: 1.3 };
+const REACTION_SECONDS: Record<GuestReaction, number> = { surprised: 1.9, worried: 1.6, pleased: 1.3, voiced: 1.2 };
 /** The face shown for each reaction; a pleased guest picks one of PLEASED_MOODS each time. */
-const REACTION_MOOD: Record<Exclude<GuestReaction, 'pleased'>, Mood> = { surprised: 'surprised', worried: 'thinking' };
+const REACTION_MOOD: Record<WrongReaction, Mood> = { surprised: 'surprised', worried: 'thinking' };
 const PLEASED_MOODS: Mood[] = ['content', 'delighted'];
 /** A right choice pleases the guest only now and then, so it stays a nice surprise. */
 const PLEASED_CHANCE = 0.4;
 /** What the guest may say about a choice, with how often each comes up. */
-type ChoiceSound = 'chirp' | 'hm' | 'mhm' | 'purr' | 'grumble' | 'doubt' | 'disagree';
-const RIGHT_SOUNDS: [ChoiceSound, number][] = [['hm', 3], ['mhm', 3], ['chirp', 2], ['purr', 1]];
-const WRONG_SOUNDS: [ChoiceSound, number][] = [['doubt', 3], ['disagree', 3], ['grumble', 2]];
+type ChoiceSound = 'chirp' | 'hm' | 'mhm' | 'purr' | 'happyMeow' | 'grumble' | 'doubt' | 'disagree' | 'askMeow' | 'indignantMeow' | 'whineMeow' | 'hiss';
+/** Right choices: a guest who is still displeased only hums. */
+const RIGHT_SOUNDS: [ChoiceSound, number][] = [['hm', 3], ['mhm', 3], ['chirp', 2], ['happyMeow', 2], ['purr', 1]];
+const RIGHT_SOUNDS_COOL: [ChoiceSound, number][] = [['hm', 3], ['mhm', 3]];
+/** Wrong choices, by how displeased the guest is (0 fine, 1 flat, 2 upset); `hiss` is added by `wrongSounds`. */
+const WRONG_SOUNDS: [ChoiceSound, number][][] = [
+  [['doubt', 3], ['disagree', 3], ['askMeow', 3], ['grumble', 1]],
+  [['disagree', 2], ['askMeow', 1], ['grumble', 3], ['indignantMeow', 3], ['whineMeow', 1]],
+  [['grumble', 2], ['indignantMeow', 3], ['whineMeow', 3]],
+];
+/** How often a guest hisses at each displeasure level: readily with an angry temper, hardly ever otherwise. */
+const HISS_WEIGHT = { angry: [0, 2, 5], calm: [0, 0, 1] };
+const HISS_SECONDS = 0.4;
+type GuestSound = ChoiceSound | 'sigh' | 'huff' | 'sadMeow';
+/** The face that goes with each sound. */
+const SOUND_FACE: Record<GuestSound, Mood> = {
+  hm: 'content', mhm: 'content', purr: 'content', chirp: 'delighted', happyMeow: 'happy',
+  doubt: 'thinking', disagree: 'flat', askMeow: 'surprised', sigh: 'flat',
+  grumble: 'angry', indignantMeow: 'angry', huff: 'angry', hiss: 'hissing', whineMeow: 'sad', sadMeow: 'sad',
+};
+/** These faces are their own message: they replace the "?" or "!" beside the head. */
+const FIERCE_FACES: Mood[] = ['angry', 'hissing'];
 /**
  * Not every choice is voiced: a right one only now and then (a perfect cake shouldn't be a stream of sounds),
  * a wrong one mostly. A surprising mistake (wrong cream or magic) and a pleased face always come with a sound.
@@ -73,36 +97,49 @@ export function lookAt(x: number, y: number): void {
 }
 
 /** Shows a reaction face for a moment; surprise also jolts the window and gets a puzzled "mrr?". */
-export function react(kind: GuestReaction): void {
+export function react(kind: WrongReaction | 'pleased'): void {
   const customer = runtime.customer;
   if (!customer || !isWaitingGuest()) return;
   reaction = { kind, startTime: clock.time, mood: kind === 'pleased' ? PLEASED_MOODS[Math.floor(Math.random() * PLEASED_MOODS.length)] : REACTION_MOOD[kind] };
   if (kind !== 'pleased') customer.moodChangedAt = clock.time;
 }
 
-type GuestSound = ChoiceSound | 'sigh' | 'huff' | 'sadMeow';
-
-/** Plays one of the guest's sounds in their voice (a surprised one a little higher). */
+/** Plays one of the guest's sounds in their voice (a surprised one a little higher) and shows the face that goes with it. */
 function say(sound: GuestSound, isSurprised = false): void {
-  const cat = runtime.customer!.cat, pitch = cat.voicePitch * (isSurprised ? SURPRISED_VOICE : 1);
+  const customer = runtime.customer!, cat = customer.cat, pitch = cat.voicePitch * (isSurprised ? SURPRISED_VOICE : 1);
   lastVoiceTime = clock.time;
   if (sound !== 'sigh' && sound !== 'huff' && sound !== 'sadMeow') lastSound = sound;
   switch (sound) {
     case 'chirp': case 'grumble': sfx.meow(pitch, sound, cat.voice); break;
+    case 'happyMeow': sfx.meow(pitch, 'happy', cat.voice); break;
+    case 'askMeow': sfx.meow(pitch, 'ask', cat.voice); break;
+    case 'indignantMeow': sfx.meow(pitch, 'indignant', cat.voice); break;
+    case 'whineMeow': sfx.meow(pitch, 'whine', cat.voice); break;
     case 'sadMeow': sfx.meow(pitch, 'sad', cat.voice); break;
+    case 'hiss': sfx.hiss(HISS_SECONDS); customer.moodChangedAt = clock.time; break;
     case 'purr': sfx.purr(pitch * (cat.voice === 'male' ? 0.85 : 1.1), SHORT_PURR_SECONDS); break;
     default: sfx.hum(pitch, sound, cat.voice);
   }
+  const mood = SOUND_FACE[sound], shown = currentReaction();
+  const keepsMark = (shown === 'surprised' || shown === 'worried') && !FIERCE_FACES.includes(mood);
+  reaction = { kind: keepsMark ? shown : 'voiced', startTime: clock.time, mood };
+}
+
+/** What a guest this displeased may say about a wrong choice. */
+function wrongSounds(customer: Customer): [ChoiceSound, number][] {
+  const level = displeasureLevel(customer), hiss = HISS_WEIGHT[customer.cat.temper === 'angry' ? 'angry' : 'calm'][level];
+  return hiss ? [...WRONG_SOUNDS[level], ['hiss', hiss]] : WRONG_SOUNDS[level];
 }
 
 /** Not right after another sound (a shorter wait before a complaint). */
 const isQuiet = (isRight: boolean): boolean => clock.time - lastVoiceTime >= VOICE_QUIET_SECONDS[isRight ? 'right' : 'wrong'];
 
 /** The guest's sound over a choice: by chance (or always with `isSure`), never right after another one, never the same twice running. */
-function voiceChoice(isRight: boolean, whenWrong: Exclude<GuestReaction, 'pleased'>, isSure: boolean): void {
+function voiceChoice(isRight: boolean, whenWrong: WrongReaction, isSure: boolean): void {
   if (!isQuiet(isRight)) return;
   if (!isSure && Math.random() >= VOICE_CHANCE[isRight ? 'right' : 'wrong']) return;
-  const options = (isRight ? RIGHT_SOUNDS : WRONG_SOUNDS).filter(([sound]) => sound !== lastSound);
+  const customer = runtime.customer!, isCool = displeasureLevel(customer) > 0;
+  const options = (isRight ? (isCool ? RIGHT_SOUNDS_COOL : RIGHT_SOUNDS) : wrongSounds(customer)).filter(([sound]) => sound !== lastSound);
   say(pickWeighted(options.map(([option]) => option), options.map(([, weight]) => weight)), !isRight && whenWrong === 'surprised');
 }
 
@@ -123,8 +160,9 @@ export function guestMood(customer: Customer): Mood {
  * (PLEASED_CHANCE) a pleased face, only when `praise` is set (not for every small step). Each choice moves the
  * guest's displeasure; when their face gets worse for it they sigh, meow sadly or huff instead of the usual sound.
  * Sounds come by chance (see VOICE_CHANCE), so the player can often tell by ear without it getting noisy.
+ * `topic` is what the choice was about, for the guest's rare comment.
  */
-export function judgeChoice(isRight: boolean, whenWrong: Exclude<GuestReaction, 'pleased'>, praise = false): void {
+export function judgeChoice(isRight: boolean, whenWrong: WrongReaction, praise = false, topic?: GuestCommentTopic): void {
   const customer = runtime.customer;
   if (!customer || !isWaitingGuest()) return;
   const levelBefore = displeasureLevel(customer);
@@ -135,8 +173,9 @@ export function judgeChoice(isRight: boolean, whenWrong: Exclude<GuestReaction, 
     if (isShaking) gesture = { kind: 'shake', startTime: clock.time };
     const level = displeasureLevel(customer);
     if (level > levelBefore) say(level === 1 ? 'sigh' : customer.cat.temper === 'angry' ? 'huff' : 'sadMeow'); // the face just got worse
-    else if (isShaking) { if (isQuiet(false)) say('disagree', whenWrong === 'surprised'); }
-    else voiceChoice(false, whenWrong, whenWrong === 'surprised');
+    else if (isShaking && !level) { if (isQuiet(false)) say('disagree', whenWrong === 'surprised'); }
+    else voiceChoice(false, whenWrong, isShaking || whenWrong === 'surprised');
+    if (topic) maybeComment(customer, topic, false);
     return;
   }
   const isPleased = praise && Math.random() < PLEASED_CHANCE;
@@ -145,6 +184,7 @@ export function judgeChoice(isRight: boolean, whenWrong: Exclude<GuestReaction, 
     gesture = { kind: 'nod', startTime: clock.time };
     if (isQuiet(true) && lastSound !== 'mhm') say('mhm');
   } else voiceChoice(true, whenWrong, isPleased);
+  if (praise) maybeComment(customer, 'praise', true);
 }
 
 /** Where the head is during a nod or a head shake (still otherwise). */
@@ -171,6 +211,7 @@ export const reactionMood = (): Mood => reaction?.mood ?? 'neutral';
 export function resetGuestReactions(): void {
   reaction = null;
   gesture = null;
+  resetGuestComment();
   gaze.since = -Infinity;
 }
 

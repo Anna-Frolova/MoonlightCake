@@ -55,7 +55,7 @@ function addLayer(flavor: FlavorId): void {
   cake.stack.push({ kind: 'layer', flavor, dropProgress: 0 });
   cake.creamDots = null;
   // one layer too many is as wrong as the wrong flavour
-  judgeChoice(flavor === currentOrder().flavor && countLayers(cake) <= currentOrder().layerCount, 'worried');
+  judgeChoice(flavor === currentOrder().flavor && countLayers(cake) <= currentOrder().layerCount, 'worried', false, 'layer');
   setTimeout(() => {
     sfx.plop();
     burst(CAKE_CENTER_X, CAKE_BASE_Y - cakeHeight(cake) + 10, 10, FLAVORS[flavor].color, { lift: 120, gravity: 500 });
@@ -73,7 +73,7 @@ function addFilling(filling: FillingId): void {
   if (countLayers(cake) >= MAX_LAYERS) { showToast(t().fillingNoRoom); sfx.fail(); return; }
   cake.stack.push({ kind: 'filling', filling, dropProgress: 0 });
   cake.creamDots = null;
-  judgeChoice(filling === currentOrder().filling, 'worried');
+  judgeChoice(filling === currentOrder().filling, 'worried', false, 'filling');
   setTimeout(() => {
     sfx.squish();
     burst(CAKE_CENTER_X, CAKE_BASE_Y - cakeHeight(cake), 8, FILLINGS[filling].color, { lift: 80 });

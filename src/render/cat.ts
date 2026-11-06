@@ -304,6 +304,10 @@ function drawFace(look: CatLook, outline: string, headY: number, time: number, m
   } else if (mood === 'delighted') { // the mouth a little open in joy: a soft round opening with a tongue
     ellipsePath(0, headY + 25, 6.5, 4.5); ctx.fillStyle = '#c0406a'; ctx.fill(); ctx.stroke();
     ellipsePath(0, headY + 27, 3.5, 1.8); ctx.fillStyle = '#ff9cbc'; ctx.fill();
+  } else if (mood === 'hissing') { // wide open, showing the tongue (the fangs go over it)
+    ctx.moveTo(-13, headY + 22); ctx.quadraticCurveTo(0, headY + 17, 13, headY + 22); ctx.quadraticCurveTo(0, headY + 42, -13, headY + 22); ctx.closePath();
+    ctx.fillStyle = '#8a2048'; ctx.fill(); ctx.stroke();
+    ellipsePath(0, headY + 31, 5, 3); ctx.fillStyle = '#ff9cbc'; ctx.fill();
   } else if (mood === 'flat') { // a short straight line
     ctx.moveTo(-8, headY + 25); ctx.lineTo(8, headY + 25); ctx.stroke();
   } else if (mood === 'surprised') { // a little round "o"
@@ -312,7 +316,7 @@ function drawFace(look: CatLook, outline: string, headY: number, time: number, m
     ctx.moveTo(-9, headY + 21); ctx.quadraticCurveTo(-4.5, headY + 27, 0, headY + 21); ctx.quadraticCurveTo(4.5, headY + 27, 9, headY + 21); ctx.stroke();
   }
 
-  if (look.accessory === 'fangs') drawFangs(outline, headY);
+  if (look.accessory === 'fangs' || mood === 'hissing') drawFangs(outline, headY);
 
   ctx.strokeStyle = look.isDarkFur ? 'rgba(255,255,255,0.6)' : withAlpha(outline, 0.35); ctx.lineWidth = 1.6;
   for (const side of [-1, 1]) for (let i = 0; i < 2; i++) {
@@ -340,8 +344,8 @@ function drawEye(look: CatLook, outline: string, x: number, y: number, side: num
   ellipsePath(lookX + rx * 0.38, lookY + ry * 0.12, rx * 0.17, rx * 0.17); ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.fill();
   ctx.restore();
 
-  if (mood === 'sad' || mood === 'thinking' || mood === 'angry' || mood === 'flat') { // eyelid drawn in fur colour over the top of the eye
-    if (mood === 'angry') side = -side; // the lid slants the other way: inner corners down, a frown
+  if (mood === 'sad' || mood === 'thinking' || mood === 'angry' || mood === 'hissing' || mood === 'flat') { // eyelid drawn in fur colour over the top of the eye
+    if (mood === 'angry' || mood === 'hissing') side = -side; // the lid slants the other way: inner corners down, a frown
     ctx.fillStyle = look.fur; ctx.beginPath();
     if (mood === 'flat') ctx.rect(x - 17, y - 20, 34, 18); // half down, level: unimpressed
     else if (mood !== 'thinking') { ctx.moveTo(x - 17, y - 20); ctx.lineTo(x + 17, y - 20); ctx.lineTo(x + 17, y - 8 + side * 6); ctx.lineTo(x - 17, y - 8 - side * 6); }

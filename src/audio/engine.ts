@@ -145,7 +145,7 @@ export function playNoise(duration: number, volume: number, filterFrequency: num
  * Cat sounds: `neutral` / `happy` / `sad` meows; `chirp` — a short bright "mrrp!" rising twice (the guest
  * likes what the player just did); `grumble` — a low "mrrm…" sliding down with a growl (they don't).
  */
-export type MeowMood = 'neutral' | 'happy' | 'sad' | 'chirp' | 'grumble';
+export type MeowMood = 'neutral' | 'happy' | 'sad' | 'chirp' | 'grumble' | 'ask' | 'indignant' | 'whine';
 export type MeowVoice = 'female' | 'male';
 
 /**
@@ -158,6 +158,9 @@ const MEOW_SHAPES: Record<MeowMood, { glide: [number, number][]; duration: numbe
   sad: { glide: [[0, 1.2], [0.55, 0.7]], duration: 0.55, trill: 0 },
   chirp: { glide: [[0, 0.95], [0.07, 1.45], [0.11, 1.15], [0.2, 1.85]], duration: 0.26, trill: 0.35 },
   grumble: { glide: [[0, 0.72], [0.1, 0.8], [0.5, 0.5]], duration: 0.6, trill: 0.7 },
+  ask: { glide: [[0, 0.95], [0.2, 1], [0.42, 1.65]], duration: 0.47, trill: 0 }, // "mew?", rising at the end
+  indignant: { glide: [[0, 1.3], [0.06, 1.65], [0.26, 0.85]], duration: 0.3, trill: 0.2 }, // a short sharp "mrow!"
+  whine: { glide: [[0, 1.05], [0.28, 1.35], [0.58, 1.12], [0.85, 0.75]], duration: 0.9, trill: 0 }, // a long pleading "mee-ow"
 };
 const GROWL_HZ = 26;
 /**

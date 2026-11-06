@@ -95,7 +95,7 @@ function placeTopping(cake: Cake, topping: ToppingId, x: number, y: number, isNe
   cake.toppings.push({ topping, x, y, popProgress: 0 });
   // right while it's an ordered kind and there are not more of it than wanted
   const wanted = currentOrder().toppings[topping] ?? 0;
-  if (isNew) judgeChoice(cake.toppings.filter(item => item.topping === topping).length <= wanted, 'worried');
+  if (isNew) judgeChoice(cake.toppings.filter(item => item.topping === topping).length <= wanted, 'worried', false, 'topping');
   sfx.place();
   burst(CAKE_CENTER_X + x, cakeTopY(cake) + y, 6, ['#fff', '#ffe27a'], { kind: 'star', gravity: 100, maxSpeed: 120 });
 }

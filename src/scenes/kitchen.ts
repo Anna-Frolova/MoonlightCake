@@ -4,7 +4,7 @@
 import { ctx, SCREEN_W, view } from '../core/canvas';
 import { clock } from '../core/clock';
 import { shade, withAlpha } from '../core/color';
-import { drawFittedText, drawGlassPill, drawGlow, drawText, ellipsePath, font, roundRectPath } from '../core/draw';
+import { drawFittedText, drawGlassPill, drawGlow, drawText, ellipsePath, font, roundRectPath, withPopIn, wrapText } from '../core/draw';
 import { easeOutCubic, lerp } from '../core/math';
 import { burst, drawMotes } from '../core/particles';
 import { sfx } from '../audio/sfx';
@@ -18,12 +18,13 @@ import type { Cake } from '../data/types';
 import { isCakeReady, serveCake } from '../game/flow';
 import { patienceBarValue, patienceLeft, PATIENCE_CALM_MARK, PATIENCE_LEVELS } from '../game/patience';
 import { currentReaction, guestMood, headPose, reactionMood, updateGaze } from '../game/guestReactions';
+import { currentComment, GUEST_COMMENTS } from '../game/guestComments';
 import { orderChangeGlow } from '../game/orderChange';
 import { activeGuestTheme, isOwned, progress, runtime, type Customer, type StationIndex } from '../game/state';
 import { currentCake, resetCake } from '../kitchen/kitchen';
 import {
   AUTO_BUTTON, KITCHEN_TOP, RESET_BUTTON, SERVE_BUTTON, SETTINGS_PANEL, CAKE_BASE_Y, CAKE_CENTER_X, GLAZE_STATION_CAKE_SCALE, GLAZE_STATION_CAKE_X, HELPER_KITTEN_SPOT, KITCHEN_MESSAGE_X, STATION_CONTROLS, TABS,
-  GUEST_WINDOW, THOUGHT_CLOUD, TOP_BAR_HEIGHT,
+  GUEST_COMMENT, GUEST_WINDOW, THOUGHT_CLOUD, TOP_BAR_HEIGHT,
 } from '../kitchen/layout';
 import { drawGlazeArc, drawGlazeStationScenery, drawMovingBottles, hasUnpouredGlaze, offerShadeHint, remindToPour } from '../kitchen/stations/glaze';
 import { GLAZE_STATION_INDEX, STATIONS, TOPPINGS_STATION_INDEX } from '../kitchen/stations';
@@ -59,6 +60,8 @@ const PATIENCE_BACKING = { pad: 5, color: 'rgba(14,8,44,0.7)' };
 const DAY_COUNTER = { moonRadius: 12, moonBite: { x: 0.45, y: -0.2, radius: 0.8 }, textOffset: 22, textSize: 22, moonColor: '#ffd76a' };
 /** The bin on the reset button. */
 const BIN = { color: '#ffffff', lidW: 24, bodyTopW: 18, bodyBottomW: 14, bodyH: 18 };
+/** The guest's comment bubble: pale like the thought cloud, dark text. */
+const COMMENT_LOOK = { fill: '#f3edff', text: '#3a2a6e', shadow: 'rgba(20,10,50,0.6)', fadeSeconds: 0.3 };
 /** How fast the changed order's frame pulses. */
 const CHANGED_ORDER_PULSE_SPEED = 6;
 
@@ -210,6 +213,30 @@ function drawTicket(): void {
   const { x, y, w, h, nameTag, patienceGap } = GUEST_WINDOW;
   drawNameTag(loc(customer.cat.name), x + nameTag.x, y + nameTag.y);
   if (customer.patience !== null) drawPatienceBar(x, y + h + patienceGap, w, customer);
+  drawGuestComment();
+}
+
+/** The guest's rare comment in a bubble beside their window, popping in and fading out. */
+function drawGuestComment(): void {
+  const comment = currentComment();
+  if (!comment) return;
+  const { x, centerY, maxTextWidth, paddingX, paddingY, textSize, lineHeight, radius, tailLength } = GUEST_COMMENT, look = COMMENT_LOOK;
+  const lines = wrapText(comment.text, maxTextWidth, textSize, 800);
+  ctx.font = font(textSize, 800);
+  const w = Math.max(...lines.map(line => ctx.measureText(line).width)) + paddingX * 2, h = lines.length * lineHeight + paddingY * 2, y = centerY - h / 2;
+  const left = comment.startTime + GUEST_COMMENTS.showSeconds - clock.time;
+  ctx.save();
+  ctx.globalAlpha = Math.min(1, left / look.fadeSeconds);
+  withPopIn(comment.startTime, x + w / 2, centerY, () => {
+    ctx.save();
+    ctx.shadowColor = look.shadow; ctx.shadowBlur = 14;
+    ctx.fillStyle = look.fill;
+    ctx.beginPath(); ctx.moveTo(x + 2, centerY - 10); ctx.lineTo(x - tailLength, centerY); ctx.lineTo(x + 2, centerY + 10); ctx.closePath(); ctx.fill();
+    roundRectPath(x, y, w, h, radius); ctx.fill();
+    ctx.restore();
+    lines.forEach((line, i) => drawText(line, x + paddingX, y + paddingY + lineHeight * (i + 0.5), textSize, look.text, 'left', 800));
+  });
+  ctx.restore();
 }
 
 /** The cloud's outline: `bumps` circles around an ellipse that fills the box, plus the ellipse itself (all one fill). */
@@ -290,7 +317,7 @@ function drawGuestWindow(customer: Customer): void {
     ctx.fillStyle = '#8fd8ff'; ctx.beginPath();
     ctx.moveTo(sideX, sideY - 16); ctx.quadraticCurveTo(sideX + 11, sideY + 4, sideX, sideY + 8);
     ctx.quadraticCurveTo(sideX - 11, sideY + 4, sideX, sideY - 16); ctx.fill();
-  } else if (mood === 'angry') drawAngerMark(sideX, sideY, 1.5, time); // a sad guest just has a tear (drawn on the face)
+  } else if (mood === 'angry' || mood === 'hissing') drawAngerMark(sideX, sideY, 1.5, time); // a sad guest just has a tear (drawn on the face)
 }
 
 /** "!" for surprise, "?" for worry — popping in beside the head (a pleased guest just shows it on their face). */

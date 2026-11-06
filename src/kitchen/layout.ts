@@ -16,6 +16,11 @@ export const GUEST_WINDOW = {
   x: 22, y: 476, w: 318, h: 206, headAt: 0.62, catScale: 1, markOffset: { x: 82, y: -62 },
   nameTag: { x: 12, y: 28 }, patienceGap: 10, patienceHeight: 8,
 };
+/** A guest's comment: a bubble right of their window, at head height, with a tail pointing at it (over the kitchen, it ignores presses). */
+export const GUEST_COMMENT = {
+  x: GUEST_WINDOW.x + GUEST_WINDOW.w + 18, centerY: GUEST_WINDOW.y + GUEST_WINDOW.h * 0.55, maxTextWidth: 262,
+  paddingX: 16, paddingY: 12, textSize: 19, lineHeight: 24, radius: 16, tailLength: 16,
+};
 /**
  * The thought cloud with the wanted cake: a puffy cloud of `bumps` circles around an ellipse filling the box,
  * the cake centred inside it (`picturePadding` from the box), three thought dots (centre and radius) rising

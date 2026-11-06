@@ -64,7 +64,7 @@ function pipeAt(point: Point): void {
   const cake = currentCake();
   if (!countLayers(cake) || !runtime.selectedCream) return;
   if (!cake.creamDots) createCreamDots(cake);
-  if (cake.cream !== runtime.selectedCream) judgeChoice(runtime.selectedCream === currentOrder().cream, 'surprised', true);
+  if (cake.cream !== runtime.selectedCream) judgeChoice(runtime.selectedCream === currentOrder().cream, 'surprised', true, 'cream');
   cake.cream = runtime.selectedCream;
   const localX = point.x - CAKE_CENTER_X, localY = point.y - CAKE_BASE_Y;
   let pipedNow = 0;
@@ -138,7 +138,7 @@ export const creamStation: Station = {
     const cake = currentCake(), cream = runtime.selectedCream;
     if (!requireLayer(cake)) return;
     if (!cream) { showToast(t().pickCreamOnShelf); sfx.fail(); return; }
-    if (cake.cream !== cream) judgeChoice(cream === currentOrder().cream, 'surprised', true);
+    if (cake.cream !== cream) judgeChoice(cream === currentOrder().cream, 'surprised', true, 'cream');
     cake.cream = cream;
     if (!cake.creamDots) createCreamDots(cake);
     const dots = cake.creamDots!;

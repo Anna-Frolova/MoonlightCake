@@ -52,7 +52,7 @@ function castMagic(element: ElementId): void {
   cake.magicQuality = 1;
   cake.element = element;
   cake.magicCastTime = clock.time;
-  judgeChoice(isWanted, 'surprised', true);
+  judgeChoice(isWanted, 'surprised', true, 'magic');
   sfx.magic(element);
   burst(CAKE_CENTER_X, top, 46, [def.color, '#ffffff', shade(def.color, 0.4)],
     { kind: 'star', gravity: element === 'fire' ? -120 : 40, maxSpeed: 300 });

@@ -2,7 +2,7 @@
 // their data (`{ uk, ja }` fields); here is everything else the player reads.
 // `ja` must have exactly the same keys as `uk` — TypeScript reports anything missing.
 import { loc, type Localized } from '../core/language';
-import type { HelperId, MenuCategory } from './types';
+import type { GuestCommentTopic, HelperId, MenuCategory } from './types';
 
 type ScorePartKind = 'shape' | 'layers' | 'filling' | 'cream' | 'glaze' | 'toppings' | 'magic' | 'speed';
 
@@ -69,6 +69,17 @@ const uk = {
   tips: 'Чайові',
   ingredients: 'Інгредієнти',
   changeBonus: 'Бонус за зміну',
+
+  // what a guest may say while the cake is made (game/guestComments.ts); `isShe` picks the verb form
+  guestComments: {
+    layer: () => ['Це не той корж…', 'Щось не так із коржами.'],
+    filling: isShe => ['Це не та начинка.', `Я ${isShe ? 'просила' : 'просив'} іншу начинку.`],
+    cream: isShe => [`Я ${isShe ? 'просила' : 'просив'} інший крем.`, 'Це не той крем…'],
+    glaze: isShe => [`Я ${isShe ? 'хотіла' : 'хотів'} інший колір.`, 'Хм, це не мій колір.'],
+    topping: isShe => [`Цього я не ${isShe ? 'замовляла' : 'замовляв'}.`, 'Цього вже забагато.'],
+    magic: isShe => ['Це не ті чари!', `Я ${isShe ? 'чекала' : 'чекав'} на інші чари…`],
+    praise: () => ['Мм, виглядає смачно!', 'Саме так!', 'Мені вже подобається!'],
+  } as Record<GuestCommentTopic, (isShe: boolean) => string[]>,
 
   // a guest changing their order halfway (game/orderChange.ts); `isShe` picks the verb form
   orderChangeCream: (cream: string, isShe: boolean) =>
@@ -250,6 +261,16 @@ const ja: UiStrings = {
   tips: 'チップ',
   ingredients: '材料費',
   changeBonus: '変更ボーナス',
+
+  guestComments: {
+    layer: () => ['そのスポンジじゃないよ…', 'スポンジがちょっと違うな。'],
+    filling: () => ['そのフィリングじゃないよ。', '別のフィリングをたのんだのに。'],
+    cream: () => ['別のクリームをたのんだよ。', 'そのクリームじゃないよ…'],
+    glaze: () => ['別の色がよかったな。', 'うーん、この色じゃないな。'],
+    topping: () => ['それはたのんでないよ。', 'それは多すぎるかな。'],
+    magic: () => ['その魔法じゃないよ！', '別の魔法を待ってたのに…'],
+    praise: () => ['おいしそう！', 'そうそう！', 'もう気に入ったよ！'],
+  },
 
   orderChangeCream: (cream: string) => `あっ、ごめんなさい！クリームは「${cream}」にしてもらえる？お礼ははずむよ！`,
   orderChangeTopping: (topping: string, count: number) => `あっ、言い忘れてた！${topping}を${count}こ追加してくれる？お礼ははずむよ！`,

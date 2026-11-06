@@ -79,9 +79,12 @@ export type CatBack = 'none' | 'batWings' | 'featherWings' | 'cape' | 'fairyWing
 /**
  * `content`: eyes softly closed, mouth as usual; `delighted`: eyes open, mouth a little open in joy (no smile).
  * Both are the quiet "pleased" faces; `happy` is the big beaming one. `flat`: unimpressed, lids half down and
- * a straight mouth (a guest after a few mistakes).
+ * a straight mouth (a guest after a few mistakes); `hissing`: a frown and a wide open mouth with fangs.
  */
-export type Mood = 'neutral' | 'happy' | 'sad' | 'thinking' | 'angry' | 'surprised' | 'content' | 'delighted' | 'flat';
+export type Mood = 'neutral' | 'happy' | 'sad' | 'thinking' | 'angry' | 'surprised' | 'content' | 'delighted' | 'flat' | 'hissing';
+
+/** What a guest can remark on while the cake is made. */
+export type GuestCommentTopic = 'layer' | 'filling' | 'cream' | 'glaze' | 'topping' | 'magic' | 'praise';
 
 /** How a cat looks (also used for the chef mascot and the helper kitten). */
 export interface CatLook {

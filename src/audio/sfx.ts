@@ -133,7 +133,7 @@ export const sfx = {
   hum(pitch: number, kind: HumKind, voice?: MeowVoice) { playHum(pitch, kind, voice); },
   purr(pitch = 1, seconds = 2, delay = 0) { playPurr(pitch, seconds, delay); },
   /** An angry hiss before the guest throws the cake. */
-  hiss() { playNoise(0.6, 0.12, 4500, { q: 0.8, sweepTo: 2500, reverb: 0.15, filter: 'highpass' }); },
+  hiss(seconds = 0.6) { playNoise(seconds, 0.12, 4500, { q: 0.8, sweepTo: 2500, reverb: 0.15, filter: 'highpass' }); },
   /** The cake flying at the screen. */
   throwCake() { playNoise(0.4, 0.08, 400, { q: 1.4, sweepTo: 3000, reverb: 0.2 }); },
   /** …and hitting it. */
