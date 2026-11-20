@@ -16,12 +16,12 @@ import { goToScene, showModal, showToast } from '../scenes/sceneManager';
 import { countLayers, CREAM_DONE_COVERAGE } from './cake';
 import { buildDailyMenu } from './dailyMenu';
 import { catLine, pickWithoutRepeat } from './lines';
-import { canTakeOrder, generateOrder } from './orders';
+import { buildOrderPicture, canTakeOrder, generateOrder } from './orders';
 import { createNewSave } from './save';
 import { startRaid } from './nightRaid';
 import { patienceLeft, patienceSeconds } from './patience';
 import { scoreCake } from './scoring';
-import { resetTutorial } from './tutorial';
+import { finishTutorial, resetTutorial } from './tutorial';
 import { resetGuestReactions } from './guestReactions';
 import { changesOrderToday } from './orderChange';
 import { decorTipBonus, isOwned, progress, resetProgress, runtime, saveProgress } from './state';
@@ -37,6 +37,11 @@ const ROYAL_VISIT_DAY = STORY_DAYS;
  * order — every theme is quick to check. Remove (or set to Infinity) to return to normal days.
  */
 const SPECIALS_ONLY_FROM_DAY = 8;
+/**
+ * TESTING AID (temporary): a "Skip" button under the order in the hall serves the ordered cake, made perfectly,
+ * without the kitchen — to play through the story (lines, maps, nights) quickly. Set to false to hide it.
+ */
+export const SKIP_GUEST_ENABLED = true;
 /** Special guests a day: one in the story, two in endless mode. */
 const SPECIAL_GUESTS_PER_DAY = { story: 1, endless: 2 };
 /** A day of only perfect cakes heals this share of the region's land; the day's average hearts scale it. */
@@ -191,6 +196,16 @@ export function acceptOrder(): void {
   if (!customer || customer.state !== 'ordering') return;
   customer.state = 'waiting';
   goToScene('kitchen', setUpKitchen);
+}
+
+/** Testing aid: the guest gets exactly the cake they ordered, as if made perfectly and at once. */
+export function skipGuest(): void {
+  const customer = runtime.customer;
+  if (!SKIP_GUEST_ENABLED || !customer || customer.state !== 'ordering' || runtime.isServing) return;
+  if (customer.isTutorial) finishTutorial();
+  customer.state = 'waiting';
+  runtime.cake = { ...buildOrderPicture(customer.order), seed: (Math.random() * 1e9) | 0 };
+  handOverCake();
 }
 
 /** "Serve" button: warns about unfinished steps first. */

@@ -13,7 +13,7 @@ import { BUTTON_COLOR, TEXT } from '../core/theme';
 import { button } from '../core/ui';
 import { t } from '../data/strings';
 import {
-  acceptOrder, collectPayment, GUEST_COUNTER_X, isLastGuestOfDay, say, sendGuestAway, spawnNextGuest,
+  acceptOrder, collectPayment, GUEST_COUNTER_X, isLastGuestOfDay, say, sendGuestAway, SKIP_GUEST_ENABLED, skipGuest, spawnNextGuest,
 } from '../game/flow';
 import { catLine, hasLines, pickWithoutRepeat } from '../game/lines';
 import { patienceLeft, PATIENCE_LEVELS } from '../game/patience';
@@ -55,6 +55,8 @@ const JUDGING_SECONDS = 1.5;
 const HEART_FIRST = 0.4;
 const HEART_INTERVAL = 0.22;
 
+/** The testing "Skip" button, under "Accept order". */
+const SKIP_BUTTON = { w: 300, h: 50, gap: 12, fontSize: 20 };
 const BUBBLE = { x: 770, w: 480, textWidth: 440, lineHeight: 30, textSize: 22, orderPictureHeight: 180, centerY: 255, minY: 70, maxY: 420 };
 const RESULT_CARD = { x: 36, y: 92, w: 380, h: 468 };
 /** The served cake stands on the counter left of the guest (between them and the result card), so it hides neither. */
@@ -244,6 +246,11 @@ export function renderHall(): void {
       button('acceptOrder', BUBBLE.x, runtime.speechBubbleBottom + 16, BUBBLE.w, 62, t().acceptOrder, {
         color: BUTTON_COLOR.confirm, fontSize: 23, glow: progress.day === 1 && progress.guestIndex === 0, onClick: acceptOrder,
       });
+      if (SKIP_GUEST_ENABLED) {
+        button('skipGuest', BUBBLE.x, runtime.speechBubbleBottom + 16 + 62 + SKIP_BUTTON.gap, SKIP_BUTTON.w, SKIP_BUTTON.h, t().skipGuest, {
+          color: BUTTON_COLOR.secondary, fontSize: SKIP_BUTTON.fontSize, onClick: skipGuest,
+        });
+      }
     }
     if (customer.state === 'reacting') drawResultCard(customer);
     if (customer.state === 'storming' && customer.servedCake) drawThrownCake(customer, customer.servedCake);

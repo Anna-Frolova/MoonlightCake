@@ -7,6 +7,8 @@ const TUTORIAL_KEY = 'misiachnyi-korzh-tutorial';
 const SHADE_HINT_KEY = 'misiachnyi-korzh-shade-hint';
 /** The tutorial's own button ("Skip") works at every step. */
 const TUTORIAL_BUTTON_PREFIX = 'tutorial';
+/** Buttons the tutorial never blocks (the testing "Skip guest"). */
+const ALWAYS_PRESSABLE = ['skipGuest'];
 
 export interface Rect { x: number; y: number; w: number; h: number }
 
@@ -40,7 +42,7 @@ const isInside = (point: { x: number; y: number }, rect: Rect): boolean =>
 /** May a press start here? `buttonId` is the button under the point, if any. */
 export function isPressAllowed(point: { x: number; y: number }, buttonId: string | null): boolean {
   const areas = tutorialGate.pressable;
-  if (!areas || buttonId?.startsWith(TUTORIAL_BUTTON_PREFIX)) return true;
+  if (!areas || buttonId?.startsWith(TUTORIAL_BUTTON_PREFIX) || (buttonId && ALWAYS_PRESSABLE.includes(buttonId))) return true;
   if (tutorialGate.buttonsOnly && !buttonId) return true;
   return areas.some(rect => isInside(point, rect));
 }

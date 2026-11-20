@@ -114,6 +114,7 @@ const uk = {
   ruinedCakeFine: 'Штраф за зіпсований торт',
   finishDay: 'Завершити день',
   nextGuest: 'Наступний гість',
+  skipGuest: 'Пропустити » (тест)',
 
   // kitchen
   reset: 'Скинути',
@@ -321,6 +322,7 @@ const ja: UiStrings = {
   ruinedCakeFine: 'だめにしたケーキの罰金',
   finishDay: '一日をおえる',
   nextGuest: 'つぎのお客さん',
+  skipGuest: 'スキップ »（テスト）',
 
   reset: 'やり直す',
   confirmReset: 'このケーキを捨てて、最初から作り直す？',
