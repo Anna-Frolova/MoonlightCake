@@ -1,5 +1,7 @@
-// A night raid: after a villain's visit black ghosts creep to the recipe book, each carrying a magic sign.
-// Drawing the sign banishes the crumb nearest the book. Losing costs a few coins, never the land's progress.
+// A night raid: after a villain's visit grey, faded ghosts drift to the recipe book, each carrying a magic sign.
+// Drawing the sign frees the ghost nearest the book: it gets its colour back and floats away.
+// Two kinds: slow sheet ghosts float straight in, quick wisps loop round in circles on their way.
+// Losing costs a few coins, never the land's progress.
 import { sfx } from '../audio/sfx';
 import { clock } from '../core/clock';
 import { lerp, pickRandom, randomRange, type Point } from '../core/math';
@@ -11,47 +13,70 @@ import { showToast } from '../scenes/sceneManager';
 import { recognizeSign } from './signRecognition';
 import { availableElements, progress, runtime, saveProgress } from './state';
 
-/** How many crumbs come, how often, how long the way to the book takes, how many pages it can lose; coins won or lost. */
+/** How often ghosts come, how many pages the book can lose; coins won or lost. */
 export const RAID = {
-  crumbs: 8, firstCrumbSeconds: 2.2, spawnSeconds: 3.2, walkSeconds: 11, pages: 3,
+  firstGhostSeconds: 2.2, spawnSeconds: 3.2, pages: 3,
   winCoins: 30, lostCoinsShare: 0.15, lostCoinsMax: 40, minStrokePoints: 4,
 };
-/** Where the book lies and where the crumbs start: this far to either side of it, somewhere in this height. */
+export type GhostKind = 'sheet' | 'wisp';
+/**
+ * `seconds`: the way to the book. The sheet bobs up and down by `bob` px; the wisp makes `loops` circles
+ * of `loopRadius` px on its way (they shrink as it nears the book). `fromY`: the height it starts at.
+ */
+export const GHOST_KINDS = {
+  sheet: { seconds: 13, bob: 8, bobSpeed: 2.4, fromY: { min: 200, max: 430 } },
+  wisp: { seconds: 7.5, loops: 2.5, loopRadius: 110, loopSquash: 0.8, fromY: { min: 300, max: 370 } },
+} as const;
+/** The night's ghosts in order: slow sheets to learn on first, then more and more quick wisps. */
+const GHOST_ORDER: readonly GhostKind[] = ['sheet', 'sheet', 'wisp', 'sheet', 'wisp', 'sheet', 'wisp', 'wisp', 'sheet', 'wisp'];
+/** How long a freed ghost takes to fill with colour and float away. */
+export const FREED_SECONDS = 1.6;
+/** Where the book lies; ghosts start this far to either side of it. */
 export const RAID_BOOK = { x: 640, y: 480 };
-const SPAWN = { sideDistance: 620, topY: 170, bottomY: 430 };
+const SPAWN_SIDE_DISTANCE = 620;
 /** Only the signs that are easy to tell apart at speed. */
 const RAID_ELEMENTS: ElementId[] = ELEMENT_ORDER.filter(element => element !== 'star');
 const FAILED_STROKE_COLOR = '#ff7f9f';
 
-export interface RaidCrumb { element: ElementId; fromX: number; fromY: number; startTime: number }
+/** `side`: -1 comes from the left, 1 from the right. */
+export interface RaidGhost { kind: GhostKind; element: ElementId; side: number; fromY: number; startTime: number }
+/** A ghost the player freed: it fills with its sign's colour and floats up from where it was hit. */
+export interface FreedGhost { kind: GhostKind; element: ElementId; x: number; y: number; side: number; startTime: number }
 
 export const raid = {
-  crumbs: [] as RaidCrumb[], spawned: 0, nextSpawnAt: 0, pages: RAID.pages,
+  ghosts: [] as RaidGhost[], freed: [] as FreedGhost[], spawned: 0, nextSpawnAt: 0, pages: RAID.pages,
   /** Set once it is over; the coins are already counted then. */
   result: null as { won: boolean; coins: number } | null,
 };
 
-/** How far along its way a crumb is (0..1). */
-export const crumbProgress = (crumb: RaidCrumb): number => (clock.time - crumb.startTime) / RAID.walkSeconds;
+/** How far along its way a ghost is (0..1). */
+export const ghostProgress = (ghost: RaidGhost, time = clock.time): number => (time - ghost.startTime) / GHOST_KINDS[ghost.kind].seconds;
 
-/** Where a crumb is now: walking to the book with a little wobble. */
-export function crumbPosition(crumb: RaidCrumb): Point {
-  const k = crumbProgress(crumb);
-  return { x: lerp(crumb.fromX, RAID_BOOK.x, k), y: lerp(crumb.fromY, RAID_BOOK.y, k) + Math.sin(clock.time * 5 + crumb.fromY) * 6 };
+/** Where a ghost is at `time`: the sheet floats straight with a bob, the wisp loops round in shrinking circles. */
+export function ghostPosition(ghost: RaidGhost, time = clock.time): Point {
+  const k = Math.max(0, ghostProgress(ghost, time)), fromX = RAID_BOOK.x + ghost.side * SPAWN_SIDE_DISTANCE;
+  const x = lerp(fromX, RAID_BOOK.x, k), y = lerp(ghost.fromY, RAID_BOOK.y, k);
+  if (ghost.kind === 'sheet') {
+    const { bob, bobSpeed } = GHOST_KINDS.sheet;
+    return { x, y: y + Math.sin(time * bobSpeed + ghost.fromY) * bob };
+  }
+  const { loops, loopRadius, loopSquash } = GHOST_KINDS.wisp;
+  const radius = loopRadius * (1 - k), angle = k * loops * Math.PI * 2;
+  // starts at the bottom of the circle and swings up and forward, towards the book
+  return { x: x - ghost.side * radius * Math.sin(angle), y: y - radius * loopSquash * (1 - Math.cos(angle)) };
 }
 
 export function startRaid(): void {
-  Object.assign(raid, { crumbs: [], spawned: 0, nextSpawnAt: clock.time + RAID.firstCrumbSeconds, pages: RAID.pages, result: null });
+  Object.assign(raid, { ghosts: [], freed: [], spawned: 0, nextSpawnAt: clock.time + RAID.firstGhostSeconds, pages: RAID.pages, result: null });
   runtime.magicStroke = null;
   runtime.fadingStroke = null;
 }
 
-function spawnCrumb(): void {
+function spawnGhost(): void {
   const open = availableElements().filter(element => RAID_ELEMENTS.includes(element));
-  const side = raid.spawned % 2 ? 1 : -1;
-  raid.crumbs.push({
-    element: pickRandom(open), fromX: RAID_BOOK.x + side * SPAWN.sideDistance, fromY: randomRange(SPAWN.topY, SPAWN.bottomY), startTime: clock.time,
-  });
+  const kind = GHOST_ORDER[raid.spawned];
+  const { min, max } = GHOST_KINDS[kind].fromY;
+  raid.ghosts.push({ kind, element: pickRandom(open), side: raid.spawned % 2 ? 1 : -1, fromY: randomRange(min, max), startTime: clock.time });
   raid.spawned++;
   raid.nextSpawnAt = clock.time + RAID.spawnSeconds;
 }
@@ -60,7 +85,7 @@ function finishRaid(won: boolean): void {
   const coins = won ? RAID.winCoins : -Math.min(RAID.lostCoinsMax, Math.round(progress.coins * RAID.lostCoinsShare));
   progress.coins = Math.max(0, progress.coins + coins);
   raid.result = { won, coins };
-  raid.crumbs = [];
+  raid.ghosts = [];
   runtime.magicStroke = null;
   progress.phase = 'dayEnd'; // reloading now must not replay the night and count its coins again
   saveProgress();
@@ -69,17 +94,18 @@ function finishRaid(won: boolean): void {
 
 /** Called every frame. */
 export function updateRaid(): void {
+  raid.freed = raid.freed.filter(ghost => clock.time - ghost.startTime < FREED_SECONDS);
   if (runtime.scene !== 'night' || runtime.fade || raid.result) return;
-  if (raid.spawned < RAID.crumbs && clock.time >= raid.nextSpawnAt) spawnCrumb();
-  for (const crumb of raid.crumbs.filter(item => crumbProgress(item) >= 1)) {
-    raid.crumbs.splice(raid.crumbs.indexOf(crumb), 1);
+  if (raid.spawned < GHOST_ORDER.length && clock.time >= raid.nextSpawnAt) spawnGhost();
+  for (const ghost of raid.ghosts.filter(item => ghostProgress(item) >= 1)) {
+    raid.ghosts.splice(raid.ghosts.indexOf(ghost), 1);
     raid.pages--;
     runtime.shake = 0.3;
     sfx.fail();
     burst(RAID_BOOK.x, RAID_BOOK.y, 16, ['#fff6dc', '#8a7aa8'], { lift: 140, gravity: 200 });
   }
   if (raid.pages <= 0) finishRaid(false);
-  else if (raid.spawned >= RAID.crumbs && !raid.crumbs.length) finishRaid(true);
+  else if (raid.spawned >= GHOST_ORDER.length && !raid.ghosts.length) finishRaid(true);
 }
 
 export function startRaidStroke(point: Point): void {
@@ -93,18 +119,19 @@ export function extendRaidStroke(point: Point): void {
   if (Math.hypot(point.x - lastX, point.y - lastY) > 6) stroke.points.push([point.x, point.y]);
 }
 
-/** The drawn sign banishes the crumb with that sign nearest the book. */
+/** The drawn sign frees the ghost with that sign nearest the book. */
 export function finishRaidStroke(): void {
   const points = runtime.magicStroke?.points;
   runtime.magicStroke = null;
   if (!points || points.length < RAID.minStrokePoints || raid.result) return;
-  const match = recognizeSign(points, [...new Set(raid.crumbs.map(crumb => crumb.element))]);
+  const match = recognizeSign(points, [...new Set(raid.ghosts.map(ghost => ghost.element))]);
   const element = match && match.quality > 0 ? match.element : null;
   runtime.fadingStroke = { points, startTime: clock.time, color: element ? ELEMENTS[element].color : FAILED_STROKE_COLOR };
   if (!element) { showToast(t().signNotRecognized); sfx.fail(); return; }
-  const [target] = raid.crumbs.filter(crumb => crumb.element === element).sort((a, b) => crumbProgress(b) - crumbProgress(a));
-  const { x, y } = crumbPosition(target);
-  raid.crumbs.splice(raid.crumbs.indexOf(target), 1);
+  const [target] = raid.ghosts.filter(ghost => ghost.element === element).sort((a, b) => ghostProgress(b) - ghostProgress(a));
+  const { x, y } = ghostPosition(target);
+  raid.ghosts.splice(raid.ghosts.indexOf(target), 1);
+  raid.freed.push({ kind: target.kind, element, x, y, side: target.side, startTime: clock.time });
   sfx.place(); sfx.sparkle();
-  burst(x, y, 22, [ELEMENTS[element].color, '#ffffff'], { kind: 'star', gravity: 60, maxSpeed: 260 });
+  burst(x, y - 30, 22, [ELEMENTS[element].color, '#ffffff'], { kind: 'star', gravity: 60, maxSpeed: 260 });
 }

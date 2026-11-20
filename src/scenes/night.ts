@@ -1,6 +1,7 @@
-// The night raid: the dark hall, the chef guarding the recipe book, black ghosts creeping in with signs over them.
+// The night raid: the dark hall, the chef guarding the recipe book, faded grey ghosts drifting in with signs over them.
 import { ctx, SCREEN_H, SCREEN_W } from '../core/canvas';
 import { clock } from '../core/clock';
+import { hexToRgb, mixRgb, rgbToHex, withAlpha } from '../core/color';
 import { drawGlow, drawPanel, drawText, drawTitle, roundRectPath, withPopIn, wrapText } from '../core/draw';
 import { drawMotes } from '../core/particles';
 import { BUTTON_COLOR, TEXT } from '../core/theme';
@@ -9,7 +10,7 @@ import { CHEF_CAT } from '../data/cats';
 import { ELEMENTS } from '../data/elements';
 import { t } from '../data/strings';
 import { finishNight } from '../game/flow';
-import { crumbPosition, crumbProgress, raid, RAID, RAID_BOOK, type RaidCrumb } from '../game/nightRaid';
+import { FREED_SECONDS, ghostPosition, ghostProgress, raid, RAID, RAID_BOOK, type FreedGhost, type GhostKind, type RaidGhost } from '../game/nightRaid';
 import { runtime } from '../game/state';
 import { drawMagicStrokes } from '../kitchen/stations/magic';
 import { drawCat } from '../render/cat';
@@ -19,10 +20,17 @@ import { dimBackground, drawCoinCounter } from './hud';
 
 const DARKNESS = 0.68;
 const CHEF_SCALE = 0.95;
-/** The ghosts: black with a pale glow so they stand out from the night, half-width and height of the body, how it writhes, its arms, the sign over its head. */
+/**
+ * The ghosts: faded grey with a soft pale glow so they stand out from the night; freed ones fill with their sign's colour.
+ * Sheet: half-width and height of the body, its wavy hem. Wisp: the head's radius and the tail behind it.
+ */
 const GHOST = {
-  body: '#07040f', rim: '#b8a4ff', eyes: '#ffe27a', width: 27, height: 64, speed: 4.2, sway: 9, hemWaves: 4, hemDepth: 7,
-  armLength: 44, armWidth: 6, fingerLength: 11, signSize: 44, signAbove: 44, signPlate: 'rgba(14,8,44,0.86)',
+  body: '#aaa4b6', highlight: '#d3cede', face: '#4a4458', glow: '#d3cede', glowAlpha: 0.22, blush: 'rgba(255,143,184,0.75)',
+  sheet: { width: 30, height: 70, hemWaves: 5, hemDepth: 9, hemSpeed: 4, lean: 4 },
+  wisp: { radius: 24, tailLength: 62, tailWave: 7, dust: 5, dustSpacing: 15 },
+  signSize: 44, signAbove: 40, signPlate: 'rgba(14,8,44,0.86)',
+  /** A freed ghost: how fast it fills with colour, how high it floats, how much it sways. */
+  freed: { colorSeconds: 0.35, rise: 150, sway: 10 },
 };
 const BOOK = { w: 104, h: 28, cover: '#7a3f8e', page: '#fff6dc', glow: '#ffe27a' };
 const PAGE_ICONS = { y: 42, spacing: 40, w: 26, h: 32, color: '#fff6dc', lost: 'rgba(255,255,255,0.14)' };
@@ -36,7 +44,8 @@ export function renderNight(): void {
   drawCounter(time);
   dimBackground(DARKNESS);
   drawBook();
-  raid.crumbs.forEach(drawCrumb);
+  raid.freed.forEach(drawFreedGhost);
+  raid.ghosts.forEach(drawRaidGhost);
   drawMotes();
   drawMagicStrokes();
   drawPageIcons();
@@ -53,49 +62,92 @@ function drawBook(): void {
   roundRectPath(x + 2, y - h / 2, w / 2 - 2, h - 2, 5); ctx.fill();
 }
 
-/** A black ghost writhing on its way: a swaying body with a torn wavy hem, thin arms reaching forward, glowing slanted eyes. */
-function drawCrumb(crumb: RaidCrumb): void {
-  const { x, y } = crumbPosition(crumb), def = ELEMENTS[crumb.element], { width, height, hemWaves, sway } = GHOST;
-  const phase = clock.time * GHOST.speed + crumb.fromY, lean = Math.sin(phase * 0.7) * sway, reach = RAID_BOOK.x > x ? 1 : -1;
-  const headY = y - height * 0.55, hemY = y + height * 0.45;
-  ctx.save();
-  ctx.shadowColor = GHOST.rim; ctx.shadowBlur = 18;
-  for (const side of [-1, 1]) drawGhostArm(x + side * width * 0.75 + lean * 0.4, headY + height * 0.4, side, reach, phase);
-  ctx.fillStyle = GHOST.body;
-  ctx.beginPath();
-  ctx.moveTo(x - width + lean * 0.3, y);
-  ctx.quadraticCurveTo(x - width + lean, headY - height * 0.1, x + lean, headY - height * 0.12); // up over the head
-  ctx.quadraticCurveTo(x + width + lean, headY - height * 0.1, x + width + lean * 0.3, y);
-  for (let i = hemWaves * 2; i >= 0; i--) { // back along the hem, its tatters writhing
-    const k = i / (hemWaves * 2), px = x - width + width * 2 * k - lean * 0.5;
-    ctx.lineTo(px, hemY + (i % 2 ? -GHOST.hemDepth : GHOST.hemDepth * 0.6) + Math.sin(phase * 1.6 + i * 1.3) * GHOST.hemDepth * 0.7);
-  }
-  ctx.closePath(); ctx.fill();
-  ctx.restore();
-  for (const side of [-1, 1]) { // slanted eyes, inner corners down
-    const eyeX = x + lean * 0.8 + side * width * 0.36, eyeY = headY + height * 0.16;
-    ctx.fillStyle = GHOST.eyes; ctx.shadowColor = GHOST.eyes; ctx.shadowBlur = 10;
-    ctx.beginPath(); ctx.moveTo(eyeX - side * 8, eyeY + 4); ctx.lineTo(eyeX + side * 8, eyeY - 5); ctx.lineTo(eyeX + side * 3, eyeY + 6); ctx.closePath(); ctx.fill();
-    ctx.shadowBlur = 0;
-  }
-  const plateY = headY - GHOST.signAbove, half = GHOST.signSize / 2 + 8;
+/** A ghost on its way to the book, with its sign above; the plate turns red when it is close. */
+function drawRaidGhost(ghost: RaidGhost): void {
+  const { x, y } = ghostPosition(ghost), def = ELEMENTS[ghost.element];
+  // the wisp's tail trails behind it, opposite to where it is heading
+  const before = ghostPosition(ghost, clock.time - 0.06), heading = Math.atan2(y - before.y, x - before.x);
+  const top = drawGhost(ghost.kind, x, y, heading, ghost.startTime, GHOST.body, false);
+  const plateY = top - GHOST.signAbove, half = GHOST.signSize / 2 + 8;
   ctx.fillStyle = GHOST.signPlate; roundRectPath(x - half, plateY - half, half * 2, half * 2, 12); ctx.fill();
-  if (crumbProgress(crumb) > 0.7) { ctx.strokeStyle = BUTTON_COLOR.danger; ctx.lineWidth = 3; ctx.stroke(); }
-  drawSign(crumb.element, x, plateY, GHOST.signSize, def.color, 3);
+  if (ghostProgress(ghost) > 0.7) { ctx.strokeStyle = BUTTON_COLOR.danger; ctx.lineWidth = 3; ctx.stroke(); }
+  drawSign(ghost.element, x, plateY, GHOST.signSize, def.color, 3);
 }
 
-/** A thin wavering arm with three claw-like fingers, raised and reaching towards the book. */
-function drawGhostArm(x: number, y: number, side: number, reach: number, phase: number): void {
-  const { armLength, armWidth, fingerLength } = GHOST, wave = Math.sin(phase * 1.3 + side) * 12;
-  const elbowX = x + side * armLength * 0.4 + reach * 8, elbowY = y + wave, handX = x + side * armLength * 0.8 + reach * armLength * 0.3, handY = y - armLength * 0.35 - wave;
-  ctx.strokeStyle = GHOST.body; ctx.lineCap = 'round'; ctx.lineWidth = armWidth;
-  ctx.beginPath(); ctx.moveTo(x, y); ctx.quadraticCurveTo(elbowX, elbowY, handX, handY); ctx.stroke();
-  ctx.lineWidth = armWidth * 0.5;
-  for (const spread of [-0.55, 0, 0.55]) {
-    const angle = Math.atan2(handY - elbowY, handX - elbowX) + spread + Math.sin(phase * 2 + spread) * 0.15;
-    ctx.beginPath(); ctx.moveTo(handX, handY); ctx.lineTo(handX + Math.cos(angle) * fingerLength, handY + Math.sin(angle) * fingerLength); ctx.stroke();
-  }
+/** A freed ghost fills with its sign's colour, smiles and floats up, swaying, as it fades. */
+function drawFreedGhost(ghost: FreedGhost): void {
+  const k = (clock.time - ghost.startTime) / FREED_SECONDS, { colorSeconds, rise, sway } = GHOST.freed;
+  const color = mixHex(GHOST.body, ELEMENTS[ghost.element].color, Math.min(1, (clock.time - ghost.startTime) / colorSeconds));
+  ctx.save();
+  ctx.globalAlpha = Math.max(0, Math.min(1, (1 - k) * 2));
+  drawGhost(ghost.kind, ghost.x + Math.sin(k * 9) * sway, ghost.y - rise * k * k, -Math.PI / 2, ghost.startTime, color, true);
+  ctx.restore();
 }
+
+/**
+ * Draws a ghost standing at (x, y) (the bottom of the sheet, the wisp's head lower edge) and returns the y of its top.
+ * `heading`: where a wisp is flying (its tail points the other way). `seed`: keeps each ghost's wobble its own.
+ */
+function drawGhost(kind: GhostKind, x: number, y: number, heading: number, seed: number, color: string, isFreed: boolean): number {
+  const phase = clock.time + seed;
+  if (kind === 'sheet') {
+    const { width, height, hemWaves, hemDepth, hemSpeed, lean: leanAmount } = GHOST.sheet, lean = Math.sin(phase * 1.6) * leanAmount;
+    const headY = y - height + width;
+    drawGlow(x, y - height / 2, height * 0.9, GHOST.glow, GHOST.glowAlpha);
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(x - width, y);
+    ctx.lineTo(x - width, headY);
+    ctx.arc(x + lean * 0.3, headY, width, Math.PI, 0);
+    ctx.lineTo(x + width, y);
+    for (let i = hemWaves - 1; i >= 0; i--) { // the soft wavy hem, back to the left
+      const left = x - width + (i * width * 2) / hemWaves;
+      ctx.quadraticCurveTo(left + width / hemWaves, y + hemDepth + Math.sin(phase * hemSpeed + i) * hemDepth * 0.3, left, y);
+    }
+    ctx.fill();
+    ctx.fillStyle = GHOST.highlight;
+    ctx.beginPath(); ctx.ellipse(x - width * 0.45, headY - width * 0.4, 5, 9, -0.4, 0, Math.PI * 2); ctx.fill();
+    drawGhostFace(x + 4 + lean * 0.3, headY + 8, isFreed);
+    return y - height;
+  }
+  const { radius, tailLength, tailWave, dust, dustSpacing } = GHOST.wisp, cy = y - radius;
+  const back = heading + Math.PI, wave = Math.sin(phase * 6) * tailWave;
+  const tipX = x + Math.cos(back) * tailLength - Math.sin(back) * wave, tipY = cy + Math.sin(back) * tailLength + Math.cos(back) * wave;
+  if (!isFreed) for (let i = 1; i <= dust; i++) { // grey dust trailing behind
+    const d = tailLength + i * dustSpacing;
+    ctx.fillStyle = withAlpha(GHOST.highlight, 0.5 - i * 0.08);
+    ctx.beginPath(); ctx.arc(x + Math.cos(back) * d, cy + Math.sin(back) * d + Math.sin(phase * 3 + i) * 5, 4 - i * 0.5, 0, Math.PI * 2); ctx.fill();
+  }
+  drawGlow(x, cy, radius * 2.4, GHOST.glow, GHOST.glowAlpha);
+  ctx.fillStyle = color;
+  ctx.beginPath(); ctx.arc(x, cy, radius, 0, Math.PI * 2); ctx.fill();
+  const side = Math.PI / 2; // the tail: from both sides of the head, narrowing to its tip
+  ctx.beginPath();
+  ctx.moveTo(x + Math.cos(back - side) * radius, cy + Math.sin(back - side) * radius);
+  ctx.quadraticCurveTo(x + Math.cos(back - 0.5) * tailLength * 0.6, cy + Math.sin(back - 0.5) * tailLength * 0.6, tipX, tipY);
+  ctx.quadraticCurveTo(x + Math.cos(back + 0.3) * tailLength * 0.5, cy + Math.sin(back + 0.3) * tailLength * 0.5, x + Math.cos(back + side) * radius, cy + Math.sin(back + side) * radius);
+  ctx.fill();
+  ctx.fillStyle = GHOST.highlight;
+  ctx.beginPath(); ctx.ellipse(x - radius * 0.4, cy - radius * 0.45, 4, 7, -0.5, 0, Math.PI * 2); ctx.fill();
+  drawGhostFace(x + 3, cy + 2, isFreed);
+  return cy - radius;
+}
+
+/** Faded: sleepy eyes and a small round mouth. Freed: smiling eyes, a smile and pink cheeks. */
+function drawGhostFace(x: number, y: number, isFreed: boolean): void {
+  ctx.strokeStyle = GHOST.face; ctx.fillStyle = GHOST.face; ctx.lineWidth = 3; ctx.lineCap = 'round';
+  if (isFreed) {
+    for (const side of [-1, 1]) { ctx.beginPath(); ctx.arc(x + side * 10, y + 2, 5, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke(); }
+    ctx.beginPath(); ctx.arc(x, y + 8, 6, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke();
+    ctx.fillStyle = GHOST.blush;
+    for (const side of [-1, 1]) { ctx.beginPath(); ctx.arc(x + side * 18, y + 9, 5, 0, Math.PI * 2); ctx.fill(); }
+    return;
+  }
+  ctx.beginPath(); ctx.moveTo(x - 15, y); ctx.lineTo(x - 6, y); ctx.moveTo(x + 6, y); ctx.lineTo(x + 15, y); ctx.stroke();
+  ctx.beginPath(); ctx.arc(x, y + 12, 3.5, 0, Math.PI * 2); ctx.fill();
+}
+
+const mixHex = (from: string, to: string, k: number): string => rgbToHex(mixRgb(hexToRgb(from), hexToRgb(to), k));
 
 function drawPageIcons(): void {
   const { y, spacing, w, h, color, lost } = PAGE_ICONS, left = SCREEN_W / 2 - ((RAID.pages - 1) * spacing) / 2;
